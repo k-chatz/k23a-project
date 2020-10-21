@@ -6,19 +6,29 @@
 #include <stdarg.h>
 
 typedef void (*mapfunc_t)(void *node, void *newnode, va_list vargs);
+
 typedef void (*llfree_f)(void *node);
 
 void *llnth(void *l, int n);
+
 void *lltail(void *l);
+
 void llpush(void *lp, void *node);
+
 void llpushlist(void *lp, void *node);
+
 void *llpop(void *l);
+
 int lllen(void *l);
+
 void llreverse(void *l);
 
 void *llmap_reverse2(void *l, size_t new_data_size, mapfunc_t map_func, va_list vargs);
+
 void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...);
+
 void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...);
+
 void llfree(void *l, llfree_f free_data);
 
 /* A generic linked list interface */
@@ -26,7 +36,7 @@ void llfree(void *l, llfree_f free_data);
 /* long as the pointer to the next element is the first */
 /* field of the struct */
 
-#include <stdarg.h> 
+#include <stdarg.h>
 
 /* predicate type for search */
 /* nodeptr is a pointer to a node */
