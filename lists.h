@@ -8,7 +8,7 @@
 typedef void (*mapfunc_t)(void *node, void *newnode, va_list vargs);
 typedef void (*llfree_f)(void *node);
 
-void *llrest(void *l);
+void *llnth(void *l, int n);
 void *lltail(void *l);
 void llpush(void *lp, void *node);
 void llpushlist(void *lp, void *node);
