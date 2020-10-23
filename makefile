@@ -9,9 +9,10 @@ LFLAGS	 =
 all: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
 
-main.o: main.c
+spec_to_specs_tests: spec_to_specs_tests.o spec_to_specs.o lists.o hash.o spec_to_specs.h
 
+main.o: main.c
 lists.o: lists.c lists.h
 
 clean:
-	rm -f $(OBJS) $(OUT)
+	rm -f *.o $(OUT) *_tests

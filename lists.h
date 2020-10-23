@@ -63,4 +63,4 @@ void *llsort_merge(void *list_a, void *list_b, list_cmpr c);
 
 void llsort(void *l, list_cmpr c);
 
-#define LISTOF(TYPE) {void *next; TYPE data;}
+#define LISTOF(TYPE) struct {void *next; TYPE data;}
