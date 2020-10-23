@@ -1,23 +1,8 @@
 /* file: spec_to_specs.h */
+#include "spec_to_specs.h"
 
-#include "hash.h"
-#include "lists.h"
-#include <stdlib.h>
-#include <string.h>
-
-
-#define HT_CAP 128
-#define HT_BSZ 16
-
-typedef LISTOF(SpecEntry) SpecList;
-
-typedef
-struct {
-  char *id;
-  SpecList *similar;
-} SpecEntry;
-
-void *mk_spec(void *id){
+/* Created a spec node to be added to the hash table */
+static void *mk_spec(void *id){
   SpecEntry *new = malloc(sizeof(SpecEntry));
   new->id = strdup(id);
   new->similar = malloc(sizeof(SpecList));
@@ -26,22 +11,24 @@ void *mk_spec(void *id){
   return new;
 }
 
-ulong hash_spec(void *spec, ulong htcap){
+/* Hash an id */
+static ulong hash_spec(void *id, ulong htcap){
   ulong sum = 0;
-  char *id = ((SpecEntry*)spec)->id;
-  while(id){
+  while(*(char*)id){
     sum *= 47;			/* multiply by a prime number */
-    sum += *id;
+    sum += *((char*)id);
     id++;
   }
   return sum % htcap;
 }
 
-int cmp_spec(void *spec, void *key){
+/* Compare a spec to a key */
+static int cmp_spec(void *spec, void *key){
   return strcmp(((SpecEntry*)spec)->id, key);
 }
 
-ulong destroy_spec(void *spec){
+/* Destroy a spec */
+static ulong destroy_spec(void *spec){
   SpecList **similarp = &(((SpecEntry *)spec)->similar);
   while(*similarp){
     if(strcmp(((SpecEntry*)spec)->id, (*similarp)->data->id) == 0){
@@ -56,20 +43,50 @@ ulong destroy_spec(void *spec){
   return 1;
 }
 
-Hashtable sts_init(){
-  Hashtable new;
-  HT_Init(&new,
+
+
+
+/* __________ STS Functions __________ */
+/* Create a new sts */
+STS *sts_new(){
+  STS *new = malloc(sizeof(STS));
+  HT_Init(&(new->ht),
 	  HT_CAP,
 	  HT_BSZ,
 	  mk_spec,
 	  cmp_spec,
 	  hash_spec,
 	  destroy_spec);
+  new->keys = NULL;
   return new;
 }
 
-void sts_add(char *id){
-  HT_Insert(ht, id, void *valueParams, void **value)
+/* adds a node to the sts */
+int sts_add(STS *sts, char *id){
+  void *_;
+  StrList *new_id = malloc(sizeof(StrList));
+  new_id->data = strdup(id);
+  llpush(&(sts->keys), new_id);
+  HT_Insert(sts->ht, id, id, &_);
+  return 0;
 }
 
+/* Merges two sts nodes to point to the same expanded list */
+int sts_merge(STS *sts, char *id1, char *id2){
+  SpecEntry *spec1, *spec2;
+  spec1 = HT_Get(sts->ht, id1);
+  spec2 = HT_Get(sts->ht, id2);
+  SpecList *spec2_similar = spec2->similar;
+  SpecList *iter;
 
+  while(spec2_similar){
+    llpush(&(spec1->similar), llpop(&spec2_similar));
+  }
+
+  for(iter = spec1->similar; iter; iter = llnth(iter, 1)){
+    iter->data->similar = spec1->similar;
+  }
+  
+  return 0;
+}
+/* _______ END of STS Functions _______ */
