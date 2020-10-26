@@ -33,3 +33,4 @@ struct SpecEntry_s{
 STS *sts_new();
 int sts_add(STS *sts, char *id);
 int sts_merge(STS *sts, char *id1, char *id2);
+SpecEntry *sts_get(STS *sts, char *id);

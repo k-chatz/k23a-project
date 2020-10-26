@@ -51,12 +51,12 @@ static ulong destroy_spec(void *spec){
 STS *sts_new(){
   STS *new = malloc(sizeof(STS));
   HT_Init(&(new->ht),
-	  HT_CAP,
-	  HT_BSZ,
-	  mk_spec,
-	  cmp_spec,
-	  hash_spec,
-	  destroy_spec);
+		  HT_CAP,
+		  HT_BSZ,
+		  mk_spec,
+		  cmp_spec,
+		  hash_spec,
+		  destroy_spec);
   new->keys = NULL;
   return new;
 }
@@ -88,5 +88,9 @@ int sts_merge(STS *sts, char *id1, char *id2){
   }
   
   return 0;
+}
+
+SpecEntry *sts_get(STS *sts, char *id){
+  return HT_Get(sts->ht, id);
 }
 /* _______ END of STS Functions _______ */

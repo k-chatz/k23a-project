@@ -1,3 +1,4 @@
+#include "acutest.h"
 #include "spec_to_specs.h"
 
 #define N (sizeof(ids) / sizeof(ids[0]))
@@ -17,22 +18,50 @@ void print_sts(STS *sts){
   }
 }
 
-int main(int argc, char *argv[]) {
+void add_test(void){
   STS *sts = sts_new();
-  char *ids[] = {"1", "2", "3", "4", "5"};
+  char *ids[] = {"www.ebay.com//123", "2", "3", "4", "5"};
+  char *ids_from_sts[sizeof(ids) / sizeof(char*)];
   int i;
   for(i = 0; i < N; i++){
     sts_add(sts, ids[i]);
   }
-  print_sts(sts);
-
-  sts_merge(sts, "1", "4");
-
-  print_sts(sts);
-
-  sts_merge(sts, "4", "5");
-
-  print_sts(sts);
   
-  return 0;
+  i = N;
+  for(StrList *key = sts->keys; key; key = llnth(key, 1)){
+    ids_from_sts[--i] = key->data;
+  }
+
+  /* compare the two arrays */
+  for(i = 0; i < N; i++){
+    TEST_CHECK(strcmp(ids[i], ids_from_sts[i]) == 0);
+  }
 }
+
+void merge_test(void){
+  STS *sts = sts_new();
+  char *ids[] = {"1", "2"};
+  int i;
+  for(i = 0; i < N; i++){
+    sts_add(sts, ids[i]);
+  }
+  
+  sts_merge(sts, "1", "2");
+  SpecEntry *s1, *s2;
+  s1 = sts_get(sts, "1");
+  s2 = sts_get(sts, "2");
+  
+  /* check if s1 and s2 point to the same list */
+  TEST_CHECK(s1->similar == s2->similar);
+
+  for(i = 0; i < 2; i++){
+    TEST_CHECK(strcmp(ids[1-i], ((SpecList*)llnth(s1->similar, i))->data->id) == 0);
+  }
+}
+
+
+TEST_LIST = {
+  {"insertion", add_test},
+  {"merging", merge_test},
+  {NULL, NULL}
+};
