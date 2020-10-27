@@ -6,29 +6,24 @@ CC	 = gcc
 CFLAGS	 = -g -Wall -I../include/
 LFLAGS	 = 
 
+.PHONY: tests all clean githooks
+
 all: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
 
-tests: tests/spec_to_specs_tests
-	tests/spec_to_specs_tests
+
+tests:
+	$(MAKE) -C tests
+	for test in tests/*; do [ -x $$test ] && ./$$test; done
 
 tests/spec_to_specs_tests: objs/spec_to_specs_tests.o objs/spec_to_specs.o objs/lists.o objs/hash.o
 	$(MAKE) -C objs spec_to_specs_tests
 	mv objs/spec_to_specs_tests tests/
 
-main.o: main.c
-lists.o: lists.c
-
-objs/%.o: src/%.c src/makefile
-	$(MAKE) -C src $*.o
-	mv src/$*.o $@
-
-src/makefile: makefile
-	cp makefile src/makefile
-
-objs/makefile: makefile
-	cp makefile objs/makefile
-
+githooks:
+	git config --local core.hooksPath ".githooks/"
 
 clean:
-	rm -f objs/*.o tests/* bin/*
+	rm -rf deps
+	$(MAKE) -C objs clean
+	$(MAKE) -C tests clean

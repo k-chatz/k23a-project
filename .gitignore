@@ -169,5 +169,12 @@ fabric.properties
 
 Datasets/
 
+# emacs
+compile_commands.json
+compile_commands.commands.json
+TAGS
+.ccls-cache/*
+*~
+
 # End of https://www.toptal.com/developers/gitignore/api/c,clion,vscode
 
