@@ -31,4 +31,4 @@ objs/makefile: makefile
 
 
 clean:
-	rm -f objs/*.o tests/* bin/*
+	rm -f *.o $(OUT) *_tests
