@@ -171,3 +171,4 @@ Datasets/
 
 # End of https://www.toptal.com/developers/gitignore/api/c,clion,vscode
 
+/tests/spec_to_specs_tests
