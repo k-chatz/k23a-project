@@ -102,4 +102,33 @@ void tokenize_number(void) {
     }
 }
 
+void tokenize_string(void) {
+    char *str_contents[] = {"fhasdj", "foo bar", "foo 123bar _@@!@#$%^&*()_+/",
+                            "\"", "\uAbFf"};
+    char buf[100];
+    for (int i = 0; i < ARR_LEN(str_contents); i++) {
+        sprintf(buf, "\"%s\"", str_contents[i]);
+        TEST_CHECK(tokenize_word(buf));
+    }
+}
 
+void tokenize_whitespace(void) {
+    /* tokenizing whitespace should yield no tokens */
+    StrList *toks = json_tokenize_str("  \t \n ");
+    TEST_CHECK(!toks);
+}
+
+TEST_LIST = {
+    {"tokenize_true", tokenize_true},
+    {"tokenize_false", tokenize_false},
+    {"tokenize_null", tokenize_null},
+    {"tokenize_lbrace", tokenize_lbrace},
+    {"tokenize_rbrace", tokenize_rbrace},
+    {"tokenize_colon", tokenize_colon},
+    {"tokenize_lbracket", tokenize_lbracket},
+    {"tokenize_rbracket", tokenize_rbracket},
+    {"tokenize_comma", tokenize_comma},
+    {"tokenize_number", tokenize_number},
+    {"tokenize_string", tokenize_string},
+    {"tokenize_whitespace", tokenize_whitespace},
+};
