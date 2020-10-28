@@ -16,10 +16,6 @@ tests:
 	$(MAKE) -C tests
 	for test in tests/*; do [ -x $$test ] && ./$$test; done
 
-tests/spec_to_specs_tests: objs/spec_to_specs_tests.o objs/spec_to_specs.o objs/lists.o objs/hash.o
-	$(MAKE) -C objs spec_to_specs_tests
-	mv objs/spec_to_specs_tests tests/
-
 githooks:
 	git config --local core.hooksPath ".githooks/"
 

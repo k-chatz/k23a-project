@@ -11,13 +11,21 @@ SPEC_TO_SPECS_OBJS = $(patsubst %.o, ../objs/%.o,             \
 					lists.o		      \
 					hash.o)		      
 
+LISTS_OBJS = $(patsubst %.o, ../objs/%.o,     \
+			lists_tests.o         \
+			lists.o)
 
 
 
-all: spec_to_specs_tests
+
+all:    spec_to_specs_tests \
+	lists_tests
 
 spec_to_specs_tests: $(SPEC_TO_SPECS_OBJS)
 	$(CC) $(CFLAGS) -ospec_to_specs_tests $(SPEC_TO_SPECS_OBJS) $(LFLAGS)
+
+lists_tests: $(LISTS_OBJS)
+	$(CC) $(CFLAGS) -olists_tests $(LISTS_OBJS) $(LFLAGS)
 
 -include $(DEPS)
 
