@@ -44,8 +44,6 @@ static ulong destroy_spec(void *spec){
 }
 
 
-
-
 /* __________ STS Functions __________ */
 /* Create a new sts */
 STS *sts_new(){

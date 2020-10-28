@@ -5,25 +5,21 @@ LFLAGS	 =
 CSRC := $(wildcard *.c)
 DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
-SPEC_TO_SPECS_OBJS = $(patsubst %.o, ../objs/%.o,             \
-					spec_to_specs_tests.o \
-					spec_to_specs.o	      \
-					lists.o		      \
-					hash.o)		      
 
 
+../deps/%_tests.d: ../tests/%_tests.c
+	mkdir -p ../deps
+	cpp $(CFLAGS) $< -MM -MT../objs/$*.o >$@
 
-
-all: spec_to_specs_tests
-
-spec_to_specs_tests: $(SPEC_TO_SPECS_OBJS)
-	$(CC) $(CFLAGS) -ospec_to_specs_tests $(SPEC_TO_SPECS_OBJS) $(LFLAGS)
+../deps/%.d: ../src/%.c
+	mkdir -p ../deps
+	cpp $(CFLAGS) $< -MM -MT../objs/$*.o >$@
 
 -include $(DEPS)
 
-../objs/%.o: ../src/%.c
-	$(MAKE) -C ../objs $*.o
+../objs/%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-.PHONY: clean all
+.PHONY: clean
 clean:
-	rm spec_to_specs_tests
+	rm -f *~

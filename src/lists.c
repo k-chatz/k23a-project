@@ -6,11 +6,11 @@
 
 #include "lists.h"
 
-#define NEXT(x) (*((void**)x))
+#define NEXT(x) (*((void **)x))
 
 void *llnth(void *l, int n) {
     if (n >= 0) {
-        while (n-- > 0)
+        while (n-- > 0 && l)
             l = NEXT(l);
         return l;
     } else {
@@ -25,7 +25,7 @@ void *llnth(void *l, int n) {
 }
 
 void *lltail(void *l) {
-    if (!l)            /* l is NULL */
+    if (!l) /* l is NULL */
         return NULL;
     while (NEXT(l))
         l = NEXT(l);
@@ -77,14 +77,13 @@ int lllen(void *l) {
 }
 
 void llreverse(void *l) {
-    void *r = NULL;        /* initialize output to NULL */
+    void *r = NULL; /* initialize output to NULL */
     while (NEXT(l)) {
         void *p = llpop(l);
-        llpush(&r, p);    /* pop and push from l to r */
+        llpush(&r, p); /* pop and push from l to r */
     }
-    NEXT(l) = r;            /* return the results */
+    NEXT(l) = r; /* return the results */
 }
-
 
 void llsplit(void *in, void *out_a, void *out_b, int n) {
     if (n == 0) {
@@ -135,7 +134,7 @@ void *llsearch(void *l, list_predicate p, ...) {
         va_end(for_func);
         if (success)
             break;
-        l = (void *) NEXT((void **) l);
+        l = (void *)NEXT((void **)l);
     }
     va_end(vargs);
     return l;
@@ -147,7 +146,8 @@ struct lltemp {
     char data[];
 };
 
-void *llmap_reverse2(void *l, size_t new_node_size, mapfunc_t map_func, va_list vargs) {
+void *llmap_reverse2(void *l, size_t new_node_size, mapfunc_t map_func,
+                     va_list vargs) {
     struct lltemp *out_l = NULL;
     va_list temp;
     while (l) {
@@ -170,7 +170,6 @@ void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
     return out;
 }
 
-
 void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
     va_list vargs;
     va_start(vargs, map_func);
@@ -188,4 +187,3 @@ void llfree(void *l, llfree_f free_node) {
         }
     }
 }
-

@@ -8,9 +8,13 @@ DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
 -include $(DEPS)
 
+%_tests.o: ../tests/%_tests.c
+	$(MAKE) -C ../tests/ ../objs/$@
+
+
 %.o: ../src/%.c
 	$(MAKE) -C ../src/ ../objs/$@
 
 .PHONY: clean
 clean:
-	rm *.o
+	rm -f *.o

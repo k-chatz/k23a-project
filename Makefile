@@ -13,12 +13,8 @@ all: $(OBJS)
 
 
 tests:
-	$(MAKE) -C tests
-	for test in tests/*; do [ -x $$test ] && ./$$test; done
-
-tests/spec_to_specs_tests: objs/spec_to_specs_tests.o objs/spec_to_specs.o objs/lists.o objs/hash.o
-	$(MAKE) -C objs spec_to_specs_tests
-	mv objs/spec_to_specs_tests tests/
+	$(MAKE) -C tests-bin
+	for test in tests-bin/*; do [ -x $$test ] && ./$$test; done
 
 githooks:
 	git config --local core.hooksPath ".githooks/"
@@ -26,4 +22,6 @@ githooks:
 clean:
 	rm -rf deps
 	$(MAKE) -C objs clean
+	$(MAKE) -C tests-bin clean
+	$(MAKE) -C src clean
 	$(MAKE) -C tests clean
