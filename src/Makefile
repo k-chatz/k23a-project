@@ -15,3 +15,7 @@ DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
 ../objs/%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+.PHONY: clean
+clean:
+	rm -f *~

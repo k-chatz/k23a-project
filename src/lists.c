@@ -10,7 +10,7 @@
 
 void *llnth(void *l, int n) {
     if (n >= 0) {
-        while (n-- > 0)
+        while (n-- > 0 && l)
             l = NEXT(l);
         return l;
     } else {
