@@ -1,6 +1,7 @@
 #include "json_parser.h"
-#include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 #define DIGITS "0123456789"
@@ -11,8 +12,8 @@ typedef char *(*matcher)(char *input);
     static char *FNAME(char *input) {                                          \
         int cmp = strncmp(input, TOK, strlen(TOK));                            \
         if (!cmp)                                                              \
-            return TOK;                                                        \
-        return "";                                                             \
+            return strdup(TOK);                                                \
+        return strdup("");                                                     \
     }
 
 MATCH_TOKEN(is_true, "true");
@@ -96,51 +97,63 @@ static char *is_string(char *input) {
                     break;
                 }
             } else {
-		curr++;
-	    }
+                curr++;
+            }
         }
-	if(input[curr] == '"'){
-	    char *out = strndup(input, curr+1);
-	    return out;
-	}
+        if (input[curr] == '"') {
+            char *out = strndup(input, curr + 1);
+            return out;
+        }
     }
     return strdup("");
 }
 
-static char *json_next_token(char *input) {
-    matcher tokenizers[] = {is_true,     is_false,  is_null,  is_lbrace,
-                            is_rbrace,   is_comma,  is_colon, is_lbracket,
+static char *json_next_token(char *input, int *cursor) {
+    matcher tokenizers[] = {is_true,     is_false,  is_null,   is_lbrace,
+                            is_rbrace,   is_comma,  is_colon,  is_lbracket,
                             is_rbracket, is_number, is_string, NULL};
 
     char *match;
     for (int i = 0; tokenizers[i] != NULL; i++) {
         match = tokenizers[i](input);
-        if (strlen(match) > 0)
+        int len = strlen(match);
+        if (strlen(match) > 0) {
+            *cursor = len;
             return match;
+        } else {
+            free(match);
+        }
     }
-
-    return "";
+    *cursor = 0;
+    return strdup("");
 }
 
-static char *eat_ws(char *str){
+static char *eat_ws(char *str) {
     char *out = str;
-    while(isspace(*out))
-	out++;
+    while (isspace(*out))
+        out++;
     return out;
 }
 
-StrList *json_tokenize_str(char *str) {
+StrList *json_tokenize_str(char *str, char **rest) {
     StrList *out = NULL;
     char *current;
+    int current_len;
     do {
-	str = eat_ws(str);
-        current = json_next_token(str);
-        str += strlen(current);
-	if(current[0] != '\0')
-	    llpush(&out, create_node(current));
-    } while (str[0] != '\0' && current[0] != '\0');
+        str = eat_ws(str);
+        current = json_next_token(str, &current_len);
+        str += current_len;
+        if (current_len > 0) {
+            StrList *thisTok = malloc(sizeof(StrList));
+            thisTok->data = current;
+            llpush(&out, thisTok);
+        } else {
+            free(current);
+        }
+    } while (str[0] != '\0' && current_len > 0);
 
     llreverse(&out);
+    *rest = str;
     return out;
 }
 

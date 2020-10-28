@@ -12,13 +12,15 @@
 
 bool tokenize_word(char *word) {
     StrList *tokens;
-    tokens = json_tokenize_str(word);
+    char *rest;
+    tokens = json_tokenize_str(word, &rest);
     return (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
 }
 
 bool tokenize_sentence(char *str, char **expected_tokens) {
     StrList *tokens;
-    tokens = json_tokenize_str(str);
+    char *rest;
+    tokens = json_tokenize_str(str, &rest);
     int i = 0;
     for (StrList *tok = tokens; tok; tok = llnth(tok, 1)) {
         if (expected_tokens[i] == NULL)
@@ -119,16 +121,19 @@ void tokenize_string(void) {
 }
 
 void tokenize_whitespace(void) {
-    /* tokenizing whitespace should yield no tokens */
-    StrList *toks = json_tokenize_str("  \t \n ");
+    /* tokenizing whitespace should yield no tokens and consume it */
+    char *rest;
+    StrList *toks = json_tokenize_str("  \t \n ", &rest);
     TEST_CHECK(!toks);
+    TEST_CHECK(strlen(rest) == 0);
 }
 
 void tokenize_multiword(void){
     char *in_toks[] = {"5e2", "true", "false"};
     char *in_str = "5e2true   \t\n\n false";
     char *out_toks[ARR_LEN(in_toks)];
-    StrList *toks = json_tokenize_str(in_str);
+    char *rest;
+    StrList *toks = json_tokenize_str(in_str, &rest);
     int i = 0;
     LLFOREACH(tok, toks){
 	out_toks[i++] = tok->data;
@@ -136,6 +141,17 @@ void tokenize_multiword(void){
     for(i = 0; i < ARR_LEN(in_toks); i++){
 	TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
     }
+
+    /* check if we consumed all the input */
+    TEST_CHECK(strlen(rest) == 0);
+}
+
+void tokenize_invalid(void){
+    char *rest;
+    char *invalid_in = "treu";
+    json_tokenize_str(invalid_in, &rest);
+    /* no input should be consumed here */
+    TEST_CHECK(strcmp(rest, invalid_in) == 0);
 }
 
 #ifndef ACUTEST_H
@@ -160,6 +176,7 @@ TEST_LIST = {{"tokenize_true", tokenize_true},
              {"tokenize_string", tokenize_string},
              {"tokenize_whitespace", tokenize_whitespace},
 	     {"tokenize_multiword", tokenize_multiword},
+	     {"tokenize_invalid", tokenize_invalid},
              {NULL, NULL}};
 
 #ifndef ACUTEST_H
