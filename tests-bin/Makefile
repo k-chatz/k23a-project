@@ -18,6 +18,7 @@ LISTS_OBJS = $(patsubst %.o, ../objs/%.o,     \
 JSON_OBJS = $(patsubst %.o, ../objs/%.o,     \
 			json_parser_tests.o  \
 			json_parser.o	     \
+			spec_ids.o	     \
 			hash.o		     \
 			lists.o)
 

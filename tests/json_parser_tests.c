@@ -1,6 +1,12 @@
 #include "acutest.h"
 #include "json_parser.h"
 #include "stdbool.h"
+#include <string.h>
+
+#ifndef ACUTEST_H
+#include <assert.h>
+#define TEST_CHECK assert
+#endif
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
@@ -90,8 +96,8 @@ void tokenize_number(void) {
                 for (int d1 = 0; d1 < ARR_LEN(digits); d1++) {
                     for (int d2 = 0; d2 < ARR_LEN(digits); d2++) {
                         for (int d3 = 0; d3 < ARR_LEN(digits); d3++) {
-                            sprintf(buf2, buf1, digits[d1], digits[d2],
-                                    digits[d3]);
+                            sprintf(buf2, buf1, digits[1].str, digits[2].str,
+                                    digits[3].str);
                             bool success = tokenize_word(buf2);
                             TEST_CHECK(success == expected_success);
                         }
@@ -104,7 +110,7 @@ void tokenize_number(void) {
 
 void tokenize_string(void) {
     char *str_contents[] = {"fhasdj", "foo bar", "foo 123bar _@@!@#$%^&*()_+/",
-                            "\"", "\uAbFf"};
+                            "\\\"", "\\uAbFf"};
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
         sprintf(buf, "\"%s\"", str_contents[i]);
@@ -118,17 +124,51 @@ void tokenize_whitespace(void) {
     TEST_CHECK(!toks);
 }
 
-TEST_LIST = {
-    {"tokenize_true", tokenize_true},
-    {"tokenize_false", tokenize_false},
-    {"tokenize_null", tokenize_null},
-    {"tokenize_lbrace", tokenize_lbrace},
-    {"tokenize_rbrace", tokenize_rbrace},
-    {"tokenize_colon", tokenize_colon},
-    {"tokenize_lbracket", tokenize_lbracket},
-    {"tokenize_rbracket", tokenize_rbracket},
-    {"tokenize_comma", tokenize_comma},
-    {"tokenize_number", tokenize_number},
-    {"tokenize_string", tokenize_string},
-    {"tokenize_whitespace", tokenize_whitespace},
+void tokenize_multiword(void){
+    char *in_toks[] = {"5e2", "true", "false"};
+    char *in_str = "5e2true   \t\n\n false";
+    char *out_toks[ARR_LEN(in_toks)];
+    StrList *toks = json_tokenize_str(in_str);
+    int i = 0;
+    LLFOREACH(tok, toks){
+	out_toks[i++] = tok->data;
+    }
+    for(i = 0; i < ARR_LEN(in_toks); i++){
+	TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
+    }
+}
+
+#ifndef ACUTEST_H
+struct test_ {
+    const char *name;
+    void (*func)(void);
 };
+
+#define TEST_LIST const struct test_ test_list_[]
+#endif
+
+TEST_LIST = {{"tokenize_true", tokenize_true},
+             {"tokenize_false", tokenize_false},
+             {"tokenize_null", tokenize_null},
+             {"tokenize_lbrace", tokenize_lbrace},
+             {"tokenize_rbrace", tokenize_rbrace},
+             {"tokenize_colon", tokenize_colon},
+             {"tokenize_lbracket", tokenize_lbracket},
+             {"tokenize_rbracket", tokenize_rbracket},
+             {"tokenize_comma", tokenize_comma},
+             {"tokenize_number", tokenize_number},
+             {"tokenize_string", tokenize_string},
+             {"tokenize_whitespace", tokenize_whitespace},
+	     {"tokenize_multiword", tokenize_multiword},
+             {NULL, NULL}};
+
+#ifndef ACUTEST_H
+int main(int argc, char *argv[]) {
+    int i;
+    for (i = 0; test_list_[i].name != NULL; i++) {
+        test_list_[i].func();
+    }
+    return 0;
+}
+
+#endif
