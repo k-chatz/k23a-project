@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "spec_ids.h"
-#include "lists.h"
+#include "include/spec_ids.h"
+#include "include/lists.h"
 
 // typedef LISTOF(char*) StrList;
 
@@ -59,7 +58,7 @@ StrList* get_spec_ids(){
     while(internals--){
       if(!strcmp(internals_name_list[internals]->d_name, ".") || !strcmp(internals_name_list[internals]->d_name, "..")){
 
-        free(internals_name_list[internals]);  
+        free(internals_name_list[internals]);
         continue;
       }
       internals_name_list[internals]->d_name[strlen(internals_name_list[internals]->d_name) - 5] = '\0';
@@ -67,14 +66,14 @@ StrList* get_spec_ids(){
       // printf("file name: %s\n", spec_name);
 
       llpush(&list, create_node(spec_name));
-    
-      free(internals_name_list[internals]);  
+
+      free(internals_name_list[internals]);
     }
 
     free(internals_name_list);
-    free(name_list[n]);  
+    free(name_list[n]);
   }
 
-  free(name_list);  
+  free(name_list);
   return list;
 }

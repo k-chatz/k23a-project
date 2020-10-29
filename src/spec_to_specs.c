@@ -1,5 +1,5 @@
 /* file: spec_to_specs.h */
-#include "spec_to_specs.h"
+#include "include/spec_to_specs.h"
 
 /* Created a spec node to be added to the hash table */
 static void *mk_spec(void *id){
@@ -84,7 +84,7 @@ int sts_merge(STS *sts, char *id1, char *id2){
   for(iter = spec1->similar; iter; iter = llnth(iter, 1)){
     iter->data->similar = spec1->similar;
   }
-  
+
   return 0;
 }
 

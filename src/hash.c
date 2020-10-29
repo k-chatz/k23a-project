@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "hash.h"
+#include "include/hash.h"
 
 typedef void *pointer;
 
