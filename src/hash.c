@@ -128,7 +128,7 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
             /*Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
                 _getValue(bucket, slot, &slotValue);
-                if (!ht->cmp(slotValue, valueParams)) {
+                if (!ht->cmp(slotValue, key)) {
                     //printf(":::DUPLICATE::: ");
                     //printf("\n");
                     *value = slotValue;
