@@ -157,4 +157,358 @@ StrList *json_tokenize_str(char *str, char **rest) {
     return out;
 }
 
-JSON_ENTITY json_parse_from_tokens(StrList *tokens) { return NULL; }
+/* ---------- JSON Parser start ---------- */
+
+JSON_ENTITY *json_new_num(double num) {
+    JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(num));
+    /* new->json_vt = json_int_vt; */
+    *((json_type *)(&new->type)) = JSON_NUM; /* assign to const */
+    *((double *)(&new->data)) = num;
+    return new;
+}
+
+JSON_ENTITY *json_new_str(char *str) {
+    JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(str));
+    /* new->json_vt = json_int_vt; */
+    *((json_type *)(&new->type)) = JSON_NUM; /* assign to const */
+    *((char **)(&new->data)) = str;
+    return new;
+}
+
+JSON_ENTITY *json_new_bool(bool b) {
+    JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(b));
+    /* new->json_vt = json_int_vt; */
+    *((json_type *)(&new->type)) = JSON_BOOL; /* assign to const */
+    *((bool *)(&new->data)) = b;
+    return new;
+}
+
+JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length) {
+    JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(JSON_ARRAY_DATA));
+    /* new->json_vt = json_int_vt; */
+    *((json_type *)(&new->type)) = JSON_ARRAY; /* assign to const */
+    JSON_ARRAY_DATA *datap = (void *)&new->data;
+    datap->length = length;
+    datap->contents = arr;
+    return new;
+}
+
+JSON_ENTITY *json_new_obj(Hashtable kvs, StrList *keys) {
+    JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(JSON_OBJECT_DATA));
+    /* new->json_vt = json_int_vt; */
+    *((json_type *)(&new->type)) = JSON_OBJ; /* assign to const */
+    JSON_OBJECT_DATA *datap = (void *)&new->data;
+    datap->keys = keys;
+    datap->contents = kvs;
+    return new;
+}
+
+char *json_type_to_str(json_type t) {
+    switch (t) {
+    case JSON_OBJ:
+        return "JSON_OBJ";
+    case JSON_ARRAY:
+        return "JSON_ARRAY";
+    case JSON_NUM:
+        return "JSON_NUM";
+    case JSON_BOOL:
+        return "JSON_BOOL";
+    case JSON_STRING:
+        return "JSON_STRING";
+    default:
+        return "JSON_INVALID";
+    }
+}
+
+double json_to_double(JSON_ENTITY *Ent) {
+    if (Ent->type != JSON_NUM) {
+        fprintf(stderr,
+                "Attempted to get double from json entity of type %s.\n",
+                json_type_to_str(Ent->type));
+        return 0;
+    }
+    return *((double *)&(Ent->data));
+}
+
+char *json_to_string(JSON_ENTITY *Ent) {
+    if (Ent->type != JSON_STRING) {
+        fprintf(stderr,
+                "Attempted to get string from json entity of type %s.\n",
+                json_type_to_str(Ent->type));
+        return 0;
+    }
+    return *((char **)&(Ent->data));
+}
+
+bool json_to_bool(JSON_ENTITY *Ent) {
+    if (Ent->type != JSON_BOOL) {
+        fprintf(stderr, "Attempted to get bool from json entity of type %s.\n",
+                json_type_to_str(Ent->type));
+        return 0;
+    }
+    return *((bool *)&(Ent->data));
+}
+
+int json_get_arr_length(JSON_ENTITY *Ent) {
+    if (Ent->type != JSON_ARRAY) {
+        fprintf(stderr,
+                "Attempted to get length from json entity of type %s(Expected "
+                "JSON_ARRAY).\n",
+                json_type_to_str(Ent->type));
+        return 0;
+    }
+    JSON_ARRAY_DATA *datap = (void *)(&Ent->data);
+    return datap->length;
+}
+
+StrList *json_get_obj_keys(JSON_ENTITY *Ent) {
+    if (Ent->type != JSON_ARRAY) {
+        fprintf(stderr,
+                "Attempted to get length from json entity of type %s(Expected "
+                "JSON_ARRAY).\n",
+                json_type_to_str(Ent->type));
+        return 0;
+    }
+    JSON_OBJECT_DATA *datap = (void *)(&Ent->data);
+    return datap->keys;
+}
+
+JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...) {
+    va_list arglist;
+    va_start(arglist, Ent);
+    switch (Ent->type) {
+    case JSON_OBJ: {
+        char *key = va_arg(arglist, char *);
+        JSON_OBJECT_DATA *dp = (void *)(&Ent->data);
+        va_end(arglist);
+        return ((struct JSON_OBJ_ENTRY *)HT_Get(dp->contents, key))->value;
+    }
+    case JSON_ARRAY: {
+        int index = va_arg(arglist, int);
+        JSON_ARRAY_DATA *dp = (void *)(&Ent->data);
+        va_end(arglist);
+        return dp->contents[index];
+    }
+    default:
+        fprintf(stderr,
+                "Error in json_get. Expected either JSON_OBJ or "
+                "JSON_ARRAY. Got %s instead.",
+                json_type_to_str(Ent->type));
+        return NULL;
+    }
+}
+
+void json_entity_free(JSON_ENTITY *ent) {
+    switch (ent->type) {
+    case JSON_STRING:
+        free(json_to_string(ent));
+    case JSON_NUM:
+    case JSON_BOOL:
+        free(ent);
+        break;
+    case JSON_ARRAY: {
+        int len = json_get_arr_length(ent);
+        for (int i = 0; i < len; i++) {
+            json_entity_free(json_get(ent, i));
+        }
+        free(((JSON_ARRAY_DATA *)(&ent->data))->contents);
+        free(ent);
+    } break;
+    case JSON_OBJ: {
+        HT_Destroy(&((JSON_OBJECT_DATA *)&ent->data)->contents, true);
+        llfree(json_get_obj_keys(ent), (llfree_f)&free_StrList_data);
+        free(ent);
+    } break;
+    }
+}
+
+struct JSON_OBJ_ENTRY *new_json_obj_entry(char *key, JSON_ENTITY *val) {
+    struct JSON_OBJ_ENTRY *new = malloc(sizeof(*new));
+    new->key = key;
+    new->value = val;
+    return new;
+}
+
+static void *ht_create_id(void *valargs) { return valargs; }
+static int json_obj_entry_cmp(void *obj, void *key) {
+    return strcmp(((struct JSON_OBJ_ENTRY *)obj)->key, key);
+}
+static ulong hash_str(void *id, ulong htcap) {
+    ulong sum = 0;
+    while (*(char *)id) {
+        sum *= 47; /* multiply by a prime number */
+        sum += *((char *)id);
+        id++;
+    }
+    return sum % htcap;
+}
+
+ulong json_obj_entry_free(void *joe) {
+    struct JSON_OBJ_ENTRY *e = joe;
+    free(e->key);
+    json_entity_free(e->value);
+    free(joe);
+    return 0;
+}
+
+struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
+                                               StrList **rest) {
+    StrList *key, *colon, *val_start;
+    key = llnth(tokens, 0);
+    colon = llnth(tokens, 1);
+    val_start = llnth(tokens, 2);
+
+    if (!val_start)
+        return NULL;
+
+    if (key->data[0] == '"' && strcmp(colon->data, ":")) {
+        JSON_ENTITY *val = json_parse_value(val_start, rest);
+        if (val) {
+            struct JSON_OBJ_ENTRY *entry = malloc(sizeof(*entry));
+            entry->key = strdup(key->data);
+            entry->value = val;
+            return entry;
+        }
+    }
+    *rest = tokens;
+    return NULL;
+}
+
+JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
+    *rest = tokens;
+    if (strcmp("{", (*rest)->data) == 0) {
+        Hashtable kvs;
+        HT_Init(&kvs, 10, 2 * sizeof(void *), &ht_create_id,
+                &json_obj_entry_cmp, &hash_str, json_obj_entry_free);
+        StrList *keys = NULL;
+        struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
+        while (new_ent) {
+            StrList *keys_node = malloc(sizeof(StrList));
+            keys_node->data = new_ent->key;
+            llpush(&keys, keys_node);
+            void *_;
+            HT_Insert(kvs, new_ent->key, new_ent, &_);
+            if (strcmp((*rest)->data, ",") == 0)
+                new_ent = json_parse_object_entry(llnth(*rest, 1), rest);
+            else
+                new_ent = NULL;
+        }
+        if (strcmp("}", (*rest)->data) == 0) {
+            *rest = llnth(*rest, 1);
+            JSON_ENTITY *obj = json_new_obj(kvs, keys);
+            return obj;
+        }
+        json_obj_entry_free(new_ent);
+    }
+    return NULL;
+}
+
+JSON_ENTITY *json_parse_array(StrList *tokens, StrList **rest) {
+    if (strcmp(tokens->data, "[") == 0) {
+        struct tmplist {
+            struct tmplist *next;
+            JSON_ENTITY *ent;
+        } *data = NULL;
+        *rest = llnth(tokens, 1); /* skip '[' */
+        JSON_ENTITY *curr_ent = json_parse_value(*rest, rest);
+        if (curr_ent) {
+            void *newnode = malloc(sizeof(*data));
+            llpush(&data, newnode);
+            data->ent = curr_ent;
+        }
+        while (strcmp((*rest)->data, ",") == 0) {
+            curr_ent = json_parse_value(llnth(*rest, 1), rest);
+            if (curr_ent) {
+                void *newnode = malloc(sizeof(*data));
+                llpush(&data, newnode);
+                data->ent = curr_ent;
+            }
+        }
+        /* make the array */
+        int length = lllen(data);
+        JSON_ENTITY **arr = malloc(sizeof(JSON_ENTITY *) * length);
+        int i = length;
+        LLFOREACH(ent, data) { arr[--i] = ent->ent; }
+        llfree(data, free); /* free the temp list */
+        if (strcmp((*rest)->data, "]") == 0) {
+            /* we are done */
+            *rest = llnth(*rest, 1);
+            return json_new_arr(arr, length);
+        }
+
+        for (i = 0; i < length; i++) {
+            json_entity_free(arr[i]);
+        }
+        free(arr);
+    }
+    *rest = tokens; /* consume no tokens */
+    return NULL;
+}
+
+JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest) {
+    char *first_tok = tokens->data;
+    if ((first_tok[0] >= '0' && first_tok[0] <= '9') ||
+        (first_tok[0] == '-' && first_tok[1] >= '0' && first_tok[1] <= '9')) {
+        /* number */
+        double num = atof(first_tok);
+        *rest = llnth(tokens, 1);
+        return json_new_num(num);
+    } else if (strcmp(first_tok, "true") == 0) {
+        /* true */
+        *rest = llnth(tokens, 1);
+        return json_new_bool(true);
+    } else if (strcmp(first_tok, "false") == 0) {
+        /* false */
+        *rest = llnth(tokens, 1);
+        return json_new_bool(false);
+    } else if (first_tok[0] == '"') {
+        /* string */
+        *rest = llnth(tokens, 1);
+        return json_new_str(strdup(first_tok));
+    } else if (strcmp("{", first_tok) == 0) {
+        /* object */
+        return json_parse_object(tokens, rest);
+    } else if (strcmp("[", first_tok) == 0) {
+        /* array */
+        return json_parse_array(tokens, rest);
+    }
+    *rest = tokens;
+    return NULL;
+}
+
+void json_print_value(JSON_ENTITY *val) {
+    switch (val->type) {
+    case JSON_NUM:
+        printf("%lf", json_to_double(val));
+        break;
+    case JSON_BOOL:
+        printf("%s", json_to_bool(val) ? "true" : "false");
+        break;
+    case JSON_STRING:
+        printf("%s", json_to_string(val));
+        break;
+    case JSON_ARRAY: {
+        int length = json_get_arr_length(val);
+        printf("[");
+        json_print_value(json_get(val, 0));
+        for (int i = 1; i < length; i++) {
+            printf(", ");
+            json_print_value(json_get(val, i));
+        }
+        printf("]");
+    } break;
+    case JSON_OBJ: {
+        StrList *keys = json_get_obj_keys(val);
+        printf("{");
+        LLFOREACH(key, keys) {
+            printf("%s : ", key->data);
+            json_print_value(json_get(val, key->data));
+        }
+        printf("}");
+    } break;
+    default:
+        printf("<JSON_INVALID@%p>", val);
+    }
+}
+
+

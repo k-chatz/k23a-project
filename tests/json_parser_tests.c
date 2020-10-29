@@ -1,4 +1,4 @@
-#include "acutest.h"
+/* #include "acutest.h" */
 #include "json_parser.h"
 #include "stdbool.h"
 #include <string.h>
@@ -14,7 +14,9 @@ bool tokenize_word(char *word) {
     StrList *tokens;
     char *rest;
     tokens = json_tokenize_str(word, &rest);
-    return (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
+    bool success = (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
+    llfree(tokens, (llfree_f)free_StrList_data);
+    return success;
 }
 
 bool tokenize_sentence(char *str, char **expected_tokens) {
@@ -28,6 +30,7 @@ bool tokenize_sentence(char *str, char **expected_tokens) {
         if (strcmp(tok->data, expected_tokens[i++]))
             return false;
     }
+    llfree(tokens, (llfree_f)free_StrList_data);
     return expected_tokens[i] == NULL;
 }
 
@@ -128,31 +131,108 @@ void tokenize_whitespace(void) {
     TEST_CHECK(strlen(rest) == 0);
 }
 
-void tokenize_multiword(void){
+void tokenize_multiword(void) {
     char *in_toks[] = {"5e2", "true", "false"};
     char *in_str = "5e2true   \t\n\n false";
     char *out_toks[ARR_LEN(in_toks)];
     char *rest;
     StrList *toks = json_tokenize_str(in_str, &rest);
     int i = 0;
-    LLFOREACH(tok, toks){
-	out_toks[i++] = tok->data;
-    }
-    for(i = 0; i < ARR_LEN(in_toks); i++){
-	TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
+    LLFOREACH(tok, toks) { out_toks[i++] = tok->data; }
+    for (i = 0; i < ARR_LEN(in_toks); i++) {
+        TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
     }
 
     /* check if we consumed all the input */
     TEST_CHECK(strlen(rest) == 0);
+    llfree(toks, (llfree_f)free_StrList_data);
 }
 
-void tokenize_invalid(void){
+void tokenize_invalid(void) {
     char *rest;
     char *invalid_in = "treu";
-    json_tokenize_str(invalid_in, &rest);
+    TEST_CHECK(json_tokenize_str(invalid_in, &rest) == NULL);
     /* no input should be consumed here */
     TEST_CHECK(strcmp(rest, invalid_in) == 0);
 }
+
+/* ________________________________________ */
+/* _____________ Parser tests ______________*/
+/* ________________________________________ */
+
+#define CLEANUP()					\
+    llfree(tokens, (llfree_f)free_StrList_data);	\
+    json_entity_free(ent)
+
+void parse_number(void){
+    char *_;
+    StrList *tokens = json_tokenize_str("5", &_);
+    StrList *rest;
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest);
+    TEST_CHECK(json_to_double(ent) == (double)5);
+    CLEANUP();
+}
+
+void parse_bool(void){
+    char *_;
+    StrList *tokens = json_tokenize_str("true", &_);
+    StrList *rest;
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest);
+    TEST_CHECK(json_to_bool(ent) == true);
+    CLEANUP();
+}
+
+void parse_array(void){
+    char *_;
+    StrList *tokens = json_tokenize_str("[true, 5, false, -2.27]", &_);
+    json_type arr_types[] = {JSON_BOOL, JSON_NUM, JSON_BOOL, JSON_NUM};
+    StrList *rest;
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest);
+    TEST_CHECK(ent->type == JSON_ARRAY); /* type should be array */
+    int len = json_get_arr_length(ent);
+    TEST_CHECK(len == 4); /* length should be 4 */
+    for(int i = 0; i < len; i++){
+	TEST_CHECK(json_get(ent, i)->type == arr_types[i]);
+    }
+    CLEANUP();
+}
+
+void parse_obj(void){
+    char *_;
+    StrList *tokens = json_tokenize_str("{\"foo\" : 5, \"bar\" : false, \"baz\" : [true]}", &_);
+    char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
+    StrList *rest;
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest);
+    TEST_CHECK(ent->type == JSON_OBJ); /* type should be array */
+    StrList *keys = json_get_obj_keys(ent);
+    TEST_CHECK(lllen(keys) == 3); /* length should be 3 */
+    bool removed = false;
+    LLFOREACH(key, keys){
+	for(int i = 0; i < ARR_LEN(expected_keys); i++){
+	    if(strcmp(key->data, expected_keys[i]) == 0){
+		expected_keys[i] = NULL;
+		break;
+		removed = true;
+	    }
+	}
+	TEST_CHECK(removed);	/* check if key was in expected keys */
+    }
+
+    /* all expected keys should be empty now */
+    TEST_CHECK(!(expected_keys[0] || expected_keys[1] || expected_keys[2]));
+
+    JSON_ENTITY *foo, *bar, *baz;
+    foo = json_get(ent, "\"foo\"");
+    bar = json_get(ent, "\"bar\"");
+    baz = json_get(ent, "\"baz\"");
+
+    TEST_CHECK(foo->type == JSON_NUM);
+    TEST_CHECK(bar->type == JSON_BOOL);
+    TEST_CHECK(baz->type == JSON_ARRAY);
+    TEST_CHECK(json_get(baz, 0)->type == JSON_BOOL);
+    CLEANUP();
+}
+
 
 #ifndef ACUTEST_H
 struct test_ {
@@ -175,9 +255,13 @@ TEST_LIST = {{"tokenize_true", tokenize_true},
              {"tokenize_number", tokenize_number},
              {"tokenize_string", tokenize_string},
              {"tokenize_whitespace", tokenize_whitespace},
-	     {"tokenize_multiword", tokenize_multiword},
-	     {"tokenize_invalid", tokenize_invalid},
-             {NULL, NULL}};
+             {"tokenize_multiword", tokenize_multiword},
+             {"tokenize_invalid", tokenize_invalid},
+	     /* ________________________________________ */
+	     {"parse_number", parse_number},
+	     {"parse_bool", parse_bool},
+	     {"parse_array", parse_array},
+            {NULL, NULL}};
 
 #ifndef ACUTEST_H
 int main(int argc, char *argv[]) {
