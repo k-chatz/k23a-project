@@ -3,7 +3,7 @@ SOURCE	= main.c lists.c
 HEADER	= lists.h
 OUT	= project
 CC	 = gcc
-CFLAGS	 = -g -Wall -I../include/
+CFLAGS	 = -g -Wall -I../
 LFLAGS	 = 
 
 .PHONY: tests all clean githooks

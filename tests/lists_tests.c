@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lists.h"
-#include "acutest.h"
+#include "include/lists.h"
+#include "include/acutest.h"
 /* #include <assert.h> */
 #define assert TEST_CHECK
 

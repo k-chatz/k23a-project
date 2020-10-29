@@ -1,6 +1,6 @@
-/* #include "acutest.h" */
-#include "json_parser.h"
-#include "stdbool.h"
+/* #include "include/acutest.h" */
+#include "include/json_parser.h"
+#include <stdbool.h>
 #include <string.h>
 
 #ifndef ACUTEST_H
