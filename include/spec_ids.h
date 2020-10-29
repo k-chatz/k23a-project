@@ -5,12 +5,12 @@
 
 typedef LISTOF(char*) StrList;
 
-StrList *create_node(char* spec);
+StrList *create_node(char *spec);
 
-void print_list(StrList* list);
+void print_list(StrList *list);
 
 void free_StrList_data(StrList *list);
 
-StrList* get_spec_ids();
+StrList *get_spec_ids();
 
 #endif

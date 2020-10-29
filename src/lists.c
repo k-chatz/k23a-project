@@ -134,7 +134,7 @@ void *llsearch(void *l, list_predicate p, ...) {
         va_end(for_func);
         if (success)
             break;
-        l = (void *)NEXT((void **)l);
+        l = (void *) NEXT((void **) l);
     }
     va_end(vargs);
     return l;
