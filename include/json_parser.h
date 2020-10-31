@@ -39,20 +39,6 @@ typedef struct {
     Hashtable contents;
 } JSON_OBJECT_DATA;
 
-JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest);
-
-JSON_ENTITY *json_new_num(double num);
-
-JSON_ENTITY *json_new_str(char *str);
-
-JSON_ENTITY *json_new_bool(bool b);
-
-JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length);
-
-JSON_ENTITY *json_new_obj(Hashtable kvs, StrList *keys);
-
-char *json_type_to_str(json_type t);
-
 double json_to_double(JSON_ENTITY *Ent);
 
 char *json_to_string(JSON_ENTITY *Ent);
@@ -66,6 +52,20 @@ StrList *json_get_obj_keys(JSON_ENTITY *Ent);
 JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...);
 
 void json_entity_free(JSON_ENTITY *ent);
+
+JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest);
+
+JSON_ENTITY *json_new_num(double num);
+
+JSON_ENTITY *json_new_str(char *str);
+
+JSON_ENTITY *json_new_bool(bool b);
+
+JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length);
+
+JSON_ENTITY *json_new_obj(Hashtable kvs, StrList *keys);
+
+char *json_type_to_str(json_type t);
 
 struct JSON_OBJ_ENTRY *new_json_obj_entry(char *key, JSON_ENTITY *val);
 

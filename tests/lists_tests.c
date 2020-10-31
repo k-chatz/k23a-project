@@ -1,9 +1,9 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "include/lists.h"
 #include "include/acutest.h"
+#include "include/lists.h"
 /* #include <assert.h> */
 #define assert TEST_CHECK
 
@@ -13,7 +13,6 @@ struct list_s {
     list *next;
     int data;
 };
-
 
 char *list_to_str(list *Ls) {
     int outlen = 2, outsize = 100;
@@ -44,22 +43,20 @@ void print_list(list *l) {
     free(str);
 }
 
-
 int int_sort(list *a, list *b, va_list vargs) {
     /* printf("%d - %d = %d\n", a->data, b->data, a->data-b->data); */
     return a->data - b->data;
 }
 
-int eq_pred(void *node, va_list vargs) {
-    int x = va_arg(vargs,
-    int);
-    list *n = (list *) node;
+bool eq_pred(void *node, va_list vargs) {
+    int x = va_arg(vargs, int);
+    list *n = (list *)node;
     return n->data == x;
 }
 
 int eq_pred_node(void *node, va_list vargs) {
-    list *x = va_arg(vargs, list * );
-    list *n = (list *) node;
+    list *x = va_arg(vargs, list *);
+    list *n = (list *)node;
     return n->data == x->data;
 }
 
@@ -87,7 +84,6 @@ list *make_list2(int Data[], int N) {
     return out;
 }
 
-
 list *make_list(int N) {
     static list some_nodes[100];
     list *out = NULL;
@@ -111,7 +107,6 @@ list *make_list_r(int N, list nodes[]) {
     return out;
 }
 
-
 int ints[10] = {10, 5, 2, -8, 1, 48, 43, 5, 0, 10};
 
 void push_test(void) {
@@ -133,7 +128,6 @@ void push_test(void) {
     }
 }
 
-
 void nth_test(void) {
     list *Is = make_list(5);
 
@@ -147,7 +141,6 @@ void nth_test(void) {
     assert(llnth(NULL, 100) == NULL);
 }
 
-
 void length_test(void) {
     int N = 5;
     list *Is = make_list(N);
@@ -157,7 +150,6 @@ void length_test(void) {
     assert(lllen(llnth(Is, 2)) == N - 2);
     assert(lllen(NULL) == 0);
 }
-
 
 void pop_test(void) {
     int N = 5;
@@ -226,7 +218,6 @@ void pushlist_test(void) {
 
     assert(lllen(As) == N + M);
 
-
     for (int i = 0; i < N + M; i++) {
         list *temp = llnth(As, i);
 
@@ -238,10 +229,10 @@ void pushlist_test(void) {
 void merge_test(void) {
     list *As, *Bs;
     list Anodes[4], Bnodes[7];
-    As = make_list2_r((int[]) {1, 3, 5, 7}, 4, Anodes);
-    Bs = make_list2_r((int[]) {0, 2, 4, 6, 8, 9, 10}, 7, Bnodes);
+    As = make_list2_r((int[]){1, 3, 5, 7}, 4, Anodes);
+    Bs = make_list2_r((int[]){0, 2, 4, 6, 8, 9, 10}, 7, Bnodes);
 
-    list *Ms = llsort_merge(&As, &Bs, (list_cmpr) & int_sort);
+    list *Ms = llsort_merge(&As, &Bs, (llcmpr)&int_sort);
 
     int i = 0;
     for (list *x = Ms; x; x = llnth(x, 1)) {
@@ -250,8 +241,8 @@ void merge_test(void) {
 }
 
 void sort_test(void) {
-    list *As = make_list2((int[]) {1, 9, 2, 4, 3, 7, 6, 5, 8, 0}, 10);
-    llsort(&As, (list_cmpr) & int_sort);
+    list *As = make_list2((int[]){1, 9, 2, 4, 3, 7, 6, 5, 8, 0}, 10);
+    llsort(&As, (llcmpr)&int_sort);
     for (list *A = As; A; A = llnth(A, 1)) {
         list *nextA = llnth(A, 1);
         if (nextA) {
@@ -260,16 +251,26 @@ void sort_test(void) {
     }
 }
 
+/* llfunc_t */
+void *inc1(void *node, va_list args) {
+    static list nodes[100];
+    static int node_i = 0;
+    nodes[node_i].data = ((list *)node)->data + 1;
+    return &nodes[node_i++];
+}
+
+void map_test(void) {
+    list *As = make_list(10);
+    list *Bs = llmap(As, inc1);
+    list *B = Bs;
+    LLFOREACH(A, As) {
+        TEST_CHECK(A->data + 1 == B->data);
+        B = llnth(B, 1);
+    }
+}
+
 TEST_LIST = {
-        {"push",     push_test},
-        {"nth",      nth_test},
-        {"length",   length_test},
-        {"pop",      pop_test},
-        {"search",   search_test},
-        {"split",    split_test},
-        {"tail",     tail_test},
-        {"pushlist", pushlist_test},
-        {"merge",    merge_test},
-        {"sort",     sort_test},
-        {NULL, NULL}
-};
+    {"push", push_test}, {"nth", nth_test},           {"length", length_test},
+    {"pop", pop_test},   {"search", search_test},     {"split", split_test},
+    {"tail", tail_test}, {"pushlist", pushlist_test}, {"merge", merge_test},
+    {"sort", sort_test}, {"map", map_test},           {NULL, NULL}};

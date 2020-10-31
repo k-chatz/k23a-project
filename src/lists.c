@@ -6,24 +6,31 @@
 
 #include "../include/lists.h"
 
+
 #define NEXT(x) (*((void **)x))
 
+/* function: `llnth`
+ * param: `l` -> a list 
+ * param: `n` -> an integer 
+ * output: if `n` >= 0, return the nth element of `l`
+ * output: if `n` < 0, return the nth element from the end of `l`
+ */
 void *llnth(void *l, int n) {
     if (n >= 0) {
         while (n-- > 0 && l)
             l = NEXT(l);
         return l;
     } else {
+	int length = lllen(l);
         /* n is < 0, we will count n nodes from the last */
-        void *m = llnth(l, -n);
-        while (NEXT(m)) {
-            l = NEXT(l);
-            m = NEXT(m);
-        }
-        return l;
+        return llnth(l, length - n);
     }
 }
 
+/* function: `lltail` 
+ *  param: `l` -> a list
+ *  output: the last node of `l`
+ */
 void *lltail(void *l) {
     if (!l) /* l is NULL */
         return NULL;
@@ -32,7 +39,11 @@ void *lltail(void *l) {
     return l;
 }
 
-/* pushes `node` to the list pointed to by `lp` */
+/* function: llpush
+ * param: `lp` -> a pointer to a list
+ * param: `node` -> a node where NEXT(`node`) is a list
+ * makes `node` the new head of `*lp`
+ */
 void llpush(void *lp, void *node) {
     if (!node)
         /* no list to push; return */
@@ -44,8 +55,13 @@ void llpush(void *lp, void *node) {
     NEXT(lp) = node;
 }
 
-/* pushes the list starting from `node` to */
-/* the list pointed to by `lp` */
+/* function: llpushlist 
+ * param: `lp` -> a pointer to a list
+ * param: `node` -> a node where NEXT(`node`) is a list
+ * like `llpush` but if NEXT(`node`) is a list, the whole list is pushed to `lp`
+ * appends `*lp` to `node` and points `lp` to the new head of the list
+ * (.ie the head of `node`)
+ */
 void llpushlist(void *lp, void *node) {
     if (!node)
         /* no list to push; return */
@@ -57,6 +73,11 @@ void llpushlist(void *lp, void *node) {
     NEXT(lp) = node;
 }
 
+/* function: llpop 
+ *  param: `lp` -> a pointer to a list
+ *  output: the node pointed to by `lp`
+ *  `lp` now points to NEXT(`node`)
+ */
 void *llpop(void *l) {
     if (!l)
         /* l is empty; return */
@@ -67,6 +88,10 @@ void *llpop(void *l) {
     return first;
 }
 
+/* function: lllen 
+ *  param: `l` -> a list
+ *  output: `length` of l
+ */
 int lllen(void *l) {
     int len = 0;
     while (l) {
@@ -76,6 +101,12 @@ int lllen(void *l) {
     return len;
 }
 
+/* function: llreverse
+ * param: `lp` -> input list pointer
+ * output: void
+ * reverses the list pointed to by `lp`
+ * passing a list node to this function reverses the list NEXT(`lp`)
+ */
 void llreverse(void *l) {
     void *r = NULL; /* initialize output to NULL */
     while (NEXT(l)) {
@@ -85,6 +116,14 @@ void llreverse(void *l) {
     NEXT(l) = r; /* return the results */
 }
 
+/* function: llsplit
+ * param: `in` -> a list 
+ * param: `out_a` -> a pointer to a pointer that will point to the head of `A` on exit
+ * param: `out_b` -> a pointer to a pointer that will point to the head of `B` on exit
+ * param: `n` -> the length of `A`
+ * splits `in` to lists `A` and `B`, where `A` is of length `n` and `B`
+ * is made of the remaining nodes
+ */
 void llsplit(void *in, void *out_a, void *out_b, int n) {
     if (n == 0) {
         NEXT(out_b) = NEXT(in);
@@ -98,7 +137,15 @@ void llsplit(void *in, void *out_a, void *out_b, int n) {
     return;
 }
 
-void *llsort_merge(void *list_a, void *list_b, list_cmpr c) {
+/* function: llsort_merge
+ * param: `list_a` -> a list 
+ * param: `list_b` -> a list
+ * param: `c` -> a comparison function
+ * the merging part of the merge sort algorithm 
+ * exposed to the interface for adding nodes to a sorted list 
+ * and maintaining sortedness 
+ */ 
+void *llsort_merge(void *list_a, void *list_b, llcmpr c) {
     if (!NEXT(list_b))
         return NEXT(list_a);
     if (!NEXT(list_a))
@@ -112,19 +159,29 @@ void *llsort_merge(void *list_a, void *list_b, list_cmpr c) {
     return rest;
 }
 
-void llsort(void *l, list_cmpr c) {
+/* function: llsort
+ * param: `lp` -> a pointer to a list 
+ * param: `list_cmpr` -> a comparison function
+ * sorts `lp` in place using merge sort
+ */
+void llsort(void *lp, llcmpr c) {
     void *a, *b;
-    unsigned int len = lllen(NEXT(l));
+    unsigned int len = lllen(NEXT(lp));
     if (len <= 1)
         return;
-    llsplit(l, &a, &b, len / 2);
+    llsplit(lp, &a, &b, len / 2);
     llsort(&a, c);
     llsort(&b, c);
-    NEXT(l) = llsort_merge(&a, &b, c);
+    NEXT(lp) = llsort_merge(&a, &b, c);
     return;
 }
 
-void *llsearch(void *l, list_predicate p, ...) {
+/* identifer: llsearch
+ * param: `l` -> a list
+ * param: `p` -> a predicate
+ * param: `...` -> arguments passed to p 
+ * output: the first node of `l` for which p(l, ...) returns true */
+void *llsearch(void *l, llpred p, ...) {
     /* returns the nth element of the list */
     va_list vargs, for_func;
     va_start(vargs, p);
@@ -140,45 +197,36 @@ void *llsearch(void *l, list_predicate p, ...) {
     return l;
 }
 
-/* from here on we will assume that the lists are stored on the heap */
-struct lltemp {
-    void *next;
-    char data[];
-};
-
-void *llmap_reverse2(void *l, size_t new_node_size, mapfunc_t map_func,
-                     va_list vargs) {
-    struct lltemp *out_l = NULL;
-    va_list temp;
-    while (l) {
-        void **new_node = malloc(new_node_size);
-        *new_node = NULL;
-        va_copy(temp, vargs);
-        map_func(l, new_node, temp);
-        va_end(temp);
-        llpush(&out_l, new_node);
-        l = NEXT(l);
+/* function: llmap
+ * param: `INs` -> an input list
+ * param: `map_func` -> function used to produce the output list
+ * output: a list where the nth node is the output of `mapfunc`(nth node of `INs`)
+ */
+void *llmap(void *INs, mapfunc_t map_func, ...){
+    void *OUTs = NULL, *OUT_tail;
+    va_list args;
+    if(INs){
+	/* do first element to initialize OUT_tail */
+	va_start(args, map_func);
+	void *new = map_func(INs, args);
+	llpush(&OUTs, new);
+	OUT_tail = new;
     }
-    return out_l;
+    LLFOREACH(IN, NEXT(INs)){
+	/* do rest */
+	va_start(args, map_func);
+	void *new = map_func(IN, args);
+	llpush(OUT_tail, new);	/* push AFTER 'OUT_tail' */
+	OUT_tail = new;		/* set OUT_tail to new tail */
+    }
+    return OUTs;
 }
 
-void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
-    va_list vargs;
-    va_start(vargs, map_func);
-    void *out = llmap_reverse2(l, new_data_size, map_func, vargs);
-    va_end(vargs);
-    return out;
-}
-
-void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
-    va_list vargs;
-    va_start(vargs, map_func);
-    void *outlist = llmap_reverse2(l, new_data_size, map_func, vargs);
-    llreverse(&outlist);
-    va_end(vargs);
-    return outlist;
-}
-
+/* function: llfree
+ * param: `l` -> a list 
+ * param: free_node -> a function that frees a single node from `l` 
+ * destroys `l`, freeing all the nodes with `free_node`
+ */
 void llfree(void *l, llfree_f free_node) {
     if (free_node) {
         /* free using free_node */
