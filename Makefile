@@ -19,6 +19,9 @@ tests:
 githooks:
 	git config --local core.hooksPath ".githooks/"
 
+docs:
+	doxygen Doxyfile
+
 clean:
 	rm -rf deps
 	$(MAKE) -C objs clean

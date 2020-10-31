@@ -6,6 +6,7 @@
 
 #include "include/lists.h"
 
+
 #define NEXT(x) (*((void **)x))
 
 /* function: `llnth`
@@ -144,7 +145,7 @@ void llsplit(void *in, void *out_a, void *out_b, int n) {
  * exposed to the interface for adding nodes to a sorted list 
  * and maintaining sortedness 
  */ 
-void *llsort_merge(void *list_a, void *list_b, list_cmpr c) {
+void *llsort_merge(void *list_a, void *list_b, llcmpr c) {
     if (!NEXT(list_b))
         return NEXT(list_a);
     if (!NEXT(list_a))
@@ -163,9 +164,9 @@ void *llsort_merge(void *list_a, void *list_b, list_cmpr c) {
  * param: `list_cmpr` -> a comparison function
  * sorts `lp` in place using merge sort
  */
-void llsort(void *lp, list_cmpr c) {
+void llsort(void *lp, llcmpr c) {
     void *a, *b;
-    unsigned int len = lllen(NEXT(l));
+    unsigned int len = lllen(NEXT(lp));
     if (len <= 1)
         return;
     llsplit(lp, &a, &b, len / 2);
@@ -180,7 +181,7 @@ void llsort(void *lp, list_cmpr c) {
  * param: `p` -> a predicate
  * param: `...` -> arguments passed to p 
  * output: the first node of `l` for which p(l, ...) returns true */
-void *llsearch(void *l, list_predicate p, ...) {
+void *llsearch(void *l, llpred p, ...) {
     /* returns the nth element of the list */
     va_list vargs, for_func;
     va_start(vargs, p);

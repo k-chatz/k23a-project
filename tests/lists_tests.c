@@ -48,7 +48,7 @@ int int_sort(list *a, list *b, va_list vargs) {
     return a->data - b->data;
 }
 
-int eq_pred(void *node, va_list vargs) {
+bool eq_pred(void *node, va_list vargs) {
     int x = va_arg(vargs, int);
     list *n = (list *)node;
     return n->data == x;
@@ -232,7 +232,7 @@ void merge_test(void) {
     As = make_list2_r((int[]){1, 3, 5, 7}, 4, Anodes);
     Bs = make_list2_r((int[]){0, 2, 4, 6, 8, 9, 10}, 7, Bnodes);
 
-    list *Ms = llsort_merge(&As, &Bs, (list_cmpr)&int_sort);
+    list *Ms = llsort_merge(&As, &Bs, (llcmpr)&int_sort);
 
     int i = 0;
     for (list *x = Ms; x; x = llnth(x, 1)) {
@@ -242,7 +242,7 @@ void merge_test(void) {
 
 void sort_test(void) {
     list *As = make_list2((int[]){1, 9, 2, 4, 3, 7, 6, 5, 8, 0}, 10);
-    llsort(&As, (list_cmpr)&int_sort);
+    llsort(&As, (llcmpr)&int_sort);
     for (list *A = As; A; A = llnth(A, 1)) {
         list *nextA = llnth(A, 1);
         if (nextA) {
