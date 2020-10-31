@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-typedef void (*mapfunc_t)(void *node, void *newnode, va_list vargs);
+typedef void *(*mapfunc_t)(void *node, va_list vargs);
 
 typedef void (*llfree_f)(void *node);
 
@@ -27,7 +27,7 @@ void *llmap_reverse2(void *l, size_t new_data_size, mapfunc_t map_func, va_list 
 
 void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...);
 
-void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...);
+void *llmap(void *INs, mapfunc_t map_func, ...);
 
 void llfree(void *l, llfree_f free_data);
 

@@ -146,37 +146,56 @@ struct lltemp {
     char data[];
 };
 
-void *llmap_reverse2(void *l, size_t new_node_size, mapfunc_t map_func,
-                     va_list vargs) {
-    struct lltemp *out_l = NULL;
-    va_list temp;
-    while (l) {
-        void **new_node = malloc(new_node_size);
-        *new_node = NULL;
-        va_copy(temp, vargs);
-        map_func(l, new_node, temp);
-        va_end(temp);
-        llpush(&out_l, new_node);
-        l = NEXT(l);
+/* void *llmap_reverse2(void *l, size_t new_node_size, mapfunc_t map_func, */
+/*                      va_list vargs) { */
+/*     struct lltemp *out_l = NULL; */
+/*     va_list temp; */
+/*     while (l) { */
+/*         void **new_node = malloc(new_node_size); */
+/*         *new_node = NULL; */
+/*         va_copy(temp, vargs); */
+/*         map_func(l, new_node, temp); */
+/*         va_end(temp); */
+/*         llpush(&out_l, new_node); */
+/*         l = NEXT(l); */
+/*     } */
+/*     return out_l; */
+/* } */
+
+/* void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...) { */
+/*     va_list vargs; */
+/*     va_start(vargs, map_func); */
+/*     void *out = llmap_reverse2(l, new_data_size, map_func, vargs); */
+/*     va_end(vargs); */
+/*     return out; */
+/* } */
+
+/* void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...) { */
+/*     va_list vargs; */
+/*     va_start(vargs, map_func); */
+/*     void *outlist = llmap_reverse2(l, new_data_size, map_func, vargs); */
+/*     llreverse(&outlist); */
+/*     va_end(vargs); */
+/*     return outlist; */
+/* } */
+
+/* identifier: llmap */
+void *llmap(void *INs, mapfunc_t map_func, ...){
+    void *OUTs = NULL, *OUT_tail;
+    va_list args;
+    if(INs){
+	va_start(args, map_func);
+	void *new = map_func(INs, args);
+	llpush(&OUTs, new);
+	OUT_tail = new;
     }
-    return out_l;
-}
-
-void *llmap_reverse(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
-    va_list vargs;
-    va_start(vargs, map_func);
-    void *out = llmap_reverse2(l, new_data_size, map_func, vargs);
-    va_end(vargs);
-    return out;
-}
-
-void *llmap(void *l, size_t new_data_size, mapfunc_t map_func, ...) {
-    va_list vargs;
-    va_start(vargs, map_func);
-    void *outlist = llmap_reverse2(l, new_data_size, map_func, vargs);
-    llreverse(&outlist);
-    va_end(vargs);
-    return outlist;
+    LLFOREACH(IN, NEXT(INs)){
+	va_start(args, map_func);
+	void *new = map_func(IN, args);
+	llpush(OUT_tail, new);	/* push AFTER 'OUT_tail' */
+	OUT_tail = new;
+    }
+    return OUTs;
 }
 
 void llfree(void *l, llfree_f free_node) {

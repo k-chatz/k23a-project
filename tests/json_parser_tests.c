@@ -4,7 +4,6 @@
 #include <string.h>
 
 #ifndef ACUTEST_H
-
 #include <assert.h>
 
 #define TEST_CHECK assert
@@ -17,7 +16,7 @@ bool tokenize_word(char *word) {
     char *rest;
     tokens = json_tokenize_str(word, &rest);
     bool success = (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
-    llfree(tokens, (llfree_f) free_StrList_data);
+    llfree(tokens, (llfree_f)free_StrList_data);
     return success;
 }
 
@@ -32,7 +31,7 @@ bool tokenize_sentence(char *str, char **expected_tokens) {
         if (strcmp(tok->data, expected_tokens[i++]))
             return false;
     }
-    llfree(tokens, (llfree_f) free_StrList_data);
+    llfree(tokens, (llfree_f)free_StrList_data);
     return expected_tokens[i] == NULL;
 }
 
@@ -60,57 +59,31 @@ void tokenize_number(void) {
         bool valid;
     } str_valid;
 
-    str_valid digits[] = {{"0",       true},
-                          {"000",     true},
-                          {"123",     true},
-                          {"500",     true},
+    str_valid digits[] = {{"0", true},
+                          {"000", true},
+                          {"123", true},
+                          {"500", true},
                           {"1238904", true}};
 
     str_valid ints[] = {
-            {"0",      true},
-            {"1%1$s",  true},
-            {"2%1$s",  true},
-            {"3%1$s",  true},
-            {"4%1$s",  true},
-            {"5%1$s",  true},
-            {"6%1$s",  true},
-            {"7%1$s",  true},
-            {"8%1$s",  true},
-            {"9%1$s",  true},
-            {"-0",     true},
-            {"-1%1$s", true},
-            {"-2%1$s", true},
-            {"-3%1$s", true},
-            {"-4%1$s", true},
-            {"-5%1$s", true},
-            {"-6%1$s", true},
-            {"-7%1$s", true},
-            {"-8%1$s", true},
-            {"-9%1$s", true},
-            {"01",     false},
-            {"-01",    false},
-            {"--5",    false}};
+        {"0", true},      {"1%1$s", true},  {"2%1$s", true},  {"3%1$s", true},
+        {"4%1$s", true},  {"5%1$s", true},  {"6%1$s", true},  {"7%1$s", true},
+        {"8%1$s", true},  {"9%1$s", true},  {"-0", true},     {"-1%1$s", true},
+        {"-2%1$s", true}, {"-3%1$s", true}, {"-4%1$s", true}, {"-5%1$s", true},
+        {"-6%1$s", true}, {"-7%1$s", true}, {"-8%1$s", true}, {"-9%1$s", true},
+        {"01", false},    {"-01", false},   {"--5", false}};
 
-    str_valid frac[] = {{"",      true},
+    str_valid frac[] = {{"", true},
                         {".%2$s", true},
-                        {".",     false},
-                        {".5.1",  false},
-                        {"..",    false}};
+                        {".", false},
+                        {".5.1", false},
+                        {"..", false}};
 
     str_valid exp[] = {
-            {"",       true},
-            {"E%3$s",  true},
-            {"E+%3$s", true},
-            {"E-%3$s", true},
-            {"e%3$s",  true},
-            {"e+%3$s", true},
-            {"e-%3$s", true},
-            {"e",      false},
-            {"e+",     false},
-            {"e-",     false},
-            {"E",      false},
-            {"E+",     false},
-            {"E-",     false},
+        {"", true},      {"E%3$s", true},  {"E+%3$s", true}, {"E-%3$s", true},
+        {"e%3$s", true}, {"e+%3$s", true}, {"e-%3$s", true}, {"e", false},
+        {"e+", false},   {"e-", false},    {"E", false},     {"E+", false},
+        {"E-", false},
     };
 
     char buf1[50], buf2[50];
@@ -122,7 +95,7 @@ void tokenize_number(void) {
             for (int k = 0; k < ARR_LEN(exp); k++) {
                 str_valid exp_part = exp[k];
                 expected_success =
-                        integer_part.valid && frac_part.valid && exp_part.valid;
+                    integer_part.valid && frac_part.valid && exp_part.valid;
                 strcpy(buf1, integer_part.str);
                 strcat(buf1, frac_part.str);
                 strcat(buf1, exp_part.str);
@@ -132,7 +105,7 @@ void tokenize_number(void) {
                             sprintf(buf2, buf1, digits[1].str, digits[2].str,
                                     digits[3].str);
                             bool success = tokenize_word(buf2);
-                                    TEST_CHECK(success == expected_success);
+                            TEST_CHECK(success == expected_success);
                         }
                     }
                 }
@@ -147,7 +120,7 @@ void tokenize_string(void) {
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
         sprintf(buf, "\"%s\"", str_contents[i]);
-                TEST_CHECK(tokenize_word(buf));
+        TEST_CHECK(tokenize_word(buf));
     }
 }
 
@@ -155,8 +128,8 @@ void tokenize_whitespace(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
     char *rest;
     StrList *toks = json_tokenize_str("  \t \n ", &rest);
-            TEST_CHECK(!toks);
-            TEST_CHECK(strlen(rest) == 0);
+    TEST_CHECK(!toks);
+    TEST_CHECK(strlen(rest) == 0);
 }
 
 void tokenize_multiword(void) {
@@ -166,31 +139,30 @@ void tokenize_multiword(void) {
     char *rest;
     StrList *toks = json_tokenize_str(in_str, &rest);
     int i = 0;
-    LLFOREACH(tok, toks)
-    { out_toks[i++] = tok->data; }
+    LLFOREACH(tok, toks) { out_toks[i++] = tok->data; }
     for (i = 0; i < ARR_LEN(in_toks); i++) {
-                TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
+        TEST_CHECK(strcmp(in_toks[i], out_toks[i]) == 0);
     }
 
     /* check if we consumed all the input */
-            TEST_CHECK(strlen(rest) == 0);
-    llfree(toks, (llfree_f) free_StrList_data);
+    TEST_CHECK(strlen(rest) == 0);
+    llfree(toks, (llfree_f)free_StrList_data);
 }
 
 void tokenize_invalid(void) {
     char *rest;
     char *invalid_in = "treu";
-            TEST_CHECK(json_tokenize_str(invalid_in, &rest) == NULL);
+    TEST_CHECK(json_tokenize_str(invalid_in, &rest) == NULL);
     /* no input should be consumed here */
-            TEST_CHECK(strcmp(rest, invalid_in) == 0);
+    TEST_CHECK(strcmp(rest, invalid_in) == 0);
 }
 
 /* ________________________________________ */
 /* _____________ Parser tests ______________*/
 /* ________________________________________ */
 
-#define CLEANUP()                    \
-    llfree(tokens, (llfree_f)free_StrList_data);    \
+#define CLEANUP()                                                              \
+    llfree(tokens, (llfree_f)free_StrList_data);                               \
     json_entity_free(ent)
 
 void parse_number(void) {
@@ -198,7 +170,7 @@ void parse_number(void) {
     StrList *tokens = json_tokenize_str("5", &_);
     StrList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
-            TEST_CHECK(json_to_double(ent) == (double) 5);
+    TEST_CHECK(json_to_double(ent) == (double)5);
     CLEANUP();
 }
 
@@ -207,7 +179,7 @@ void parse_bool(void) {
     StrList *tokens = json_tokenize_str("true", &_);
     StrList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
-            TEST_CHECK(json_to_bool(ent) == true);
+    TEST_CHECK(json_to_bool(ent) == true);
     CLEANUP();
 }
 
@@ -217,49 +189,84 @@ void parse_array(void) {
     json_type arr_types[] = {JSON_BOOL, JSON_NUM, JSON_BOOL, JSON_NUM};
     StrList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
-            TEST_CHECK(ent->type == JSON_ARRAY); /* type should be array */
+    TEST_CHECK(ent->type == JSON_ARRAY); /* type should be array */
     int len = json_get_arr_length(ent);
-            TEST_CHECK(len == 4); /* length should be 4 */
+    TEST_CHECK(len == 4); /* length should be 4 */
     for (int i = 0; i < len; i++) {
-                TEST_CHECK(json_get(ent, i)->type == arr_types[i]);
+        TEST_CHECK(json_get(ent, i)->type == arr_types[i]);
     }
     CLEANUP();
 }
 
 void parse_obj(void) {
     char *_;
-    StrList *tokens = json_tokenize_str("{\"foo\" : 5, \"bar\" : false, \"baz\" : [true]}", &_);
+    StrList *tokens = json_tokenize_str(
+        "{\"foo\" : 5, \"bar\" : false, \"baz\" : [true]}", &_);
     char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
     StrList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
-            TEST_CHECK(ent->type == JSON_OBJ); /* type should be array */
+    TEST_CHECK(ent->type == JSON_OBJ); /* type should be array */
     StrList *keys = json_get_obj_keys(ent);
-            TEST_CHECK(lllen(keys) == 3); /* length should be 3 */
+    TEST_CHECK(lllen(keys) == 3); /* length should be 3 */
     bool removed = false;
-    LLFOREACH(key, keys)
-    {
+    LLFOREACH(key, keys) {
         for (int i = 0; i < ARR_LEN(expected_keys); i++) {
             if (strcmp(key->data, expected_keys[i]) == 0) {
                 expected_keys[i] = NULL;
-                break;
                 removed = true;
+                break;
             }
         }
-                TEST_CHECK(removed);    /* check if key was in expected keys */
+        TEST_CHECK(removed); /* check if key was in expected keys */
     }
 
     /* all expected keys should be empty now */
-            TEST_CHECK(!(expected_keys[0] || expected_keys[1] || expected_keys[2]));
+    TEST_CHECK(!(expected_keys[0] || expected_keys[1] || expected_keys[2]));
 
     JSON_ENTITY *foo, *bar, *baz;
     foo = json_get(ent, "\"foo\"");
     bar = json_get(ent, "\"bar\"");
     baz = json_get(ent, "\"baz\"");
 
-            TEST_CHECK(foo->type == JSON_NUM);
-            TEST_CHECK(bar->type == JSON_BOOL);
-            TEST_CHECK(baz->type == JSON_ARRAY);
-            TEST_CHECK(json_get(baz, 0)->type == JSON_BOOL);
+    TEST_CHECK(foo->type == JSON_NUM);
+    TEST_CHECK(bar->type == JSON_BOOL);
+    TEST_CHECK(baz->type == JSON_ARRAY);
+    TEST_CHECK(json_get(baz, 0)->type == JSON_BOOL);
+    CLEANUP();
+}
+
+void parse_obj_complex(void) {
+
+    char *json =
+	"{"
+	"    \"glossary\": {"
+	"        \"title\": \"example glossary\","
+	"		\"GlossDiv\": {"
+	"            \"title\": \"S\","
+	"			\"GlossList\": {"
+	"                \"GlossEntry\": {"
+	"                    \"ID\": \"SGML\","
+	"					\"SortAs\": \"SGML\","
+	"					\"GlossTerm\": \"Standard Generalized Markup Language\","
+	"					\"Acronym\": \"SGML\","
+	"					\"Abbrev\": \"ISO 8879:1986\","
+	"					\"GlossDef\": {"
+	"                        \"para\": \"A meta-markup language, used to create markup languages such as DocBook.\","
+	"						\"GlossSeeAlso\": [\"GML\", \"XML\"]"
+	"                    },"
+	"					\"GlossSee\": \"markup\""
+	"                }"
+	"            }"
+	"        }"
+	"    }"
+	"}";
+
+    char *_;
+    StrList *tokens = json_tokenize_str(json, &_);
+    char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
+    StrList *rest;
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest);
+    TEST_CHECK(ent);
     CLEANUP();
 }
 
@@ -275,24 +282,26 @@ struct test_ {
 #define TEST_LIST const struct test_ test_list_[]
 #endif
 
-TEST_LIST = {{"tokenize_true",       tokenize_true},
-             {"tokenize_false",      tokenize_false},
-             {"tokenize_null",       tokenize_null},
-             {"tokenize_lbrace",     tokenize_lbrace},
-             {"tokenize_rbrace",     tokenize_rbrace},
-             {"tokenize_colon",      tokenize_colon},
-             {"tokenize_lbracket",   tokenize_lbracket},
-             {"tokenize_rbracket",   tokenize_rbracket},
-             {"tokenize_comma",      tokenize_comma},
-             {"tokenize_number",     tokenize_number},
-             {"tokenize_string",     tokenize_string},
+TEST_LIST = {{"tokenize_true", tokenize_true},
+             {"tokenize_false", tokenize_false},
+             {"tokenize_null", tokenize_null},
+             {"tokenize_lbrace", tokenize_lbrace},
+             {"tokenize_rbrace", tokenize_rbrace},
+             {"tokenize_colon", tokenize_colon},
+             {"tokenize_lbracket", tokenize_lbracket},
+             {"tokenize_rbracket", tokenize_rbracket},
+             {"tokenize_comma", tokenize_comma},
+             {"tokenize_number", tokenize_number},
+             {"tokenize_string", tokenize_string},
              {"tokenize_whitespace", tokenize_whitespace},
-             {"tokenize_multiword",  tokenize_multiword},
-             {"tokenize_invalid",    tokenize_invalid},
-        /* ________________________________________ */
-             {"parse_number",        parse_number},
-             {"parse_bool",          parse_bool},
-             {"parse_array",         parse_array},
+             {"tokenize_multiword", tokenize_multiword},
+             {"tokenize_invalid", tokenize_invalid},
+             /* ________________________________________ */
+             {"parse_number", parse_number},
+             {"parse_bool", parse_bool},
+             {"parse_array", parse_array},
+	     {"parse_obj", parse_obj},
+	     {"parse_obj_complex", parse_obj_complex},
              {NULL, NULL}};
 
 #ifndef ACUTEST_H

@@ -180,7 +180,7 @@ JSON_ENTITY *json_new_num(double num) {
 JSON_ENTITY *json_new_str(char *str) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(str));
     /* new->json_vt = json_int_vt; */
-    *((json_type *) (&new->type)) = JSON_NUM; /* assign to const */
+    *((json_type *) (&new->type)) = JSON_STRING; /* assign to const */
     *((char **) (&new->data)) = str;
     return new;
 }
@@ -272,7 +272,7 @@ int json_get_arr_length(JSON_ENTITY *Ent) {
 }
 
 StrList *json_get_obj_keys(JSON_ENTITY *Ent) {
-    if (Ent->type != JSON_ARRAY) {
+    if (Ent->type != JSON_OBJ) {
         fprintf(stderr,
                 "Attempted to get length from json entity of type %s(Expected "
                 "JSON_ARRAY).\n",
@@ -327,7 +327,7 @@ void json_entity_free(JSON_ENTITY *ent) {
             break;
         case JSON_OBJ: {
             HT_Destroy(&((JSON_OBJECT_DATA *) &ent->data)->contents, true);
-            llfree(json_get_obj_keys(ent), (llfree_f) &free_StrList_data);
+            llfree(json_get_obj_keys(ent), free);
             free(ent);
         }
             break;
@@ -375,7 +375,7 @@ struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
     if (!val_start)
         return NULL;
 
-    if (key->data[0] == '"' && strcmp(colon->data, ":")) {
+    if (key->data[0] == '"' && strcmp(colon->data, ":") == 0) {
         JSON_ENTITY *val = json_parse_value(val_start, rest);
         if (val) {
             struct JSON_OBJ_ENTRY *entry = malloc(sizeof(*entry));
@@ -391,8 +391,9 @@ struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
 JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
+	*rest = llnth(*rest, 1);
         Hashtable kvs;
-        HT_Init(&kvs, 10, 2 * sizeof(void *), &ht_create_id,
+        HT_Init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
                 &json_obj_entry_cmp, &hash_str, json_obj_entry_free);
         StrList *keys = NULL;
         struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
@@ -407,12 +408,12 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
             else
                 new_ent = NULL;
         }
+	JSON_ENTITY *obj = json_new_obj(kvs, keys);
         if (strcmp("}", (*rest)->data) == 0) {
             *rest = llnth(*rest, 1);
-            JSON_ENTITY *obj = json_new_obj(kvs, keys);
             return obj;
         }
-        json_obj_entry_free(new_ent);
+        json_entity_free(obj);
     }
     return NULL;
 }
