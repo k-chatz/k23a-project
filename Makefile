@@ -8,9 +8,9 @@ LFLAGS	 =
 
 .PHONY: tests all clean githooks
 
-all: $(OBJS)
-	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
-
+all: tests
+	$(MAKE) -C objs $(OBJS)
+	$(CC) $(foreach d, $(OBJS), objs/$d) -o $(OUT) $(LFLAGS)
 
 tests:
 	$(MAKE) -C tests-bin
@@ -20,7 +20,7 @@ githooks:
 	git config --local core.hooksPath ".githooks/"
 
 clean:
-	rm -rf deps
+	-rm -rf deps $(OUT)
 	$(MAKE) -C objs clean
 	$(MAKE) -C tests-bin clean
 	$(MAKE) -C src clean

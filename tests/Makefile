@@ -22,4 +22,4 @@ DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
 .PHONY: clean
 clean:
-	rm -f *~
+	-rm -f *~ spec_to_specs_tests

@@ -5,8 +5,6 @@ LFLAGS	 =
 CSRC := $(wildcard *.c)
 DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
-
-
 ../deps/%.d: ../src/%.c
 	mkdir -p ../deps
 	cpp $(CFLAGS) $< -MM -MT../objs/$*.o >$@
@@ -18,4 +16,4 @@ DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
 .PHONY: clean
 clean:
-	rm -f *~
+	-rm -f *~

@@ -45,4 +45,4 @@ json_parser_tests: $(JSON_OBJS)
 
 
 clean: phony
-	rm spec_to_specs_tests
+	-rm json_parser_tests lists_tests

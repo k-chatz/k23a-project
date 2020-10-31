@@ -17,4 +17,4 @@ DEPS := $(patsubst %.c, ../deps/%.d, $(CSRC))
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	-rm -f *.o
