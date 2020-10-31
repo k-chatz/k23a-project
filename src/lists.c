@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 
-#include "include/lists.h"
+#include "../include/lists.h"
 
 #define NEXT(x) (*((void **)x))
 
