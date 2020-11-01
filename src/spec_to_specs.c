@@ -2,7 +2,7 @@
 #include "../include/spec_to_specs.h"
 
 /* Created a spec node to be added to the hash table */
-static void *mk_spec(void *id) {
+static void *create_spec(void *id) {
     SpecEntry *new = malloc(sizeof(SpecEntry));
     new->id = strdup(id);
     new->similar = malloc(sizeof(SpecList));
@@ -55,7 +55,7 @@ STS *sts_new() {
     HT_Init(&(new->ht),
             HT_CAP,
             HT_BSZ,
-            mk_spec,
+            create_spec,
             cmp_spec,
             print_spec,
             hash_spec,
