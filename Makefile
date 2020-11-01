@@ -1,9 +1,9 @@
-OBJS	= main.o lists.o
-SOURCE	= main.c lists.c
-HEADER	= lists.h
+OBJS	= main.o lists.o spec_to_specs.o spec_ids.o hash.o
+SOURCE	= main.c lists.c spec_to_specs.c spec_ids.c	hash.c
+HEADER	= lists.h spec_to_specs.h spec_ids.h hash.h
 OUT	= project
 CC	 = gcc
-CFLAGS	 = -g -Wall -I../
+CFLAGS	 = -g -Wall
 LFLAGS	 = 
 
 .PHONY: tests all clean githooks

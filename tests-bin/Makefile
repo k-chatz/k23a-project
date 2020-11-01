@@ -1,5 +1,5 @@
 CC	 = gcc
-CFLAGS	 = -g -Wall -I../
+CFLAGS	 = -g -Wall
 LFLAGS	 = 
 
 CSRC := $(wildcard *.c)
@@ -19,6 +19,7 @@ JSON_OBJS = $(patsubst %.o, ../objs/%.o,     \
 			json_parser_tests.o  \
 			json_parser.o	     \
 			spec_ids.o	     \
+			spec_to_specs.o		\
 			hash.o		     \
 			lists.o)
 
