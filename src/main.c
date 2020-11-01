@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     llfree(temp, free);
 
-    STS* result = get_spec_ids("Datasets/camera_specs/2013_camera_specs");
+    STS *result = get_spec_ids("Datasets/camera_specs/2013_camera_specs");
 
     //print result
     print_sts(result);

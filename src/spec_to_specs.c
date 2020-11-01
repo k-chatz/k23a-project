@@ -12,7 +12,7 @@ static void *create_spec(void *id) {
 }
 
 void print_spec(void *spec) {
-    printf("spec_id = %s\n", ((SpecEntry*)spec)->id);
+    printf("spec_id = %s\n", ((SpecEntry *) spec)->id);
 }
 
 /* Hash an id */
@@ -96,7 +96,8 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 SpecEntry *sts_get(STS *sts, char *id) {
     return HT_Get(sts->ht, id);
 }
-void print_sts(STS *sts){
+
+void print_sts(STS *sts) {
     //HT_print(sts->ht);
 
     StrList *keys = sts->keys;

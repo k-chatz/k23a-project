@@ -3,8 +3,6 @@
 
 #define N (sizeof(ids) / sizeof(ids[0]))
 
-
-
 void add_test(void) {
     STS *sts = sts_new();
     char *ids[] = {"www.ebay.com//123", "2", "3", "4", "5"};
@@ -46,9 +44,8 @@ void merge_test(void) {
     }
 }
 
-
 TEST_LIST = {
         {"insertion", add_test},
         {"merging",   merge_test},
-        {NULL,        NULL}
+        {NULL, NULL}
 };

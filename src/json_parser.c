@@ -391,10 +391,10 @@ struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
 JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
-	*rest = llnth(*rest, 1);
+        *rest = llnth(*rest, 1);
         Hashtable kvs;
         HT_Init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
-                &json_obj_entry_cmp, NULL , &hash_str, json_obj_entry_free);
+                &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
         StrList *keys = NULL;
         struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
         while (new_ent) {
@@ -408,7 +408,7 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
             else
                 new_ent = NULL;
         }
-	JSON_ENTITY *obj = json_new_obj(kvs, keys);
+        JSON_ENTITY *obj = json_new_obj(kvs, keys);
         if (strcmp("}", (*rest)->data) == 0) {
             *rest = llnth(*rest, 1);
             return obj;

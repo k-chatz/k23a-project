@@ -316,7 +316,7 @@ void HT_print(Hashtable ht) {
         int bucketNum = 0;
         bucket = ht->table[i];
         /* Check each bucket to determine where is the target slot.*/
-        while (bucket != NULL) {         
+        while (bucket != NULL) {
             _getCount(bucket, ht->bucketSize, &count);
             /*Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
@@ -325,7 +325,7 @@ void HT_print(Hashtable ht) {
             }
             /*Get next pointer to determine if this bucket has an overflow bucket*/
             _getNext(bucket, ht->bucketSize, &bucket);
-            
+
             bucketNum++;
         }
     }

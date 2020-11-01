@@ -21,7 +21,7 @@ void *llnth(void *l, int n) {
             l = NEXT(l);
         return l;
     } else {
-	int length = lllen(l);
+        int length = lllen(l);
         /* n is < 0, we will count n nodes from the last */
         return llnth(l, length - n);
     }
@@ -144,7 +144,7 @@ void llsplit(void *in, void *out_a, void *out_b, int n) {
  * the merging part of the merge sort algorithm 
  * exposed to the interface for adding nodes to a sorted list 
  * and maintaining sortedness 
- */ 
+ */
 void *llsort_merge(void *list_a, void *list_b, llcmpr c) {
     if (!NEXT(list_b))
         return NEXT(list_a);
@@ -202,22 +202,22 @@ void *llsearch(void *l, llpred p, ...) {
  * param: `map_func` -> function used to produce the output list
  * output: a list where the nth node is the output of `mapfunc`(nth node of `INs`)
  */
-void *llmap(void *INs, mapfunc_t map_func, ...){
+void *llmap(void *INs, mapfunc_t map_func, ...) {
     void *OUTs = NULL, *OUT_tail;
     va_list args;
-    if(INs){
-	/* do first element to initialize OUT_tail */
-	va_start(args, map_func);
-	void *new = map_func(INs, args);
-	llpush(&OUTs, new);
-	OUT_tail = new;
+    if (INs) {
+        /* do first element to initialize OUT_tail */
+        va_start(args, map_func);
+        void *new = map_func(INs, args);
+        llpush(&OUTs, new);
+        OUT_tail = new;
     }
-    LLFOREACH(IN, NEXT(INs)){
-	/* do rest */
-	va_start(args, map_func);
-	void *new = map_func(IN, args);
-	llpush(OUT_tail, new);	/* push AFTER 'OUT_tail' */
-	OUT_tail = new;		/* set OUT_tail to new tail */
+    LLFOREACH(IN, NEXT(INs)) {
+        /* do rest */
+        va_start(args, map_func);
+        void *new = map_func(IN, args);
+        llpush(OUT_tail, new);    /* push AFTER 'OUT_tail' */
+        OUT_tail = new;        /* set OUT_tail to new tail */
     }
     return OUTs;
 }

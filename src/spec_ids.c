@@ -5,8 +5,8 @@
 #include "../include/spec_ids.h"
 #include "../include/spec_to_specs.h"
 
-STS* get_spec_ids(char* path) {
-    STS* spec_table = sts_new();
+STS *get_spec_ids(char *path) {
+    STS *spec_table = sts_new();
 
     struct dirent **name_list, **internals_name_list;
     int n, internals;
