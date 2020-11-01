@@ -13,7 +13,7 @@ all: tests
 
 tests:
 	$(MAKE) -C tests-bin
-	for test in tests-bin/*; do [ -x $$test ] && (./$$test || exit 1); done
+	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
 
 githooks:
 	git config --local core.hooksPath ".githooks/"
