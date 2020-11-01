@@ -5,29 +5,46 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-add_executable(k23a_project
-        tests/json_parser_tests.c
-        src/json_parser.c
-        src/lists.c
-        src/hash.c
-        src/spec_ids.c
-        include/lists.h
-        include/hash.h
-        include/json_parser.h
-        )
-
+#json_parser_tests
 #add_executable(k23a_project
-#        src/main.c
+#        tests/json_parser_tests.c
+#        src/json_parser.c
 #        src/lists.c
 #        src/hash.c
-#        src/json_parser.c
 #        src/spec_ids.c
 #        src/spec_to_specs.c
-#        src/read_csv.c
 #        include/lists.h
 #        include/hash.h
 #        include/json_parser.h
-#        include/read_csv.h
-#        include/spec_ids.h
-#        include/spec_to_specs.h
 #        )
+
+#lists_tests
+#add_executable(k23a_project
+#        tests/lists_tests.c
+#        src/lists.c
+#        )
+
+#spec_to_specs_tests
+#add_executable(k23a_project
+#        tests/spec_to_specs_tests.c
+#        src/spec_to_specs.c
+#        src/lists.c
+#        src/hash.c
+#        )
+
+#main
+add_executable(k23a_project
+        src/main.c
+        src/lists.c
+        src/hash.c
+        src/json_parser.c
+        src/spec_ids.c
+        src/spec_to_specs.c
+        src/read_csv.c
+        include/lists.h
+        include/hash.h
+        include/json_parser.h
+        include/read_csv.h
+        include/spec_ids.h
+        include/spec_to_specs.h
+        )
