@@ -291,7 +291,7 @@ JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...) {
             char *key = va_arg(arglist, char *);
             JSON_OBJECT_DATA *dp = (void *) (&Ent->data);
             va_end(arglist);
-            return ((struct JSON_OBJ_ENTRY *) HT_Get(dp->contents, key))->value;
+            return ((struct JSON_OBJ_ENTRY *) ht_get(dp->contents, key))->value;
         }
         case JSON_ARRAY: {
             int index = va_arg(arglist, int);
@@ -326,7 +326,7 @@ void json_entity_free(JSON_ENTITY *ent) {
         }
             break;
         case JSON_OBJ: {
-            HT_Destroy(&((JSON_OBJECT_DATA *) &ent->data)->contents, true);
+            ht_destroy(&((JSON_OBJECT_DATA *) &ent->data)->contents, true);
             llfree(json_get_obj_keys(ent), free);
             free(ent);
         }
@@ -393,7 +393,7 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = llnth(*rest, 1);
         Hashtable kvs;
-        HT_Init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
+        ht_init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
                 &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
         StrList *keys = NULL;
         struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
@@ -402,7 +402,7 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
             keys_node->data = new_ent->key;
             llpush(&keys, keys_node);
             void *_;
-            HT_Insert(kvs, new_ent->key, new_ent, &_);
+            ht_insert(kvs, new_ent->key, new_ent, &_);
             if (strcmp((*rest)->data, ",") == 0)
                 new_ent = json_parse_object_entry(llnth(*rest, 1), rest);
             else

@@ -3,8 +3,6 @@
 #include <assert.h>
 #include "../include/hash.h"
 
-typedef void *pointer;
-
 struct Hashtable {
     unsigned long int bucketSize;
     unsigned long int capacity;
@@ -64,7 +62,7 @@ pointer allocBucket(unsigned long int size) {
 
 /***Public functions***/
 
-bool HT_Init(Hashtable *ht,
+bool ht_init(Hashtable *ht,
              unsigned long int capacity,
              unsigned long int bucketSize,
              pointer (*createValue)(pointer),
@@ -97,7 +95,7 @@ bool HT_Init(Hashtable *ht,
     return false;
 }
 
-int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
+int ht_insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
     unsigned long int index = 0, count = 0, slots = 0, slot = 0;
     pointer bucket = NULL, b = NULL, next = NULL, slotValue = NULL;
     assert(ht != NULL);
@@ -179,7 +177,7 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
     return true;
 }
 
-pointer HT_Get(Hashtable ht, pointer key) {
+pointer ht_get(Hashtable ht, pointer key) {
     unsigned long int index = 0, count = 0, slot = 0;
     pointer bucket = NULL, v = NULL, next = NULL;
     assert(ht != NULL);
@@ -213,7 +211,7 @@ pointer HT_Get(Hashtable ht, pointer key) {
     return NULL;
 }
 
-int HT_Remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyItem) {
+int ht_remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyItem) {
     unsigned long int index = 0, count = 0, slot = 0, targetSlot = 0;
     pointer bucket = NULL, targetBucket = NULL, next = NULL, slotValue = NULL;
     assert(ht != NULL);
@@ -270,7 +268,7 @@ int HT_Remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyI
     return true;
 }
 
-void HT_Destroy(Hashtable *ht, bool forceDestroyItem) {
+void ht_destroy(Hashtable *ht, bool forceDestroyItem) {
     assert((*ht) != NULL);
     pointer next = NULL, slotValue = NULL, bucket = NULL;
     unsigned long int count = 0, i, slot;
@@ -308,7 +306,7 @@ void HT_Destroy(Hashtable *ht, bool forceDestroyItem) {
     free(*ht);
 }
 
-void HT_print(Hashtable ht) {
+void ht_print(Hashtable ht) {
     int i = 0, slot = 0;
     unsigned long int count = 0;
     pointer bucket = NULL, v = NULL;

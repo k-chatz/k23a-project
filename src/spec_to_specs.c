@@ -52,7 +52,7 @@ static ulong destroy_spec(void *spec) {
 /* Create a new sts */
 STS *sts_new() {
     STS *new = malloc(sizeof(STS));
-    HT_Init(&(new->ht),
+    ht_init(&(new->ht),
             HT_CAP,
             HT_BSZ,
             create_spec,
@@ -70,15 +70,15 @@ int sts_add(STS *sts, char *id) {
     StrList *new_id = malloc(sizeof(StrList));
     new_id->data = strdup(id);
     llpush(&(sts->keys), new_id);
-    HT_Insert(sts->ht, id, id, &_);
+    ht_insert(sts->ht, id, id, &_);
     return 0;
 }
 
 /* Merges two sts nodes to point to the same expanded list */
 int sts_merge(STS *sts, char *id1, char *id2) {
     SpecEntry *spec1, *spec2;
-    spec1 = HT_Get(sts->ht, id1);
-    spec2 = HT_Get(sts->ht, id2);
+    spec1 = ht_get(sts->ht, id1);
+    spec2 = ht_get(sts->ht, id2);
     SpecList *spec2_similar = spec2->similar;
     SpecList *iter;
 
@@ -94,15 +94,15 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 }
 
 SpecEntry *sts_get(STS *sts, char *id) {
-    return HT_Get(sts->ht, id);
+    return ht_get(sts->ht, id);
 }
 
 void print_sts(STS *sts) {
-    //HT_print(sts->ht);
+    //ht_print(sts->ht);
 
     StrList *keys = sts->keys;
     while (keys) {
-        SpecEntry *sp = HT_Get(sts->ht, keys->data);
+        SpecEntry *sp = ht_get(sts->ht, keys->data);
         printf("%s -> (", sp->id);
         SpecList *similar = sp->similar;
         while (similar) {
