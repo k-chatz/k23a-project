@@ -51,7 +51,7 @@ unsigned long int getEmptySlots(unsigned long int bucketSize, unsigned long int 
     return (bucketSize - sizeof(pointer) - sizeof(unsigned long int)) / sizeof(pointer) - count;
 }
 
-pointer allocBucket(unsigned long int size) {
+pointer allocBucket(unsigned long int size) { 
     pointer bucket = malloc((size_t) size);
     if (bucket != NULL) {
         setNext(bucket, size, NULL);

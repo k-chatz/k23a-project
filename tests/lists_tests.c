@@ -267,6 +267,7 @@ void map_test(void) {
         TEST_CHECK(A->data + 1 == B->data);
         B = ll_nth(B, 1);
     }
+    TEST_CHECK(0);
 }
 
 TEST_LIST = {
