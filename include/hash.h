@@ -12,6 +12,7 @@ bool HT_Init(
         unsigned long int bucketSize,
         void *(*createValue)(void *),
         int (*cmp)(void *, void *),
+        void (*printValue)(void*),
         unsigned long (*hash)(void *, unsigned long int),
         unsigned long (*destroy)(void *)
 );
@@ -23,5 +24,7 @@ void *HT_Get(Hashtable ht, void *key);
 int HT_Remove(Hashtable ht, void *key, void *valueParams, bool forceDestroyItem);
 
 void HT_Destroy(Hashtable *ht, bool forceDestroyItems);
+
+void HT_print(Hashtable ht);
 
 #endif

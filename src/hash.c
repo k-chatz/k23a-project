@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "include/hash.h"
+#include "../include/hash.h"
 
 typedef void *pointer;
 
@@ -12,6 +12,8 @@ struct Hashtable {
     pointer (*createValue )(pointer);
 
     int (*cmp )(pointer, pointer);
+
+    void (*printValue)(pointer);
 
     unsigned long int (*hash)(pointer, unsigned long int);
 
@@ -67,6 +69,7 @@ bool HT_Init(Hashtable *ht,
              unsigned long int bucketSize,
              pointer (*createValue)(pointer),
              int (*cmp)(pointer, pointer),
+             void (*printValue)(pointer),
              unsigned long (*hash)(pointer, unsigned long int),
              unsigned long (*destroy)(pointer)
 ) {
@@ -79,6 +82,7 @@ bool HT_Init(Hashtable *ht,
         (*ht)->capacity = capacity;
         (*ht)->createValue = createValue;
         (*ht)->cmp = cmp;
+        (*ht)->printValue = printValue;
         (*ht)->hash = hash;
         (*ht)->destroy = destroy;
         (*ht)->table = malloc(sizeof(pointer) * capacity);
@@ -88,6 +92,7 @@ bool HT_Init(Hashtable *ht,
             }
             return true;
         }
+
     }
     return false;
 }
@@ -301,4 +306,27 @@ void HT_Destroy(Hashtable *ht, bool forceDestroyItem) {
     }
     free((*ht)->table);
     free(*ht);
+}
+
+void HT_print(Hashtable ht) {
+    int i = 0, slot = 0;
+    unsigned long int count = 0;
+    pointer bucket = NULL, v = NULL;
+    for (i = 0; i < ht->capacity; i++) {
+        int bucketNum = 0;
+        bucket = ht->table[i];
+        /* Check each bucket to determine where is the target slot.*/
+        while (bucket != NULL) {         
+            _getCount(bucket, ht->bucketSize, &count);
+            /*Get value for each slot of bucket*/
+            for (slot = 0; slot < count; slot++) {
+                _getValue(bucket, slot, &v);
+                ht->printValue(v);
+            }
+            /*Get next pointer to determine if this bucket has an overflow bucket*/
+            _getNext(bucket, ht->bucketSize, &bucket);
+            
+            bucketNum++;
+        }
+    }
 }

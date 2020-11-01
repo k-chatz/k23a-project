@@ -1,7 +1,8 @@
-/* #include "include/acutest.h" */
-#include "include/json_parser.h"
+#include "../include/acutest.h"
+#include "../include/json_parser.h"
 #include <stdbool.h>
 #include <string.h>
+
 
 #ifndef ACUTEST_H
 #include <assert.h>
@@ -16,7 +17,7 @@ bool tokenize_word(char *word) {
     char *rest;
     tokens = json_tokenize_str(word, &rest);
     bool success = (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
-    llfree(tokens, (llfree_f)free_StrList_data);
+    llfree(tokens, (llfree_f)json_free_StrList);
     return success;
 }
 
@@ -31,7 +32,7 @@ bool tokenize_sentence(char *str, char **expected_tokens) {
         if (strcmp(tok->data, expected_tokens[i++]))
             return false;
     }
-    llfree(tokens, (llfree_f)free_StrList_data);
+    llfree(tokens, (llfree_f)json_free_StrList);
     return expected_tokens[i] == NULL;
 }
 
@@ -146,7 +147,7 @@ void tokenize_multiword(void) {
 
     /* check if we consumed all the input */
     TEST_CHECK(strlen(rest) == 0);
-    llfree(toks, (llfree_f)free_StrList_data);
+    llfree(toks, (llfree_f)json_free_StrList);
 }
 
 void tokenize_invalid(void) {
@@ -162,7 +163,7 @@ void tokenize_invalid(void) {
 /* ________________________________________ */
 
 #define CLEANUP()                                                              \
-    llfree(tokens, (llfree_f)free_StrList_data);                               \
+    llfree(tokens, (llfree_f)json_free_StrList);                               \
     json_entity_free(ent)
 
 void parse_number(void) {

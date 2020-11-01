@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../include/lists.h"
+#include "../include/spec_to_specs.h"
+#include "../include/spec_ids.h"
 
 typedef
 struct {
@@ -31,5 +33,11 @@ int main(int argc, char *argv[]) {
     printf(")\n");
 
     llfree(temp, free);
+
+    STS* result = get_spec_ids("Datasets/camera_specs/2013_camera_specs");
+
+    //print result
+    print_sts(result);
+
     return 0;
 }

@@ -1,22 +1,9 @@
-#include "include/acutest.h"
-#include "include/spec_to_specs.h"
+#include "../include/acutest.h"
+#include "../include/spec_to_specs.h"
 
 #define N (sizeof(ids) / sizeof(ids[0]))
 
-void print_sts(STS *sts) {
-    StrList *keys = sts->keys;
-    while (keys) {
-        SpecEntry *sp = HT_Get(sts->ht, keys->data);
-        printf("%s -> (", sp->id);
-        SpecList *similar = sp->similar;
-        while (similar) {
-            printf("%s ", similar->data->id);
-            similar = llnth(similar, 1);
-        }
-        printf(")\n");
-        keys = llnth(keys, 1);
-    }
-}
+
 
 void add_test(void) {
     STS *sts = sts_new();

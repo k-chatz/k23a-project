@@ -1,14 +1,18 @@
 /* file: spec_to_specs.h */
-#include "include/spec_to_specs.h"
+#include "../include/spec_to_specs.h"
 
 /* Created a spec node to be added to the hash table */
-static void *mk_spec(void *id) {
+static void *create_spec(void *id) {
     SpecEntry *new = malloc(sizeof(SpecEntry));
     new->id = strdup(id);
     new->similar = malloc(sizeof(SpecList));
     new->similar->next = NULL;
     new->similar->data = new;    /* add self to list of similar specs */
     return new;
+}
+
+void print_spec(void *spec) {
+    printf("spec_id = %s\n", ((SpecEntry*)spec)->id);
 }
 
 /* Hash an id */
@@ -51,8 +55,9 @@ STS *sts_new() {
     HT_Init(&(new->ht),
             HT_CAP,
             HT_BSZ,
-            mk_spec,
+            create_spec,
             cmp_spec,
+            print_spec,
             hash_spec,
             destroy_spec);
     new->keys = NULL;
@@ -90,5 +95,21 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 
 SpecEntry *sts_get(STS *sts, char *id) {
     return HT_Get(sts->ht, id);
+}
+void print_sts(STS *sts){
+    //HT_print(sts->ht);
+
+    StrList *keys = sts->keys;
+    while (keys) {
+        SpecEntry *sp = HT_Get(sts->ht, keys->data);
+        printf("%s -> (", sp->id);
+        SpecList *similar = sp->similar;
+        while (similar) {
+            printf("%s ", similar->data->id);
+            similar = llnth(similar, 1);
+        }
+        printf(")\n");
+        keys = llnth(keys, 1);
+    }
 }
 /* _______ END of STS Functions _______ */
