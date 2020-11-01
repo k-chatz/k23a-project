@@ -528,4 +528,7 @@ void json_print_value(JSON_ENTITY *val) {
     }
 }
 
-
+void json_free_StrList(StrList *list) {
+    free(list->data);
+    free(list);
+}

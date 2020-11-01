@@ -1,8 +1,9 @@
 #include "hash.h"
 #include "lists.h"
 #include <stdarg.h>
-#include "spec_ids.h" /* for StrList */
 #include <stdlib.h>
+
+typedef LISTOF(char*) StrList;
 
 typedef enum {
     JSON_OBJ,
@@ -82,3 +83,5 @@ JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest);
 void json_print_value(JSON_ENTITY *val);
 
 JSON_ENTITY *json_parse_from_tokens(StrList *tokens);
+
+void json_free_StrList(StrList *list);
