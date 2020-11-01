@@ -91,4 +91,20 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 SpecEntry *sts_get(STS *sts, char *id) {
     return HT_Get(sts->ht, id);
 }
+void print_sts(STS *sts){
+    //HT_print(sts->ht);
+
+    StrList *keys = sts->keys;
+    while (keys) {
+        SpecEntry *sp = HT_Get(sts->ht, keys->data);
+        printf("%s -> (", sp->id);
+        SpecList *similar = sp->similar;
+        while (similar) {
+            printf("%s ", similar->data->id);
+            similar = llnth(similar, 1);
+        }
+        printf(")\n");
+        keys = llnth(keys, 1);
+    }
+}
 /* _______ END of STS Functions _______ */
