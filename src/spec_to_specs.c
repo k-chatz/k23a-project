@@ -1,5 +1,5 @@
 /* file: spec_to_specs.h */
-#include "include/spec_to_specs.h"
+#include "../include/spec_to_specs.h"
 
 /* Created a spec node to be added to the hash table */
 static void *mk_spec(void *id) {

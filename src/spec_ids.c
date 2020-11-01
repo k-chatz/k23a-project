@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "include/spec_ids.h"
-#include "include/lists.h"
+#include "../include/spec_ids.h"
+#include "../include/spec_to_specs.h"
 
 // typedef LISTOF(char*) StrList;
 

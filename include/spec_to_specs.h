@@ -1,6 +1,10 @@
 /* file: spec_to_specs.h */
 /* describes the data structure used to represent */
 /* connections between specs */
+
+#ifndef __STS_H__
+#define __STS_H__
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,12 +25,10 @@ struct {
     StrList *keys;
 } STS;
 
-
 struct SpecEntry_s {
     char *id;
     SpecList *similar;
 };
-
 
 STS *sts_new();
 
@@ -38,3 +40,4 @@ SpecEntry *sts_get(STS *sts, char *id);
 
 void print_sts(STS *sts);
 
+#endif

@@ -1,5 +1,5 @@
-#include "include/acutest.h"
-#include "include/spec_to_specs.h"
+#include "../include/acutest.h"
+#include "../include/spec_to_specs.h"
 
 #define N (sizeof(ids) / sizeof(ids[0]))
 
