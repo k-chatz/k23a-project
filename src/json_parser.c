@@ -156,13 +156,13 @@ StrList *json_tokenize_str(char *str, char **rest) {
         if (current_len > 0) {
             StrList *thisTok = malloc(sizeof(StrList));
             thisTok->data = current;
-            llpush(&out, thisTok);
+            ll_push(&out, thisTok);
         } else {
             free(current);
         }
     } while (str[0] != '\0' && current_len > 0);
 
-    llreverse(&out);
+    ll_reverse(&out);
     *rest = str;
     return out;
 }
@@ -327,7 +327,7 @@ void json_entity_free(JSON_ENTITY *ent) {
             break;
         case JSON_OBJ: {
             ht_destroy(&((JSON_OBJECT_DATA *) &ent->data)->contents, true);
-            llfree(json_get_obj_keys(ent), free);
+            ll_free(json_get_obj_keys(ent), free);
             free(ent);
         }
             break;
@@ -368,9 +368,9 @@ ulong json_obj_entry_free(void *joe) {
 struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
                                                StrList **rest) {
     StrList *key, *colon, *val_start;
-    key = llnth(tokens, 0);
-    colon = llnth(tokens, 1);
-    val_start = llnth(tokens, 2);
+    key = ll_nth(tokens, 0);
+    colon = ll_nth(tokens, 1);
+    val_start = ll_nth(tokens, 2);
 
     if (!val_start)
         return NULL;
@@ -391,7 +391,7 @@ struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
 JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
-        *rest = llnth(*rest, 1);
+        *rest = ll_nth(*rest, 1);
         Hashtable kvs;
         ht_init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
                 &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
@@ -400,17 +400,17 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
         while (new_ent) {
             StrList *keys_node = malloc(sizeof(StrList));
             keys_node->data = new_ent->key;
-            llpush(&keys, keys_node);
+            ll_push(&keys, keys_node);
             void *_;
             ht_insert(kvs, new_ent->key, new_ent, &_);
             if (strcmp((*rest)->data, ",") == 0)
-                new_ent = json_parse_object_entry(llnth(*rest, 1), rest);
+                new_ent = json_parse_object_entry(ll_nth(*rest, 1), rest);
             else
                 new_ent = NULL;
         }
         JSON_ENTITY *obj = json_new_obj(kvs, keys);
         if (strcmp("}", (*rest)->data) == 0) {
-            *rest = llnth(*rest, 1);
+            *rest = ll_nth(*rest, 1);
             return obj;
         }
         json_entity_free(obj);
@@ -424,30 +424,30 @@ JSON_ENTITY *json_parse_array(StrList *tokens, StrList **rest) {
             struct tmplist *next;
             JSON_ENTITY *ent;
         } *data = NULL;
-        *rest = llnth(tokens, 1); /* skip '[' */
+        *rest = ll_nth(tokens, 1); /* skip '[' */
         JSON_ENTITY *curr_ent = json_parse_value(*rest, rest);
         if (curr_ent) {
             void *newnode = malloc(sizeof(*data));
-            llpush(&data, newnode);
+            ll_push(&data, newnode);
             data->ent = curr_ent;
         }
         while (strcmp((*rest)->data, ",") == 0) {
-            curr_ent = json_parse_value(llnth(*rest, 1), rest);
+            curr_ent = json_parse_value(ll_nth(*rest, 1), rest);
             if (curr_ent) {
                 void *newnode = malloc(sizeof(*data));
-                llpush(&data, newnode);
+                ll_push(&data, newnode);
                 data->ent = curr_ent;
             }
         }
         /* make the array */
-        int length = lllen(data);
+        int length = ll_len(data);
         JSON_ENTITY **arr = malloc(sizeof(JSON_ENTITY *) * length);
         int i = length;
         LLFOREACH(ent, data) { arr[--i] = ent->ent; }
-        llfree(data, free); /* free the temp list */
+        ll_free(data, free); /* free the temp list */
         if (strcmp((*rest)->data, "]") == 0) {
             /* we are done */
-            *rest = llnth(*rest, 1);
+            *rest = ll_nth(*rest, 1);
             return json_new_arr(arr, length);
         }
 
@@ -466,19 +466,19 @@ JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest) {
         (first_tok[0] == '-' && first_tok[1] >= '0' && first_tok[1] <= '9')) {
         /* number */
         double num = atof(first_tok);
-        *rest = llnth(tokens, 1);
+        *rest = ll_nth(tokens, 1);
         return json_new_num(num);
     } else if (strcmp(first_tok, "true") == 0) {
         /* true */
-        *rest = llnth(tokens, 1);
+        *rest = ll_nth(tokens, 1);
         return json_new_bool(true);
     } else if (strcmp(first_tok, "false") == 0) {
         /* false */
-        *rest = llnth(tokens, 1);
+        *rest = ll_nth(tokens, 1);
         return json_new_bool(false);
     } else if (first_tok[0] == '"') {
         /* string */
-        *rest = llnth(tokens, 1);
+        *rest = ll_nth(tokens, 1);
         return json_new_str(strdup(first_tok));
     } else if (strcmp("{", first_tok) == 0) {
         /* object */

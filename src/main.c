@@ -21,18 +21,18 @@ int main(int argc, char *argv[]) {
     int i;
     intList *L = NULL;
     for (i = 0; i < 6; i++) {
-        llpush(&L, new_node(list_elements[i]));
+        ll_push(&L, new_node(list_elements[i]));
     }
 
     intList *temp = L;
     printf("(");
     while (temp) {
         printf("%d ", temp->data);
-        temp = llnth(temp, 1);
+        temp = ll_nth(temp, 1);
     }
     printf(")\n");
 
-    llfree(temp, free);
+    ll_free(temp, free);
 
     STS *result = get_spec_ids("Datasets/camera_specs/2013_camera_specs");
 

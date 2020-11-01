@@ -37,10 +37,10 @@ static ulong destroy_spec(void *spec) {
     while (*similarp) {
         if (strcmp(((SpecEntry *) spec)->id, (*similarp)->data->id) == 0) {
             /* remove this element */
-            SpecList *poped = llpop(similarp);
+            SpecList *poped = ll_pop(similarp);
             free(poped);
         }
-        similarp = llnth(similarp, 1);
+        similarp = ll_nth(similarp, 1);
     }
     free(((SpecEntry *) spec)->id);
     free(spec);
@@ -69,7 +69,7 @@ int sts_add(STS *sts, char *id) {
     void *_;
     StrList *new_id = malloc(sizeof(StrList));
     new_id->data = strdup(id);
-    llpush(&(sts->keys), new_id);
+    ll_push(&(sts->keys), new_id);
     ht_insert(sts->ht, id, id, &_);
     return 0;
 }
@@ -83,10 +83,10 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     SpecList *iter;
 
     while (spec2_similar) {
-        llpush(&(spec1->similar), llpop(&spec2_similar));
+        ll_push(&(spec1->similar), ll_pop(&spec2_similar));
     }
 
-    for (iter = spec1->similar; iter; iter = llnth(iter, 1)) {
+    for (iter = spec1->similar; iter; iter = ll_nth(iter, 1)) {
         iter->data->similar = spec1->similar;
     }
 
@@ -107,10 +107,10 @@ void print_sts(STS *sts) {
         SpecList *similar = sp->similar;
         while (similar) {
             printf("%s ", similar->data->id);
-            similar = llnth(similar, 1);
+            similar = ll_nth(similar, 1);
         }
         printf(")\n");
-        keys = llnth(keys, 1);
+        keys = ll_nth(keys, 1);
     }
 }
 /* _______ END of STS Functions _______ */

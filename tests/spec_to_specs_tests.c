@@ -13,7 +13,7 @@ void add_test(void) {
     }
 
     i = N;
-    for (StrList *key = sts->keys; key; key = llnth(key, 1)) {
+    for (StrList *key = sts->keys; key; key = ll_nth(key, 1)) {
         ids_from_sts[--i] = key->data;
     }
 
@@ -40,7 +40,7 @@ void merge_test(void) {
     TEST_CHECK(s1->similar == s2->similar);
 
     for (i = 0; i < 2; i++) {
-        TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) llnth(s1->similar, i))->data->id) == 0);
+        TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
     }
 }
 

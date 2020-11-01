@@ -20,8 +20,8 @@ char *list_to_str(list *Ls) {
     strcpy(out, "(");
     static char current[50] = {0};
 
-    for (list *L = Ls; L; L = llnth(L, 1)) {
-        if (llnth(L, 1))
+    for (list *L = Ls; L; L = ll_nth(L, 1)) {
+        if (ll_nth(L, 1))
             sprintf(current, "%d, ", L->data);
         else
             sprintf(current, "%d", L->data);
@@ -67,7 +67,7 @@ list *make_list2_r(int Data[], int N, list Nodes[]) {
         /* inserting at the start of the list should reverse the elements */
         /* we expect the list to be (0, 1, 2, 3, .. N) */
         Nodes[i].data = Data[i];
-        llpush(&out, &Nodes[i]);
+        ll_push(&out, &Nodes[i]);
     }
     return out;
 }
@@ -79,7 +79,7 @@ list *make_list2(int Data[], int N) {
         /* inserting at the start of the list should reverse the elements */
         /* we expect the list to be (0, 1, 2, 3, .. N) */
         Nodes[i].data = Data[i];
-        llpush(&out, &Nodes[i]);
+        ll_push(&out, &Nodes[i]);
     }
     return out;
 }
@@ -91,7 +91,7 @@ list *make_list(int N) {
         /* inserting at the start of the list should reverse the elements */
         /* we expect the list to be (0, 1, 2, 3, .. N) */
         some_nodes[i].data = i;
-        llpush(&out, &some_nodes[i]);
+        ll_push(&out, &some_nodes[i]);
     }
     return out;
 }
@@ -102,7 +102,7 @@ list *make_list_r(int N, list nodes[]) {
         /* inserting at the start of the list should reverse the elements */
         /* we expect the list to be (0, 1, 2, 3, .. N) */
         nodes[i].data = i;
-        llpush(&out, &nodes[i]);
+        ll_push(&out, &nodes[i]);
     }
     return out;
 }
@@ -117,7 +117,7 @@ void push_test(void) {
         /* inserting at the start of the list should reverse the elements */
         /* we expect the list to be (0, 1, 2, 3, .. N) */
         some_nodes[i].data = i;
-        llpush(&Is, &some_nodes[i]);
+        ll_push(&Is, &some_nodes[i]);
     }
 
     /* i-th element of the list should contain i */
@@ -133,12 +133,12 @@ void nth_test(void) {
 
     int i = 0;
     for (list *t = Is; t; t = t->next) {
-        assert(t == llnth(Is, i));
+        assert(t == ll_nth(Is, i));
         i++;
     }
 
-    /* llnth should be able to handle NULL (empty) lists*/
-    assert(llnth(NULL, 100) == NULL);
+    /* ll_nth should be able to handle NULL (empty) lists*/
+    assert(ll_nth(NULL, 100) == NULL);
 }
 
 void length_test(void) {
@@ -146,9 +146,9 @@ void length_test(void) {
     list *Is = make_list(N);
 
     /* length of the list should be N */
-    assert(lllen(Is) == N);
-    assert(lllen(llnth(Is, 2)) == N - 2);
-    assert(lllen(NULL) == 0);
+    assert(ll_len(Is) == N);
+    assert(ll_len(ll_nth(Is, 2)) == N - 2);
+    assert(ll_len(NULL) == 0);
 }
 
 void pop_test(void) {
@@ -157,11 +157,11 @@ void pop_test(void) {
 
     int counter = 0;
     while (Is) {
-        for (int i = 0; llnth(Is, i); i++) {
-            list *temp = llnth(Is, i);
+        for (int i = 0; ll_nth(Is, i); i++) {
+            list *temp = ll_nth(Is, i);
             assert(temp->data == i + counter);
         }
-        llpop(&Is);
+        ll_pop(&Is);
         counter++;
     }
     assert(counter == N);
@@ -172,10 +172,10 @@ void search_test(void) {
     list *Is = make_list(N);
 
     for (int i = 0; i <= N; i++) {
-        list *result = llsearch(Is, &eq_pred, i);
+        list *result = ll_search(Is, &eq_pred, i);
         assert((result != NULL) == (i < N));
         if (i < N) {
-            assert(result == llnth(Is, i));
+            assert(result == ll_nth(Is, i));
         }
     }
 }
@@ -184,17 +184,17 @@ void split_test(void) {
     int N = 9;
     list *Is = make_list(N);
     list *As, *Bs;
-    llsplit(&Is, &As, &Bs, N / 2);
-    assert(lllen(As) == N / 2);
-    assert(lllen(Bs) == N - N / 2);
+    ll_split(&Is, &As, &Bs, N / 2);
+    assert(ll_len(As) == N / 2);
+    assert(ll_len(Bs) == N - N / 2);
 
     for (int i = 0; i < N / 2; i++) {
-        list *t = llnth(As, i);
+        list *t = ll_nth(As, i);
         assert(t->data == i);
     }
 
     for (int i = 0; i < N - N / 2; i++) {
-        list *t = llnth(Bs, i);
+        list *t = ll_nth(Bs, i);
         assert(t->data == i + N / 2);
     }
 }
@@ -202,7 +202,7 @@ void split_test(void) {
 void tail_test(void) {
     int N = 5;
     list *As = make_list(N);
-    As = lltail(As);
+    As = ll_tail(As);
     assert(As->data == N - 1);
 }
 
@@ -214,12 +214,12 @@ void pushlist_test(void) {
     As = make_list_r(N, Anodes);
     Bs = make_list_r(M, Bnodes);
 
-    llpushlist(&As, Bs);
+    ll_pushlist(&As, Bs);
 
-    assert(lllen(As) == N + M);
+    assert(ll_len(As) == N + M);
 
     for (int i = 0; i < N + M; i++) {
-        list *temp = llnth(As, i);
+        list *temp = ll_nth(As, i);
 
         if (temp)
             assert (temp->data == i - (i >= M ? M : 0));
@@ -232,19 +232,19 @@ void merge_test(void) {
     As = make_list2_r((int[]) {1, 3, 5, 7}, 4, Anodes);
     Bs = make_list2_r((int[]) {0, 2, 4, 6, 8, 9, 10}, 7, Bnodes);
 
-    list *Ms = llsort_merge(&As, &Bs, (llcmpr) &int_sort);
+    list *Ms = ll_sort_merge(&As, &Bs, (llcmpr) &int_sort);
 
     int i = 0;
-    for (list *x = Ms; x; x = llnth(x, 1)) {
+    for (list *x = Ms; x; x = ll_nth(x, 1)) {
         assert(x->data == i++);
     }
 }
 
 void sort_test(void) {
     list *As = make_list2((int[]) {1, 9, 2, 4, 3, 7, 6, 5, 8, 0}, 10);
-    llsort(&As, (llcmpr) &int_sort);
-    for (list *A = As; A; A = llnth(A, 1)) {
-        list *nextA = llnth(A, 1);
+    ll_sort(&As, (llcmpr) &int_sort);
+    for (list *A = As; A; A = ll_nth(A, 1)) {
+        list *nextA = ll_nth(A, 1);
         if (nextA) {
             assert(A->data <= nextA->data);
         }
@@ -261,11 +261,11 @@ void *inc1(void *node, va_list args) {
 
 void map_test(void) {
     list *As = make_list(10);
-    list *Bs = llmap(As, inc1);
+    list *Bs = ll_map(As, inc1);
     list *B = Bs;
     LLFOREACH(A, As) {
         TEST_CHECK(A->data + 1 == B->data);
-        B = llnth(B, 1);
+        B = ll_nth(B, 1);
     }
 }
 

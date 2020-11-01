@@ -16,8 +16,8 @@ bool tokenize_word(char *word) {
     StrList *tokens;
     char *rest;
     tokens = json_tokenize_str(word, &rest);
-    bool success = (lllen(tokens) == 1) && (strcmp(tokens->data, word) == 0);
-    llfree(tokens, (llfree_f) json_free_StrList);
+    bool success = (ll_len(tokens) == 1) && (strcmp(tokens->data, word) == 0);
+    ll_free(tokens, (llfree_f) json_free_StrList);
     return success;
 }
 
@@ -26,13 +26,13 @@ bool tokenize_sentence(char *str, char **expected_tokens) {
     char *rest;
     tokens = json_tokenize_str(str, &rest);
     int i = 0;
-    for (StrList *tok = tokens; tok; tok = llnth(tok, 1)) {
+    for (StrList *tok = tokens; tok; tok = ll_nth(tok, 1)) {
         if (expected_tokens[i] == NULL)
             return false;
         if (strcmp(tok->data, expected_tokens[i++]))
             return false;
     }
-    llfree(tokens, (llfree_f) json_free_StrList);
+    ll_free(tokens, (llfree_f) json_free_StrList);
     return expected_tokens[i] == NULL;
 }
 
@@ -173,7 +173,7 @@ void tokenize_multiword(void) {
 
     /* check if we consumed all the input */
     TEST_CHECK(strlen(rest) == 0);
-    llfree(toks, (llfree_f) json_free_StrList);
+    ll_free(toks, (llfree_f) json_free_StrList);
 }
 
 void tokenize_invalid(void) {
@@ -189,7 +189,7 @@ void tokenize_invalid(void) {
 /* ________________________________________ */
 
 #define CLEANUP()                                                              \
-    llfree(tokens, (llfree_f)json_free_StrList);                               \
+    ll_free(tokens, (llfree_f)json_free_StrList);                               \
     json_entity_free(ent)
 
 void parse_number(void) {
@@ -234,7 +234,7 @@ void parse_obj(void) {
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(ent->type == JSON_OBJ); /* type should be array */
     StrList *keys = json_get_obj_keys(ent);
-    TEST_CHECK(lllen(keys) == 3); /* length should be 3 */
+    TEST_CHECK(ll_len(keys) == 3); /* length should be 3 */
     bool removed = false;
     LLFOREACH(key, keys) {
         for (int i = 0; i < ARR_LEN(expected_keys); i++) {
