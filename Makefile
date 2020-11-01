@@ -1,16 +1,15 @@
 OBJS	= main.o lists.o spec_to_specs.o spec_ids.o hash.o
 SOURCE	= main.c lists.c spec_to_specs.c spec_ids.c	hash.c
 HEADER	= lists.h spec_to_specs.h spec_ids.h hash.h
-OUT	= project
-CC	 = gcc
-CFLAGS	 = -g -Wall
-LFLAGS	 = 
+OUT		= project
+CC		= gcc
+CFLAGS	= -g -Wall
 
 .PHONY: tests all clean githooks
 
 all: tests
 	$(MAKE) -C objs $(OBJS)
-	$(CC) $(foreach d, $(OBJS), objs/$d) -o $(OUT) $(LFLAGS)
+	$(CC) $(foreach d, $(OBJS), objs/$d) -o $(OUT)
 
 tests:
 	$(MAKE) -C tests-bin
