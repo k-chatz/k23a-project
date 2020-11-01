@@ -25,38 +25,38 @@ struct Hashtable {
 
 /***Private functions***/
 
-void _getCount(pointer bucket, unsigned long int bucketSize, unsigned long int *count) {
+void getCount(pointer bucket, unsigned long int bucketSize, unsigned long int *count) {
     memcpy(count, bucket + bucketSize - sizeof(unsigned long int) - sizeof(pointer), sizeof(unsigned long int));
 }
 
-void _setCount(pointer bucket, unsigned long int bucketSize, const unsigned long int count) {
+void setCount(pointer bucket, unsigned long int bucketSize, const unsigned long int count) {
     memcpy(bucket + bucketSize - sizeof(unsigned long int) - sizeof(pointer), &count, sizeof(unsigned long int));
 }
 
-void _getNext(pointer bucket, unsigned long int bucketSize, pointer *next) {
+void getNext(pointer bucket, unsigned long int bucketSize, pointer *next) {
     memcpy(next, bucket + bucketSize - sizeof(pointer), sizeof(pointer));
 }
 
-void _setNext(pointer bucket, unsigned long int bucketSize, pointer next) {
+void setNext(pointer bucket, unsigned long int bucketSize, pointer next) {
     memcpy(bucket + bucketSize - sizeof(pointer), &next, sizeof(pointer));
 }
 
-void _getValue(pointer bucket, unsigned long int offset, pointer *value) {
+void getValue(pointer bucket, unsigned long int offset, pointer *value) {
     memcpy(value, bucket + offset * sizeof(pointer), sizeof(pointer));
 }
 
-void _setValue(pointer bucket, unsigned long int offset, pointer value) {
+void setValue(pointer bucket, unsigned long int offset, pointer value) {
     memcpy(bucket + offset * sizeof(pointer), &value, sizeof(pointer));
 }
 
-unsigned long int _getEmptySlots(unsigned long int bucketSize, unsigned long int count) {
+unsigned long int getEmptySlots(unsigned long int bucketSize, unsigned long int count) {
     return (bucketSize - sizeof(pointer) - sizeof(unsigned long int)) / sizeof(pointer) - count;
 }
 
-const pointer _allocBucket(unsigned long int size) {
+pointer allocBucket(unsigned long int size) {
     pointer bucket = malloc((size_t) size);
     if (bucket != NULL) {
-        _setNext(bucket, size, NULL);
+        setNext(bucket, size, NULL);
     }
     return bucket;
 }
@@ -111,11 +111,11 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
     if (bucket == NULL) {
         slotValue = ht->createValue(valueParams);
         if (slotValue != NULL) {
-            bucket = _allocBucket(ht->bucketSize);
-            _setValue(bucket, 0, slotValue);
+            bucket = allocBucket(ht->bucketSize);
+            setValue(bucket, 0, slotValue);
             *value = slotValue;
             //printf("--> [%p] ", *value);
-            _setCount(bucket, ht->bucketSize, 1);
+            setCount(bucket, ht->bucketSize, 1);
             ht->table[index] = bucket;
         } else {
             return false;
@@ -127,12 +127,12 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
         /* Check each bucket to detect possibly duplicate values and
          * determine where is the target slot to write the new value.*/
         while (next != NULL) {
-            _getCount(bucket, ht->bucketSize, &count);
-            slots = _getEmptySlots(ht->bucketSize, count);
+            getCount(bucket, ht->bucketSize, &count);
+            slots = getEmptySlots(ht->bucketSize, count);
 
             /*Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
-                _getValue(bucket, slot, &slotValue);
+                getValue(bucket, slot, &slotValue);
                 if (!ht->cmp(slotValue, key)) {
                     //printf(":::DUPLICATE::: ");
                     //printf("\n");
@@ -142,7 +142,7 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
             }
 
             /*Get next pointer to determine if this bucket has an overflow bucket*/
-            _getNext(bucket, ht->bucketSize, &next);
+            getNext(bucket, ht->bucketSize, &next);
 
             if (next != NULL) {
                 bucket = next;
@@ -154,9 +154,9 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
             //printf(":::BUCKET [%p] HAS %lu SLOTS::: ", bucket, slots - 1);
             slotValue = ht->createValue(valueParams);
             if (slotValue != NULL) {
-                _setValue(bucket, slot, slotValue);
+                setValue(bucket, slot, slotValue);
                 *value = slotValue;
-                _setCount(bucket, ht->bucketSize, count + 1);
+                setCount(bucket, ht->bucketSize, count + 1);
             } else {
                 return false;
             }
@@ -164,12 +164,12 @@ int HT_Insert(Hashtable ht, pointer key, pointer valueParams, pointer *value) {
             //printf(":::BUCKET [%p] IS FULL::: ", bucket);
             slotValue = ht->createValue(valueParams);
             if (slotValue != NULL) {
-                b = _allocBucket(ht->bucketSize);
+                b = allocBucket(ht->bucketSize);
                 //printf(" --> ALLOCATE BUCKET [%p] ", b);
-                _setNext(bucket, ht->bucketSize, b);
-                _setValue(b, 0, slotValue);
+                setNext(bucket, ht->bucketSize, b);
+                setValue(b, 0, slotValue);
                 *value = slotValue;
-                _setCount(b, ht->bucketSize, 1);
+                setCount(b, ht->bucketSize, 1);
             } else {
                 return false;
             }
@@ -193,18 +193,18 @@ pointer HT_Get(Hashtable ht, pointer key) {
 
         /* Check each bucket to determine where is the target slot.*/
         while (next != NULL) {
-            _getCount(bucket, ht->bucketSize, &count);
+            getCount(bucket, ht->bucketSize, &count);
 
             /*Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
-                _getValue(bucket, slot, &v);
+                getValue(bucket, slot, &v);
                 if (!ht->cmp(v, key)) {
                     return v;
                 }
             }
 
             /*Get next pointer to determine if this bucket has an overflow bucket*/
-            _getNext(bucket, ht->bucketSize, &next);
+            getNext(bucket, ht->bucketSize, &next);
             if (next != NULL) {
                 bucket = next;
             }
@@ -231,11 +231,11 @@ int HT_Remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyI
 
         /* Check each bucket to detect target value, resume until last bucket.*/
         while (next != NULL) {
-            _getCount(bucket, ht->bucketSize, &count);
+            getCount(bucket, ht->bucketSize, &count);
 
             /* Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
-                _getValue(bucket, slot, &slotValue);
+                getValue(bucket, slot, &slotValue);
                 /* Check for target slot*/
                 if (!ht->cmp(slotValue, valueParams)) {
                     targetBucket = bucket;
@@ -243,13 +243,13 @@ int HT_Remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyI
                     if (forceDestroyItem) {
                         ht->destroy(slotValue);
                     }
-                    _setValue(bucket, slot, NULL);
+                    setValue(bucket, slot, NULL);
                     slotValue = NULL;
                 }
             }
 
             /* Get next pointer to determine if this bucket has an overflow bucket*/
-            _getNext(bucket, ht->bucketSize, &next);
+            getNext(bucket, ht->bucketSize, &next);
 
             if (next != NULL) {
                 bucket = next;
@@ -258,11 +258,11 @@ int HT_Remove(Hashtable ht, pointer key, pointer valueParams, bool forceDestroyI
 
         /* Move last found slotValue in targetSlotValue*/
         if (targetBucket != NULL) {
-            _setValue(targetBucket, targetSlot, slotValue);
-            _setValue(bucket, slot, NULL);
-            _getCount(bucket, ht->bucketSize, &count);
+            setValue(targetBucket, targetSlot, slotValue);
+            setValue(bucket, slot, NULL);
+            getCount(bucket, ht->bucketSize, &count);
             if (count > 0) {
-                _setCount(bucket, ht->bucketSize, --count);
+                setCount(bucket, ht->bucketSize, --count);
             }
         }
     }
@@ -281,19 +281,19 @@ void HT_Destroy(Hashtable *ht, bool forceDestroyItem) {
             //printf("[%.3lu] -->", i);
 
             while (next != NULL) {
-                _getCount(bucket, (*ht)->bucketSize, &count);
+                getCount(bucket, (*ht)->bucketSize, &count);
 
                 /*Get value for each slot of bucket to destroy it.*/
                 if (forceDestroyItem) {
                     for (slot = 0; slot < count; slot++) {
-                        _getValue(bucket, slot, &slotValue);
+                        getValue(bucket, slot, &slotValue);
                         (*ht)->destroy(slotValue);
                         //printf("[%p] ", slotValue);
                     }
                 }
 
                 /*Get next pointer to determine if this bucket has an overflow bucket.*/
-                _getNext(bucket, (*ht)->bucketSize, &next);
+                getNext(bucket, (*ht)->bucketSize, &next);
 
                 free(bucket);
 
@@ -317,14 +317,14 @@ void HT_print(Hashtable ht) {
         bucket = ht->table[i];
         /* Check each bucket to determine where is the target slot.*/
         while (bucket != NULL) {
-            _getCount(bucket, ht->bucketSize, &count);
+            getCount(bucket, ht->bucketSize, &count);
             /*Get value for each slot of bucket*/
             for (slot = 0; slot < count; slot++) {
-                _getValue(bucket, slot, &v);
+                getValue(bucket, slot, &v);
                 ht->printValue(v);
             }
             /*Get next pointer to determine if this bucket has an overflow bucket*/
-            _getNext(bucket, ht->bucketSize, &bucket);
+            getNext(bucket, ht->bucketSize, &bucket);
 
             bucketNum++;
         }
