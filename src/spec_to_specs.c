@@ -11,6 +11,10 @@ static void *mk_spec(void *id) {
     return new;
 }
 
+void print_spec(void *spec) {
+    printf("spec_id = %s\n", ((SpecEntry*)spec)->id);
+}
+
 /* Hash an id */
 static ulong hash_spec(void *id, ulong htcap) {
     ulong sum = 0;
@@ -53,6 +57,7 @@ STS *sts_new() {
             HT_BSZ,
             mk_spec,
             cmp_spec,
+            print_spec,
             hash_spec,
             destroy_spec);
     new->keys = NULL;

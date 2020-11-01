@@ -394,7 +394,7 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
 	*rest = llnth(*rest, 1);
         Hashtable kvs;
         HT_Init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
-                &json_obj_entry_cmp, &hash_str, json_obj_entry_free);
+                &json_obj_entry_cmp, NULL , &hash_str, json_obj_entry_free);
         StrList *keys = NULL;
         struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
         while (new_ent) {
