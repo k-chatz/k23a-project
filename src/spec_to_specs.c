@@ -66,11 +66,11 @@ STS *sts_new() {
 
 /* adds a node to the sts */
 int sts_add(STS *sts, char *id) {
-    void *_;
+    SpecEntry specEntry;
     StrList *new_id = malloc(sizeof(StrList));
     new_id->data = strdup(id);
     ll_push(&(sts->keys), new_id);
-    ht_insert(sts->ht, id, id, &_);
+    ht_insert(sts->ht, id, id, (void **) &specEntry);
     return 0;
 }
 

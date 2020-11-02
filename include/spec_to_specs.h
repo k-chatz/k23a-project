@@ -19,8 +19,7 @@ typedef struct SpecEntry_s SpecEntry;
 typedef LISTOF(char*) StrList;
 typedef LISTOF(SpecEntry*) SpecList;
 
-typedef
-struct {
+typedef struct {
     Hashtable ht;
     StrList *keys;
 } STS;

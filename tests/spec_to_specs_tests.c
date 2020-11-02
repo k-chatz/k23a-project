@@ -26,7 +26,7 @@ void add_test(void) {
 
     /* compare the two arrays */
     for (i = 0; i < N; i++) {
-        TEST_CHECK(strcmp(ids[i], ids_from_sts[i]) == 0);
+                TEST_CHECK(strcmp(ids[i], ids_from_sts[i]) == 0);
     }
 }
 
@@ -53,14 +53,14 @@ void merge_test(void) {
     s6 = sts_get(sts, "6");
 
     /* check if s1 and s2 point to the same list */
-    TEST_CHECK(s1->similar == s2->similar);
+            TEST_CHECK(s1->similar == s2->similar);
             TEST_CHECK(s2->similar == s3->similar);
             TEST_CHECK(s3->similar == s6->similar);
             TEST_CHECK(s2->similar == s4->similar);
             TEST_CHECK(s4->similar == s5->similar);
 
 /*    for (int i = 0; i < 2; i++) {
-        TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
+                TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
     }*/
 }
 

@@ -37,10 +37,10 @@ int main(int argc, char *argv[]) {
     while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
         if (!strcmp(label, "1") && strcmp(left_spec_id, right_spec_id) != 0) {
             sts_merge(dataset_X, left_spec_id, right_spec_id);
-    }
+        }
     }
     fclose(fp);
-
+    
     //print result
     print_sts(dataset_X);
 

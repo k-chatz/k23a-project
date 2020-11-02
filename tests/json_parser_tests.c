@@ -16,7 +16,7 @@ bool tokenize_word(char *word) {
     char *rest;
     tokens = json_tokenize_str(word, &rest);
     bool success = (ll_len(tokens) == 1) && (strcmp(tokens->data, word) == 0);
-    ll_free(tokens, (llfree_f) json_free_StrList);
+    ll_free(tokens, (llfree_f) json_free_StringList);
     return success;
 }
 
@@ -31,7 +31,7 @@ bool tokenize_sentence(char *str, char **expected_tokens) {
         if (strcmp(tok->data, expected_tokens[i++]))
             return false;
     }
-    ll_free(tokens, (llfree_f) json_free_StrList);
+    ll_free(tokens, (llfree_f) json_free_StringList);
     return expected_tokens[i] == NULL;
 }
 
@@ -172,7 +172,7 @@ void tokenize_multiword(void) {
 
     /* check if we consumed all the input */
     TEST_CHECK(strlen(rest) == 0);
-    ll_free(toks, (llfree_f) json_free_StrList);
+    ll_free(toks, (llfree_f) json_free_StringList);
 }
 
 void tokenize_invalid(void) {
@@ -188,7 +188,7 @@ void tokenize_invalid(void) {
 /* ________________________________________ */
 
 #define CLEANUP()                                                              \
-    ll_free(tokens, (llfree_f)json_free_StrList);                               \
+    ll_free(tokens, (llfree_f)json_free_StringList);                               \
     json_entity_free(ent)
 
 void parse_number(void) {
