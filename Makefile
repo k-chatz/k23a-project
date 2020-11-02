@@ -5,7 +5,7 @@ OUT		= project
 CC		= gcc
 CFLAGS	= -g -Wall
 
-.PHONY: tests all clean githooks
+.PHONY: tests all clean githooks docs
 
 all: tests
 	$(MAKE) -C objs $(OBJS)

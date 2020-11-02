@@ -5,83 +5,192 @@
 
 typedef LISTOF(char*) StringList;
 
+/*!
+\defgroup json_parser Json Parser
+This module provides a parser and a tokenizer for json inputs.
+
+\brief JSON parser and tokenizer logic.
+
+### Example usage
+@code{.c}
+void parse_obj(void) {
+
+    char *rest_str;
+    StringList *rest_toks;
+    StringList *tokens = json_tokenize_str(
+            "{\"foo\" : 5, \"bar\" : false, \"baz\" : [true]}", &rest_str);
+    // rest_str should point to the null terminator of the input string
+    // tokens should contain a list of all the tokens in the input string
+    JSON_ENTITY *ent = json_parse_value(tokens, &rest_toks);
+    // rest_toks should point to NULL
+    // ent should be a JSON_OBJ with 3 keys
+
+    JSON_ENTITY *foo, *bar, *baz;
+    foo = json_get(ent, "\"foo\"");
+    bar = json_get(ent, "\"bar\"");
+    baz = json_get(ent, "\"baz\"");
+
+    CLEANUP();
+}
+@endcode
+@{
+ */
+
+
+/*!
+\brief The possible types of a json value.
+ */
 typedef enum {
+    /*! json object type */
     JSON_OBJ,
+    /*! json array type */
     JSON_ARRAY,
+    /*! json number type */
     JSON_NUM,
+    /*! json boolean type */
     JSON_BOOL,
-    JSON_STRING
+    /*! json string type */
+    JSON_STRING,
+    /*! json null type-like */
+    JSON_NULL
 } json_type;
 
-struct json_entity_vt {
-    char *(*toStr)(void *this);
-};
+/*!
+\brief The representation used for json values.
 
+When reasoning about it in code, the type should be consulted first and then
+the appropriate access functions.
+ */
 typedef struct {
-    /* struct json_entity_vt *json_vt; */
+    /*! \brief the type of the value represented with this struct */
     const json_type type;
+    /*! \brief the data associated with the value */
     char data[];
 } JSON_ENTITY;
 
+/*!
+\brief Splits an input string to tokens.
+
+Tokens produced from the tokenizer are:
++ "true"
++ "false"
++ "null"
++ "{"
++ "}"
++ ":"
++ "["
++ "]"
++ ","
++ numbers as defined in the json standard
++ strings as defined in the json standard
+
+
+@param[in] str : the input string
+@param[out] rest : a pointer to the postfix of str, that failed to be tokenized.
+@returns a list of tokens
+ */
 StringList *json_tokenize_str(char *str, char **rest);
 
-struct JSON_OBJ_ENTRY {
-    char *key;
-    JSON_ENTITY *value;
-};
+/*!
+@brief Converts a json_type to a string representation.
 
-typedef struct {
-    int length;
-    JSON_ENTITY **contents;
-} JSON_ARRAY_DATA;
-
-typedef struct {
-    StringList *keys;
-    Hashtable contents;
-} JSON_OBJECT_DATA;
-
-double json_to_double(JSON_ENTITY *Ent);
-
-char *json_to_string(JSON_ENTITY *Ent);
-
-bool json_to_bool(JSON_ENTITY *Ent);
-
-int json_get_arr_length(JSON_ENTITY *Ent);
-
-StringList *json_get_obj_keys(JSON_ENTITY *Ent);
-
-JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...);
-
-void json_entity_free(JSON_ENTITY *ent);
-
-JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
-
-JSON_ENTITY *json_new_num(double num);
-
-JSON_ENTITY *json_new_str(char *str);
-
-JSON_ENTITY *json_new_bool(bool b);
-
-JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length);
-
-JSON_ENTITY *json_new_obj(Hashtable kvs, StringList *keys);
-
+The string is statically allocated and does not need to be freed
+@param[in] t : the json_type
+@returns a string that describes t
+ */
 char *json_type_to_str(json_type t);
 
-struct JSON_OBJ_ENTRY *new_json_obj_entry(char *key, JSON_ENTITY *val);
+/*!
+@relates JSON_ENTITY
+@brief Converts a JSON_ENTITY encapsulated double to a C double
 
-ulong json_obj_entry_free(void *joe);
+@param[in] Ent : A JSON_ENTITY with type JSON_NUM
+@returns the number stored in the entity
+ */
+double json_to_double(JSON_ENTITY *Ent);
 
-struct JSON_OBJ_ENTRY *json_parse_object_entry(StringList *tokens, StringList **rest);
+/*!
+@relates JSON_ENTITY
+@brief Converts a JSON_ENTITY encapsulated string to a C string
 
-JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest);
+@param[in] Ent : A JSON_ENTITY with type JSON_STRING
+@returns the string stored in the entity
+ */
+char *json_to_string(JSON_ENTITY *Ent);
 
-JSON_ENTITY *json_parse_array(StringList *tokens, StringList **rest);
+/*!
+@relates JSON_ENTITY
+@brief Converts a JSON_ENTITY encapsulated bool to a C bool
 
+@param[in] Ent : A JSON_ENTITY with type JSON_BOOL
+@returns the bool stored in the entity
+ */
+bool json_to_bool(JSON_ENTITY *Ent);
+
+/*!
+@relates JSON_ENTITY
+@brief Get the length of a JSON_ARRAY
+
+@param[in] Ent : A JSON_ENTITY with type JSON_ARRAY
+@returns the length of the array stored in the entity
+ */
+int json_get_arr_length(JSON_ENTITY *Ent);
+
+/*!
+@relates JSON_ENTITY
+@brief Get the keys of a JSON_OBJECT
+
+@param[in] Ent : A JSON_ENTITY with type JSON_OBJ
+@returns the list of keys of the json object stored in the entity
+ */
+StringList *json_get_obj_keys(JSON_ENTITY *Ent);
+
+/*!
+@relates JSON_ENTITY
+@brief Get a member of the json value
+
+can either be called as json_get(JSON_ENTITY*, int) or
+json_get(JSON_ENTITY*, char*)
+@param[in] Ent : A JSON_ENTITY with type of either JSON_ARRAY or JSON_OBJ
+@param[in] key_or_index : If Ent is a JSON_OBJ,
+this is interpreted as a string and returns the JSON_ENTITY associated with the
+key on the object. Otherwise, if Ent is a JSON_ARRAY, this is interpreted as an
+int and the key_or_index-th element of the array is returned.
+ */
+JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...);
+
+/*!
+@relates JSON_ENTITY
+@brief Frees a JSON_ENTITY. 
+
+If it is an object or an array, this recursively frees the contents as well.
+@param[in] ent : the entity to be freed
+ */
+void json_entity_free(JSON_ENTITY *ent);
+
+/*!
+@brief Parses a json value from a list of tokens.
+
+The value can be of any of the types in the JSON standard
+(ie. number, string, boolean, object, array).
+The resulting JSON_ENTITY, if not NULL, should be freed with json_entity_free.
+@param[in] tokens : A list of tokens
+@param[out] rest : a pointer to the first unconsumed token, if all tokens were
+consumed, NULL
+@returns the JSON_ENTITY built by reading the tokens
+ */
 JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
 
+/*!
+@brief Prints a json value
+@param[in] val : the value to be printed
+ */
 void json_print_value(JSON_ENTITY *val);
 
-JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
+/*!
+@brief Parses a list of tokens that represents a json file
 
-void json_free_StrList(StringList *list);
+@param[in] tokens : the list of tokens
+ */
+JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
+/*! @} */
