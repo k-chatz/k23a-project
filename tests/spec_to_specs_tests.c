@@ -1,7 +1,6 @@
-#include "../include/acutest.h"
 #include "../include/spec_to_specs.h"
 
-//#include "../include/acutest.h"
+#include "../include/acutest.h"
 #ifndef ACUTEST_H
 
 #include <assert.h>
@@ -32,24 +31,37 @@ void add_test(void) {
 }
 
 void merge_test(void) {
+    SpecEntry *s1, *s2, *s3, *s4, *s5, *s6;
     STS *sts = sts_new();
-    char *ids[] = {"1", "2"};
-    int i;
-    for (i = 0; i < N; i++) {
+    char *ids[] = {"1", "2", "3", "4", "5", "6"};
+    for (int i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
     }
-
+    sts_merge(sts, "1", "1");
     sts_merge(sts, "1", "2");
-    SpecEntry *s1, *s2;
+    sts_merge(sts, "1", "3");
+    sts_merge(sts, "2", "5");
+    sts_merge(sts, "3", "6");
+    sts_merge(sts, "4", "6");
+    sts_merge(sts, "3", "4");
+
     s1 = sts_get(sts, "1");
     s2 = sts_get(sts, "2");
+    s3 = sts_get(sts, "3");
+    s4 = sts_get(sts, "4");
+    s5 = sts_get(sts, "5");
+    s6 = sts_get(sts, "6");
 
     /* check if s1 and s2 point to the same list */
     TEST_CHECK(s1->similar == s2->similar);
+            TEST_CHECK(s2->similar == s3->similar);
+            TEST_CHECK(s3->similar == s6->similar);
+            TEST_CHECK(s2->similar == s4->similar);
+            TEST_CHECK(s4->similar == s5->similar);
 
-    for (i = 0; i < 2; i++) {
+/*    for (int i = 0; i < 2; i++) {
         TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
-    }
+    }*/
 }
 
 #ifndef ACUTEST_H
