@@ -79,6 +79,10 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     SpecEntry *spec1, *spec2;
     spec1 = ht_get(sts->ht, id1);
     spec2 = ht_get(sts->ht, id2);
+
+    if (spec1->similar == spec2->similar)
+        return 0;
+
     SpecList *spec2_similar = spec2->similar;
     SpecList *iter;
 
