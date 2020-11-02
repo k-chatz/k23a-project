@@ -40,11 +40,4 @@ add_executable(k23a_project
         src/json_parser.c
         src/spec_ids.c
         src/spec_to_specs.c
-        src/read_csv.c
-        include/lists.h
-        include/hash.h
-        include/json_parser.h
-        include/read_csv.h
-        include/spec_ids.h
-        include/spec_to_specs.h
         )
