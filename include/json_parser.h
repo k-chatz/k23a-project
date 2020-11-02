@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-typedef LISTOF(char*) StrList;
+typedef LISTOF(char*) StringList;
 
 typedef enum {
     JSON_OBJ,
@@ -23,7 +23,7 @@ typedef struct {
     char data[];
 } JSON_ENTITY;
 
-StrList *json_tokenize_str(char *str, char **rest);
+StringList *json_tokenize_str(char *str, char **rest);
 
 struct JSON_OBJ_ENTRY {
     char *key;
@@ -36,7 +36,7 @@ typedef struct {
 } JSON_ARRAY_DATA;
 
 typedef struct {
-    StrList *keys;
+    StringList *keys;
     Hashtable contents;
 } JSON_OBJECT_DATA;
 
@@ -48,13 +48,13 @@ bool json_to_bool(JSON_ENTITY *Ent);
 
 int json_get_arr_length(JSON_ENTITY *Ent);
 
-StrList *json_get_obj_keys(JSON_ENTITY *Ent);
+StringList *json_get_obj_keys(JSON_ENTITY *Ent);
 
 JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...);
 
 void json_entity_free(JSON_ENTITY *ent);
 
-JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest);
+JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
 
 JSON_ENTITY *json_new_num(double num);
 
@@ -64,7 +64,7 @@ JSON_ENTITY *json_new_bool(bool b);
 
 JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length);
 
-JSON_ENTITY *json_new_obj(Hashtable kvs, StrList *keys);
+JSON_ENTITY *json_new_obj(Hashtable kvs, StringList *keys);
 
 char *json_type_to_str(json_type t);
 
@@ -72,16 +72,16 @@ struct JSON_OBJ_ENTRY *new_json_obj_entry(char *key, JSON_ENTITY *val);
 
 ulong json_obj_entry_free(void *joe);
 
-struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens, StrList **rest);
+struct JSON_OBJ_ENTRY *json_parse_object_entry(StringList *tokens, StringList **rest);
 
-JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest);
+JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest);
 
-JSON_ENTITY *json_parse_array(StrList *tokens, StrList **rest);
+JSON_ENTITY *json_parse_array(StringList *tokens, StringList **rest);
 
-JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest);
+JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
 
 void json_print_value(JSON_ENTITY *val);
 
-JSON_ENTITY *json_parse_from_tokens(StrList *tokens);
+JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
 
-void json_free_StrList(StrList *list);
+void json_free_StrList(StringList *list);

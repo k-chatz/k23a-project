@@ -145,8 +145,8 @@ static char *eat_ws(char *str) {
     return out;
 }
 
-StrList *json_tokenize_str(char *str, char **rest) {
-    StrList *out = NULL;
+StringList *json_tokenize_str(char *str, char **rest) {
+    StringList *out = NULL;
     char *current;
     int current_len;
     do {
@@ -154,7 +154,7 @@ StrList *json_tokenize_str(char *str, char **rest) {
         current = json_next_token(str, &current_len);
         str += current_len;
         if (current_len > 0) {
-            StrList *thisTok = malloc(sizeof(StrList));
+            StringList *thisTok = malloc(sizeof(StringList));
             thisTok->data = current;
             ll_push(&out, thisTok);
         } else {
@@ -203,7 +203,7 @@ JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length) {
     return new;
 }
 
-JSON_ENTITY *json_new_obj(Hashtable kvs, StrList *keys) {
+JSON_ENTITY *json_new_obj(Hashtable kvs, StringList *keys) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(JSON_OBJECT_DATA));
     /* new->json_vt = json_int_vt; */
     *((json_type *) (&new->type)) = JSON_OBJ; /* assign to const */
@@ -271,7 +271,7 @@ int json_get_arr_length(JSON_ENTITY *Ent) {
     return datap->length;
 }
 
-StrList *json_get_obj_keys(JSON_ENTITY *Ent) {
+StringList *json_get_obj_keys(JSON_ENTITY *Ent) {
     if (Ent->type != JSON_OBJ) {
         fprintf(stderr,
                 "Attempted to get length from json entity of type %s(Expected "
@@ -365,9 +365,9 @@ ulong json_obj_entry_free(void *joe) {
     return 0;
 }
 
-struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
-                                               StrList **rest) {
-    StrList *key, *colon, *val_start;
+struct JSON_OBJ_ENTRY *json_parse_object_entry(StringList *tokens,
+                                               StringList **rest) {
+    StringList *key, *colon, *val_start;
     key = ll_nth(tokens, 0);
     colon = ll_nth(tokens, 1);
     val_start = ll_nth(tokens, 2);
@@ -388,17 +388,17 @@ struct JSON_OBJ_ENTRY *json_parse_object_entry(StrList *tokens,
     return NULL;
 }
 
-JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
+JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = ll_nth(*rest, 1);
         Hashtable kvs;
         ht_init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
                 &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
-        StrList *keys = NULL;
+        StringList *keys = NULL;
         struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
         while (new_ent) {
-            StrList *keys_node = malloc(sizeof(StrList));
+            StringList *keys_node = malloc(sizeof(StringList));
             keys_node->data = new_ent->key;
             ll_push(&keys, keys_node);
             void *_;
@@ -418,7 +418,7 @@ JSON_ENTITY *json_parse_object(StrList *tokens, StrList **rest) {
     return NULL;
 }
 
-JSON_ENTITY *json_parse_array(StrList *tokens, StrList **rest) {
+JSON_ENTITY *json_parse_array(StringList *tokens, StringList **rest) {
     if (strcmp(tokens->data, "[") == 0) {
         struct tmplist {
             struct tmplist *next;
@@ -460,7 +460,7 @@ JSON_ENTITY *json_parse_array(StrList *tokens, StrList **rest) {
     return NULL;
 }
 
-JSON_ENTITY *json_parse_value(StrList *tokens, StrList **rest) {
+JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest) {
     char *first_tok = tokens->data;
     if ((first_tok[0] >= '0' && first_tok[0] <= '9') ||
         (first_tok[0] == '-' && first_tok[1] >= '0' && first_tok[1] <= '9')) {
@@ -514,7 +514,7 @@ void json_print_value(JSON_ENTITY *val) {
         }
             break;
         case JSON_OBJ: {
-            StrList *keys = json_get_obj_keys(val);
+            StringList *keys = json_get_obj_keys(val);
             printf("{");
             LLFOREACH(key, keys) {
                 printf("%s : ", key->data);
@@ -528,7 +528,7 @@ void json_print_value(JSON_ENTITY *val) {
     }
 }
 
-void json_free_StrList(StrList *list) {
+void json_free_StrList(StringList *list) {
     free(list->data);
     free(list);
 }

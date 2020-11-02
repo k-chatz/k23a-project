@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 #ifndef ACUTEST_H
 #include <assert.h>
 
@@ -13,7 +12,7 @@
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
 bool tokenize_word(char *word) {
-    StrList *tokens;
+    StringList *tokens;
     char *rest;
     tokens = json_tokenize_str(word, &rest);
     bool success = (ll_len(tokens) == 1) && (strcmp(tokens->data, word) == 0);
@@ -22,11 +21,11 @@ bool tokenize_word(char *word) {
 }
 
 bool tokenize_sentence(char *str, char **expected_tokens) {
-    StrList *tokens;
+    StringList *tokens;
     char *rest;
     tokens = json_tokenize_str(str, &rest);
     int i = 0;
-    for (StrList *tok = tokens; tok; tok = ll_nth(tok, 1)) {
+    for (StringList *tok = tokens; tok; tok = ll_nth(tok, 1)) {
         if (expected_tokens[i] == NULL)
             return false;
         if (strcmp(tok->data, expected_tokens[i++]))
@@ -154,7 +153,7 @@ void tokenize_string(void) {
 void tokenize_whitespace(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
     char *rest;
-    StrList *toks = json_tokenize_str("  \t \n ", &rest);
+    StringList *toks = json_tokenize_str("  \t \n ", &rest);
     TEST_CHECK(!toks);
     TEST_CHECK(strlen(rest) == 0);
 }
@@ -164,7 +163,7 @@ void tokenize_multiword(void) {
     char *in_str = "5e2true   \t\n\n false";
     char *out_toks[ARR_LEN(in_toks)];
     char *rest;
-    StrList *toks = json_tokenize_str(in_str, &rest);
+    StringList *toks = json_tokenize_str(in_str, &rest);
     int i = 0;
     LLFOREACH(tok, toks) { out_toks[i++] = tok->data; }
     for (i = 0; i < ARR_LEN(in_toks); i++) {
@@ -194,8 +193,8 @@ void tokenize_invalid(void) {
 
 void parse_number(void) {
     char *_;
-    StrList *tokens = json_tokenize_str("5", &_);
-    StrList *rest;
+    StringList *tokens = json_tokenize_str("5", &_);
+    StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(json_to_double(ent) == (double) 5);
     CLEANUP();
@@ -203,8 +202,8 @@ void parse_number(void) {
 
 void parse_bool(void) {
     char *_;
-    StrList *tokens = json_tokenize_str("true", &_);
-    StrList *rest;
+    StringList *tokens = json_tokenize_str("true", &_);
+    StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(json_to_bool(ent) == true);
     CLEANUP();
@@ -212,9 +211,9 @@ void parse_bool(void) {
 
 void parse_array(void) {
     char *_;
-    StrList *tokens = json_tokenize_str("[true, 5, false, -2.27]", &_);
+    StringList *tokens = json_tokenize_str("[true, 5, false, -2.27]", &_);
     json_type arr_types[] = {JSON_BOOL, JSON_NUM, JSON_BOOL, JSON_NUM};
-    StrList *rest;
+    StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(ent->type == JSON_ARRAY); /* type should be array */
     int len = json_get_arr_length(ent);
@@ -227,13 +226,13 @@ void parse_array(void) {
 
 void parse_obj(void) {
     char *_;
-    StrList *tokens = json_tokenize_str(
+    StringList *tokens = json_tokenize_str(
             "{\"foo\" : 5, \"bar\" : false, \"baz\" : [true]}", &_);
     char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
-    StrList *rest;
+    StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(ent->type == JSON_OBJ); /* type should be array */
-    StrList *keys = json_get_obj_keys(ent);
+    StringList *keys = json_get_obj_keys(ent);
     TEST_CHECK(ll_len(keys) == 3); /* length should be 3 */
     bool removed = false;
     LLFOREACH(key, keys) {
@@ -289,9 +288,9 @@ void parse_obj_complex(void) {
             "}";
 
     char *_;
-    StrList *tokens = json_tokenize_str(json, &_);
+    StringList *tokens = json_tokenize_str(json, &_);
     char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
-    StrList *rest;
+    StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
     TEST_CHECK(ent);
     CLEANUP();
