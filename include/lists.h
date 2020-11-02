@@ -13,10 +13,17 @@
 
 /*!
   \defgroup lists
+  @brief Generic linked list interface. Consult for functions and types with prefix 'll_'.
+
+  A generic linked list interface.
+  Can be applied to any linked list structure as long as the pointer to the next 
+  element is the first field of the struct.
+
   @{
  */
 
-/*! Macro to easily create list types.
+/*! 
+@brief Macro to easily create list types.
 @param[in] TYPE the type of data stored in the list
 @hideinitializer
 */
@@ -27,13 +34,13 @@
     }
 
 /*!
-Implements foreach functionality for lists
+@brief Implements foreach functionality for lists
 @param[out] VAR an identifier that references the current node
 @param[in] LIST the list
 @hideinitializer
 read as "for each VAR in LIST"
 
-###example:
+### example:
 \code{.c}
 
 list *Ls = function_that_produces_list(...);
@@ -48,7 +55,7 @@ LLFOREACH(L, Ls){
 
 /* type: mapfunc_t */
 /*!
-Function type for ll_map. Should map a list node to a new one.
+@brief Function type for ll_map. Should map a list node to a new one.
 @param[in] node a list node
 @param[in] vargs a va_list with the extra arguments passed to ll_map
 @retval out a new list node
@@ -57,7 +64,9 @@ typedef void *(*mapfunc_t)(void *node, va_list vargs);
 
 /* type: llfree_f */
 /*!
-the logical equivalent of calling free(node)
+@brief Free-ing function type for ll_free.
+
+The logical equivalent of calling free(node)
 @param[in] node a list node
 
  */
@@ -65,6 +74,8 @@ typedef void (*llfree_f)(void *node);
 
 /* type: llpred */
 /*!
+@brief Predicate function type for llmap.
+
 @param[in] nodeptr : a list node
 @param[in] vargs : va_list passed to the predicate by ll_search
 @returns
@@ -75,6 +86,8 @@ typedef bool (*llpred)(void *nodeptr, va_list vargs);
 
 /* type: llcmpr */
 /*!
+@brief Comparator function type for ll_sort.
+
 @param[in] node_a : a list node
 @param[in] node_b : a list node
 @retval c where\n
@@ -86,6 +99,8 @@ typedef int (*llcmpr)(void *node_a, void *node_b);
 
 /* function: `ll_nth` */
 /*!
+@brief Finds the nth element of a list.
+
 @param[in] l : a list
 @param[in] n : an integer
 @returns the nth element of l
@@ -94,6 +109,8 @@ void *ll_nth(void *l, int n);
 
 /* function: `ll_tail` */
 /*!
+@brief Finds the last element of a list.
+
 @param[in] l : a list
 @returns last node of l
  */
@@ -101,7 +118,8 @@ void *ll_tail(void *l);
 
 /* function: ll_push */
 /*!
-makes node the new head of the list pointed to by lp
+@brief Makes node the new head of the list pointed to by lp.
+
 @param[in] lp : a pointer to a list
 @param[in] node : a node where NEXT(`node`) is a list
 ###example:
@@ -123,8 +141,9 @@ void ll_push(void *lp, void *node);
 
 /* function: llpushlist */
 /*!
-like ll_push but if NEXT(node) is a list, the whole list is pushed to lp
-connects ll_tail(node) to *lp and sets *lp to node
+@brief Like ll_push but if NEXT(node) is a list, the whole list is pushed to lp.
+
+Connects ll_tail(node) to *lp and sets *lp to node.
 
 @param[in] lp : a pointer to a list
 @param[in] node : a node where NEXT(`node`) is a list
@@ -157,7 +176,8 @@ void ll_pushlist(void *lp, void *node);
 
 /* function: ll_pop */
 /*!
-extracts and returns the first node of the list pointed to by lp
+@brief Extracts and returns the first node of the list pointed to by lp.
+
 @param[in] lp : a pointer to a list
 @returns the node pointed to by `lp`
 
@@ -185,6 +205,8 @@ void *ll_pop(void *lp);
 
 /* function: ll_len */
 /*!
+@brief Counts the nodes of a list.
+
 @param[in] l : a list
 @returns the length of l
  */
@@ -192,7 +214,9 @@ int ll_len(void *l);
 
 /* function: ll_reverse */
 /*!
-reverses the list pointed to by lp in place
+
+@brief Reverses the list pointed to by lp in place.
+
 @param[in] lp : input list pointer
 
 ###example
@@ -206,6 +230,8 @@ void ll_reverse(void *lp);
 
 /* function: ll_map */
 /*!
+@brief Maps a list to a new one according to mapping function.
+
 @param[in] INs : an input list
 @param[in] map_func : function used to produce the output list
 @retval OUTs a list where the nth node is the output of mapfunc(nth node of INs)
@@ -214,7 +240,7 @@ void *ll_map(void *INs, mapfunc_t map_func, ...);
 
 /* function: ll_free */
 /*!
-destroys the input list, freeing all the nodes with free_node
+@brief Destroys the input list, freeing all the nodes with free_node.
 
 @param[in] l : a list
 @param[in] free_node : a function that frees a single node from `l`
@@ -223,6 +249,8 @@ void ll_free(void *l, llfree_f free_data);
 
 /* function: ll_search */
 /*!
+@brief Searches a list.
+
 @param[in] l : a list
 @param[in] p : a predicate
 @param[in] ... : arguments passed to p
@@ -232,8 +260,7 @@ void *ll_search(void *l, llpred p, ...);
 
 /* function: ll_split */
 /*!
-Splits in to out_a and out_b, giving the first n nodes to out_a and the rest to
-b the reverse of llpushlist(&out_b, out_a)
+@brief Splits in to out_a and out_b, giving the first n nodes to out_a and the rest to b.
 
 @param[in] in : input list
 @param[out] out_a : first output list
@@ -267,9 +294,10 @@ void ll_split(void *in, void *out_a, void *out_b, int n);
 
 /* function: ll_sort_merge */
 /*!
-the merging part of the merge sort algorithm
-exposed to the interface for adding nodes to a sorted list
-and maintaining sortedness
+@brief The merging part of the merge sort algorithm.
+
+This function is exposed to the interface for adding nodes to 
+an already sorted list and maintaining sortedness.
 
 @param[in] list_a : a list
 @param[in] list_b : a list
@@ -295,7 +323,7 @@ void *ll_sort_merge(void *list_a, void *list_b, llcmpr c);
 
 /* function: ll_sort */
 /*!
-sorts lp in place using merge sort
+@brief Sorts the input list in place using merge sort.
 
 @param[in] lp : a pointer to a list
 @param[in] c : a comparison function
