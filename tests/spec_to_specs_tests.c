@@ -1,6 +1,14 @@
 #include "../include/acutest.h"
 #include "../include/spec_to_specs.h"
 
+//#include "../include/acutest.h"
+#ifndef ACUTEST_H
+
+#include <assert.h>
+
+#define TEST_CHECK assert
+#endif
+
 #define N (sizeof(ids) / sizeof(ids[0]))
 
 void add_test(void) {
@@ -44,8 +52,31 @@ void merge_test(void) {
     }
 }
 
+#ifndef ACUTEST_H
+
+struct test_ {
+    const char *name;
+
+    void (*func)(void);
+};
+
+#define TEST_LIST const struct test_ test_list_[]
+#endif
+
 TEST_LIST = {
         {"insertion", add_test},
         {"merging",   merge_test},
         {NULL, NULL}
 };
+
+#ifndef ACUTEST_H
+
+int main(int argc, char *argv[]) {
+    int i;
+    for (i = 0; test_list_[i].name != NULL; i++) {
+        test_list_[i].func();
+    }
+    return 0;
+}
+
+#endif
