@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
+  <component name="CidrRootsConfiguration">
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/.githooks" />
+      <file path="$PROJECT_DIR$/Datasets" />
+      <file path="$PROJECT_DIR$/deps" />
+      <file path="$PROJECT_DIR$/html" />
+      <file path="$PROJECT_DIR$/objs" />
+      <file path="$PROJECT_DIR$/tests-bin" />
+    </excludeRoots>
+  </component>
 </project>
