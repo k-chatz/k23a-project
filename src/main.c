@@ -4,55 +4,45 @@
 #include "../include/spec_to_specs.h"
 #include "../include/spec_ids.h"
 
-typedef struct {
-    void *next;
-    int data;
-} intList;
-
-intList *new_node(int data) {
-    intList *out = malloc(sizeof(intList));
-    out->data = data;
-    return out;
-}
-
-void readOptions(int argc,char **argv,char **folder) {
+void readOptions(int argc, char **argv, char **dir, char **csv) {
     int i;
     char *opt, *optVal;
     for (i = 1; i < argc; ++i) {
         opt = argv[i];
         optVal = argv[i + 1];
-        if (strcmp(opt, "-f") == 0) {
+        if (strcmp(opt, "-dir") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                *folder = optVal;
+                *dir = optVal;
+            }
+        } else if (strcmp(opt, "-csv") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                *csv = optVal;
             }
         }
     }
 }
 
 int main(int argc, char *argv[]) {
-    int list_elements[] = {1, 2, 3, 4, 5, 6}, i = 0;
-    char * folder = NULL;
-    readOptions(argc, argv, &folder);
+    char left_spec_id[50], right_spec_id[50], label[50], *dir = NULL, *csv = NULL;
+    FILE *fp;
+    STS *dataset_X = NULL;
 
-    intList *L = NULL;
-    for (i = 0; i < 6; i++) {
-        ll_push(&L, new_node(list_elements[i]));
+    readOptions(argc, argv, &dir, &csv);
+
+    dataset_X = get_spec_ids(dir);
+    fp = fopen(csv, "r");
+
+    //skip first row fseek
+    fseek(fp, 33, SEEK_SET);
+    while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
+        if (!strcmp(label, "1") && strcmp(left_spec_id, right_spec_id) != 0) {
+            sts_merge(dataset_X, left_spec_id, right_spec_id);
     }
-
-    intList *temp = L;
-    printf("(");
-    while (temp) {
-        printf("%d ", temp->data);
-        temp = ll_nth(temp, 1);
     }
-    printf(")\n");
-
-    ll_free(temp, free);
-
-    STS *result = get_spec_ids(folder);
+    fclose(fp);
 
     //print result
-    print_sts(result);
+    print_sts(dataset_X);
 
     return 0;
 }
