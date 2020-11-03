@@ -148,7 +148,7 @@ Connects ll_tail(node) to *lp and sets *lp to node.
 @param[in] lp : a pointer to a list
 @param[in] node : a node where NEXT(`node`) is a list
 
-###example
+### example
 @code{.c}
 void pushlist_test(void) {
     int N = 5, M = 5;

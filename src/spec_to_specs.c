@@ -1,4 +1,5 @@
 /* file: spec_to_specs.h */
+#include <stdbool.h>
 #include "../include/spec_to_specs.h"
 
 /* Created a spec node to be added to the hash table */
@@ -74,24 +75,29 @@ int sts_add(STS *sts, char *id) {
     return 0;
 }
 
+/*! @private */
+bool SpecList_isSpec(void *node, va_list args){
+    SpecEntry *entry = va_arg(args, void*);
+    return ((SpecList*)node)->data == entry;
+}
+
 /* Merges two sts nodes to point to the same expanded list */
 int sts_merge(STS *sts, char *id1, char *id2) {
+    /* TODO: maybe more efficient set implementation */
     SpecEntry *spec1, *spec2;
     spec1 = ht_get(sts->ht, id1);
     spec2 = ht_get(sts->ht, id2);
 
-    if (spec1->similar == spec2->similar)
-        return 0;
-
     SpecList *spec2_similar = spec2->similar;
-    SpecList *iter;
 
-    while (spec2_similar) {
-        ll_push(&(spec1->similar), ll_pop(&spec2_similar));
-    }
-
-    for (iter = spec1->similar; iter; iter = ll_nth(iter, 1)) {
-        iter->data->similar = spec1->similar;
+    if(ll_search(spec2_similar, SpecList_isSpec, spec1))
+	/* specs are already merged */
+	return 1;
+    
+    ll_pushlist(&(spec1->similar), spec2_similar);
+    
+    LLFOREACH(similar, spec1->similar){
+	similar->data->similar = spec1->similar;
     }
 
     return 0;
