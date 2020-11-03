@@ -1,6 +1,6 @@
 /* file: spec_to_specs.h */
-#include <stdbool.h>
 #include "../include/spec_to_specs.h"
+#include <stdbool.h>
 
 /* Created a spec node to be added to the hash table */
 static void *create_spec(void *id) {
@@ -8,20 +8,20 @@ static void *create_spec(void *id) {
     new->id = strdup(id);
     new->similar = malloc(sizeof(SpecList));
     new->similar->next = NULL;
-    new->similar->data = new;    /* add self to list of similar specs */
+    new->similar->data = new; /* add self to list of similar specs */
     return new;
 }
 
 void print_spec(void *spec) {
-    printf("spec_id = %s\n", ((SpecEntry *) spec)->id);
+    printf("spec_id = %s\n", ((SpecEntry *)spec)->id);
 }
 
 /* Hash an id */
 static ulong hash_spec(void *id, ulong htcap) {
     ulong sum = 0;
-    while (*(char *) id) {
-        sum *= 47;            /* multiply by a prime number */
-        sum += *((char *) id);
+    while (*(char *)id) {
+        sum *= 47; /* multiply by a prime number */
+        sum += *((char *)id);
         id++;
     }
     return sum % htcap;
@@ -29,38 +29,31 @@ static ulong hash_spec(void *id, ulong htcap) {
 
 /* Compare a spec to a key */
 static int cmp_spec(void *spec, void *key) {
-    return strcmp(((SpecEntry *) spec)->id, key);
+    return strcmp(((SpecEntry *)spec)->id, key);
 }
 
 /* Destroy a spec */
 static ulong destroy_spec(void *spec) {
-    SpecList **similarp = &(((SpecEntry *) spec)->similar);
+    SpecList **similarp = &(((SpecEntry *)spec)->similar);
     while (*similarp) {
-        if (strcmp(((SpecEntry *) spec)->id, (*similarp)->data->id) == 0) {
+        if (strcmp(((SpecEntry *)spec)->id, (*similarp)->data->id) == 0) {
             /* remove this element */
             SpecList *poped = ll_pop(similarp);
             free(poped);
         }
         similarp = ll_nth(similarp, 1);
     }
-    free(((SpecEntry *) spec)->id);
+    free(((SpecEntry *)spec)->id);
     free(spec);
     return 1;
 }
-
 
 /* __________ STS Functions __________ */
 /* Create a new sts */
 STS *sts_new() {
     STS *new = malloc(sizeof(STS));
-    ht_init(&(new->ht),
-            HT_CAP,
-            HT_BSZ,
-            create_spec,
-            cmp_spec,
-            print_spec,
-            hash_spec,
-            destroy_spec);
+    ht_init(&(new->ht), HT_CAP, HT_BSZ, create_spec, cmp_spec, print_spec,
+            hash_spec, destroy_spec);
     new->keys = NULL;
     return new;
 }
@@ -71,14 +64,14 @@ int sts_add(STS *sts, char *id) {
     StrList *new_id = malloc(sizeof(StrList));
     new_id->data = strdup(id);
     ll_push(&(sts->keys), new_id);
-    ht_insert(sts->ht, id, id, (void **) &specEntry);
+    ht_insert(sts->ht, id, id, (void **)&specEntry);
     return 0;
 }
 
 /*! @private */
-bool SpecList_isSpec(void *node, va_list args){
-    SpecEntry *entry = va_arg(args, void*);
-    return ((SpecList*)node)->data == entry;
+bool SpecList_isSpec(void *node, va_list args) {
+    SpecEntry *entry = va_arg(args, void *);
+    return ((SpecList *)node)->data == entry;
 }
 
 /* Merges two sts nodes to point to the same expanded list */
@@ -90,25 +83,23 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 
     SpecList *spec2_similar = spec2->similar;
 
-    if(ll_search(spec2_similar, SpecList_isSpec, spec1))
-	/* specs are already merged */
-	return 1;
-    
+    if (ll_search(spec2_similar, SpecList_isSpec, spec1))
+        /* specs are already merged */
+        return 1;
+
     ll_pushlist(&(spec1->similar), spec2_similar);
-    
-    LLFOREACH(similar, spec1->similar){
-	similar->data->similar = spec1->similar;
+
+    LLFOREACH(similar, spec1->similar) {
+        similar->data->similar = spec1->similar;
     }
 
     return 0;
 }
 
-SpecEntry *sts_get(STS *sts, char *id) {
-    return ht_get(sts->ht, id);
-}
+SpecEntry *sts_get(STS *sts, char *id) { return ht_get(sts->ht, id); }
 
 void print_sts(STS *sts) {
-    //ht_print(sts->ht);
+    // ht_print(sts->ht);
 
     StrList *keys = sts->keys;
     while (keys) {
