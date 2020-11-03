@@ -16,11 +16,12 @@
 
 typedef struct SpecEntry_s SpecEntry;
 
-typedef LISTOF(char*) StrList;
-typedef LISTOF(SpecEntry*) SpecList;
+typedef LISTOF(char *) StrList;
+typedef LISTOF(SpecEntry *) SpecList;
 
 /*!
-  @brief Data structure that relates a spec to other specs that refer to the same item
+  @brief Data structure that relates a spec to other specs that refer to the
+  same item
  */
 typedef struct {
     /*! @brief Index of specs */
@@ -39,15 +40,15 @@ struct SpecEntry_s {
     SpecList *similar;
 };
 
-/*! 
-  @brief Creates a new STS structure 
+/*!
+  @brief Creates a new STS structure
 */
 STS *sts_new();
 
-/*! 
+/*!
   @relates STS
 
-  @brief Adds a new entry to the STS 
+  @brief Adds a new entry to the STS
   @param[in] sts : the sts structure
   @param[in] id : the id to be added
 */
@@ -60,7 +61,7 @@ int sts_add(STS *sts, char *id);
   @param[in] sts : the sts structure
   @param[in] id1 : first id to be merged
   @param[in] id2 : second id to be merged
-  
+
  */
 int sts_merge(STS *sts, char *id1, char *id2);
 
