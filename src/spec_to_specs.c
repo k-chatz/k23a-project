@@ -68,29 +68,20 @@ int sts_add(STS *sts, char *id) {
     return 0;
 }
 
-/*! @private */
-bool SpecList_isSpec(void *node, va_list args) {
-    SpecEntry *entry = va_arg(args, void *);
-    return ((SpecList *)node)->data == entry;
-}
-
 /* Merges two sts nodes to point to the same expanded list */
 int sts_merge(STS *sts, char *id1, char *id2) {
-    /* TODO: maybe more efficient set implementation */
     SpecEntry *spec1, *spec2;
     spec1 = ht_get(sts->ht, id1);
     spec2 = ht_get(sts->ht, id2);
 
-    SpecList *spec2_similar = spec2->similar;
+    if (spec1->similar == spec2->similar)
+	/* sets are already merged; nothing to do */
+        return 0;
 
-    if (ll_search(spec2_similar, SpecList_isSpec, spec1))
-        /* specs are already merged */
-        return 1;
+    ll_pushlist(&(spec2->similar), spec1->similar);
 
-    ll_pushlist(&(spec1->similar), spec2_similar);
-
-    LLFOREACH(similar, spec1->similar) {
-        similar->data->similar = spec1->similar;
+    LLFOREACH(specEnt, spec1->similar){
+	specEnt->data->similar = spec2->similar;
     }
 
     return 0;
