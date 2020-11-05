@@ -37,8 +37,17 @@ struct SpecEntry_s {
     /*! @brief Spec id */
     char *id;
     /*! @brief Set of similar specs. */
-    SpecList *similar;
+    struct SpecEntry_s *parent;
+    /*! @brief Contents of the set
+      if this node is the representative of the set, this is the list of the elements;
+      otherwise, this is NULL
+     */
+    SpecList *similar, *similar_tail;
+    /*! @brief Length of similar */
+    ulong similar_len;
 };
+
+SpecEntry *findRoot(SpecEntry *spec);
 
 /*!
   @brief Creates a new STS structure
@@ -67,6 +76,6 @@ int sts_merge(STS *sts, char *id1, char *id2);
 
 SpecEntry *sts_get(STS *sts, char *id);
 
-void print_sts(STS *sts);
+void print_sts(FILE *file, STS *sts, bool verbose);
 
 #endif
