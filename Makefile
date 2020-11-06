@@ -7,7 +7,7 @@ CFLAGS	= -g -Wall
 
 .PHONY: tests all clean githooks docs
 
-all: tests
+all: tests $(foreach d, $(OBJS), objs/$d)
 	$(MAKE) -C objs $(OBJS)
 	$(CC) $(foreach d, $(OBJS), objs/$d) -o $(OUT)
 

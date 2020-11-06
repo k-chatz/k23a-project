@@ -1,6 +1,6 @@
 #include "../include/spec_to_specs.h"
 
-#include "../include/acutest.h"
+/* #include "../include/acutest.h" */
 #ifndef ACUTEST_H
 
 #include <assert.h>
@@ -17,6 +17,8 @@ void add_test(void) {
     int i;
     for (i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
+	SpecEntry *test = sts_get(sts, ids[i]);
+	TEST_CHECK(strcmp(test->id, ids[i]) == 0);
     }
 
     i = N;

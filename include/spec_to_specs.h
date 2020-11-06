@@ -24,10 +24,11 @@ typedef LISTOF(SpecEntry *) SpecList;
   same item
  */
 typedef struct {
-    /*! @brief Index of specs */
-    Hashtable ht;
     /*! @brief List of specs, in case we need to iterate over them */
     StrList *keys;
+
+    /*! @brief Index of specs */
+    hashp ht;
 } STS;
 
 /*!
