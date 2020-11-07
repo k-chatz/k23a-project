@@ -5,7 +5,7 @@ OUT		= project
 CC		= gcc
 CFLAGS	= -g -Wall
 
-.PHONY: tests all clean githooks docs
+.PHONY: tests all clean githooks docs phony
 
 all: tests $(foreach d, $(OBJS), objs/$d)
 	$(MAKE) -C objs $(OBJS)
@@ -14,6 +14,9 @@ all: tests $(foreach d, $(OBJS), objs/$d)
 tests:
 	$(MAKE) -C tests-bin
 	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
+
+objs/%.o: phony
+	$(MAKE) -C objs $*.o
 
 githooks:
 	git config --local core.hooksPath ".githooks/"

@@ -1,4 +1,4 @@
-/* #include "../include/acutest.h" */
+#include "../include/acutest.h"
 #include "../include/json_parser.h"
 #include <stdbool.h>
 #include <string.h>

@@ -30,12 +30,21 @@ STS *sts_new() {
 /* adds a node to the sts */
 
 int sts_add(STS *sts, char *id) {
-    SpecEntry *newspec = create_spec(id);
     StrList *new_id = malloc(sizeof(StrList));
-    new_id->data = strdup(id);
+
+    SpecEntry temp = (SpecEntry){};
+    htab_put(sts->ht, id, &temp);
+    SpecEntry *newspec = htab_get(sts->ht, id);
+    char *newid = htab_get_keyp(sts->ht, id);
+
+    newspec->id = newid;
+    newspec->similar = malloc(sizeof(SpecList));
+    newspec->similar->data = newspec;
+    newspec->similar->next = NULL;
+
+    new_id->data = newid;
     ll_push(&(sts->keys), new_id);
-    htab_put(sts->ht, id, newspec);
-    free(newspec);
+
     return 0;
 }
 

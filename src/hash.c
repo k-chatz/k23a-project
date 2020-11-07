@@ -3,7 +3,7 @@
 uint djb2(keyp key, size_t key_sz){
     /* djb2 hashing function from http://www.cse.yorku.ca/~oz/hash.html */
     uint hash = 5381;
-    for(int i = 0; i < key_sz; i++){
+    for(uint i = 0; i < key_sz; i++){
 	hash = ((hash << 5) + hash) + ((uint8_t*)key)[i];
     }
     return hash;
@@ -12,7 +12,7 @@ uint djb2(keyp key, size_t key_sz){
 uint djb2_str(keyp key, size_t key_sz){
     /* djb2 hashing function from http://www.cse.yorku.ca/~oz/hash.html */
     uint hash = 5381;
-    for(int i = 0; i < key_sz && ((char*)key)[i]; i++){
+    for(uint i = 0; i < key_sz && ((char*)key)[i]; i++){
 	hash = ((hash << 5) + hash) + ((char*)key)[i];
     }
     return hash;
@@ -38,11 +38,10 @@ hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap){
 void htab_free_entries(hashp ht, void (*free)(void *)){
     htab_entry_t *bucket;
     size_t entry_sz = htab_entry_size(ht);
-    valp val;
-    for(int i = 0; i < ht->buf_cap; i++){
+    for(uint i = 0; i < ht->buf_cap; i++){
 	bucket = (void*)&ht->buf[entry_sz * i];
-	val = htab_del(ht, bucket->contents);
-	free(val);
+	if(bucket->flags & HT_ENTRY_FLAGS_OCCUPIED)
+	  free(bucket->contents + ht->key_sz);
     }
 }
 
@@ -88,6 +87,15 @@ valp htab_get(hashp ht, keyp key) {
     return NULL;
 }
 
+const keyp htab_get_keyp(hashp ht_info, keyp key) {
+  valp val = htab_get(ht_info, key);
+  if (val != NULL) {
+    return val - ht_info->key_sz;
+  } else {
+    return NULL;
+  }
+}
+
 valp htab_del(hashp ht, keyp key) {
     valp val = htab_get(ht, key);
     if (val == NULL)
@@ -103,7 +111,7 @@ valp htab_del(hashp ht, keyp key) {
 
 bool htab_rehash(hashp old, hashp new) {
     size_t entsz = htab_entry_size(old);
-    for (int i = 0; i < old->buf_cap; i++) {
+    for (uint i = 0; i < old->buf_cap; i++) {
 	htab_entry_t *bucket = (void*)&old->buf[entsz * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED){
 	    /* bucket is occupied */
@@ -115,7 +123,7 @@ bool htab_rehash(hashp old, hashp new) {
 
 bool htab_rehash_deep(hashp old, hashp new, valp (*copy)(valp)) {
     size_t entsz = htab_entry_size(old);
-    for (int i = 0; i < old->buf_cap; i++) {
+    for (uint i = 0; i < old->buf_cap; i++) {
 	htab_entry_t *bucket = (void*)&old->buf[entsz * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED){
 	    /* bucket is occupied */
