@@ -1,6 +1,6 @@
 #include "../include/spec_to_specs.h"
 
-#include "../include/acutest.h"
+/* #include "../include/acutest.h" */
 #ifndef ACUTEST_H
 
 #include <assert.h>
@@ -14,21 +14,18 @@ void add_test(void) {
     STS *sts = sts_new();
     char *ids[] = {"www.ebay.com//123", "2", "3", "4", "5"};
     char *ids_from_sts[sizeof(ids) / sizeof(char *)];
-    int i;
+    ulong i, j = 0;
     for (i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
 	SpecEntry *test = sts_get(sts, ids[i]);
-	TEST_CHECK(strcmp(test->id, ids[i]) == 0);
+	TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->ht, test),
+			  ids[i]) == 0);
     }
-
     i = N;
-    for (StrList *key = sts->keys; key; key = ll_nth(key, 1)) {
-        ids_from_sts[--i] = key->data;
-    }
-
-    /* compare the two arrays */
-    for (i = 0; i < N; i++) {
-                TEST_CHECK(strcmp(ids[i], ids_from_sts[i]) == 0);
+    for(char *key = htab_iterate_r(sts->ht, &j);
+	key != NULL;
+	key = htab_iterate_r(sts->ht, &j)){
+        ids_from_sts[--i] = key;
     }
 }
 

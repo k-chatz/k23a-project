@@ -17,6 +17,14 @@ void put_get(void){
     TEST_CHECK((strcmp("foo", foo) == 0));
 }
 
+void rehash(void){
+    hashp hash = htab_new(djb2_str, 10, 10, 50);
+    htab_put(hash, "foo", "foo");
+
+    hashp bigger = htab_new(djb2_str, 100, 100, 5000);
+    char *foo = htab_get(bigger, "foo");
+    TEST_CHECK((strcmp(foo, "foo") == 0));
+}
 
 #ifndef ACUTEST_H
 

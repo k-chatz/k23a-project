@@ -60,11 +60,15 @@ hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap);
 void htab_free_entries(hashp ht, void (*free)(void *));
 bool htab_put(hashp ht_info, keyp key, valp val);
 valp htab_get(hashp ht_info, keyp key);
+const keyp htab_get_keyp_from_valp(hashp ht, valp val);
 const keyp htab_get_keyp(hashp ht_info, keyp key);
 valp htab_del(hashp ht_info, keyp key);
-bool htab_copy(hashp dest, hashp src);
+bool htab_rehash(hashp dest, hashp src);
 bool htab_rehash_deep(hashp old, hashp new, valp (*copy_val)(valp val));
 
+void *htab_iterate_r(hashp ht, ulong *state);
+void *htab_iterate(hashp ht);
+  
 /* __________ Some hashing functions to use __________ */
 uint djb2(keyp key, size_t key_sz);
 uint djb2_str(keyp key, size_t key_sz);

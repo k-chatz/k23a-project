@@ -53,7 +53,7 @@ bool htab_put(hashp ht, keyp key, valp val) {
     for (int probes = 0; probes < MAX_PROBES; probes++) {
         if (!bucket->flags || (bucket->flags & HT_ENTRY_FLAGS_DELETED)) {
             /* bucket is empty; add the entry */
-            bucket->flags |= HT_ENTRY_FLAGS_OCCUPIED;
+            bucket->flags = HT_ENTRY_FLAGS_OCCUPIED;
             ht->buf_load++; /* increase the load */
             bucket->hash = hash;
             ht->keycpy(bucket->contents, key, ht->key_sz);
@@ -87,10 +87,14 @@ valp htab_get(hashp ht, keyp key) {
     return NULL;
 }
 
+const keyp htab_get_keyp_from_valp(hashp ht, valp val){
+  return val - ht->key_sz;
+}
+
 const keyp htab_get_keyp(hashp ht_info, keyp key) {
   valp val = htab_get(ht_info, key);
   if (val != NULL) {
-    return val - ht_info->key_sz;
+    return htab_get_keyp_from_valp(ht_info, val);
   } else {
     return NULL;
   }
@@ -103,19 +107,21 @@ valp htab_del(hashp ht, keyp key) {
         return NULL;
 
     htab_entry_t *bucket = val - offsetof(htab_entry_t, contents) - ht->key_sz;
-    bucket->flags =
-        (bucket->flags & ~HT_ENTRY_FLAGS_OCCUPIED) | HT_ENTRY_FLAGS_DELETED;
+    bucket->flags = HT_ENTRY_FLAGS_DELETED;
     ht->buf_load--;
     return val;
 }
 
 bool htab_rehash(hashp old, hashp new) {
-    size_t entsz = htab_entry_size(old);
+    size_t entsz_old = htab_entry_size(old);
+    size_t entsz_new = htab_entry_size(new);
+    char *new_key = malloc(new->key_sz);
     for (uint i = 0; i < old->buf_cap; i++) {
-	htab_entry_t *bucket = (void*)&old->buf[entsz * i];
+	htab_entry_t *bucket = (void*)&old->buf[entsz_old * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED){
 	    /* bucket is occupied */
-	    htab_put(new, bucket->contents, bucket->contents + old->key_sz);
+	    old->keycpy(new_key, bucket->contents, old->key_sz);
+	    htab_put(new, new_key, bucket->contents + old->key_sz);
 	}
     }
     return true;
@@ -131,4 +137,35 @@ bool htab_rehash_deep(hashp old, hashp new, valp (*copy)(valp)) {
 	}
     }
     return true;
+}
+
+void *htab_iterate_r(hashp ht, ulong *state){
+  size_t entsz = htab_entry_size(ht);
+  htab_entry_t *bucket = (void*)&ht->buf[*state * entsz];
+  while(*state < ht->buf_cap &&
+	bucket->flags != HT_ENTRY_FLAGS_OCCUPIED){
+    (*state)++;
+    bucket = (void*)&ht->buf[*state * entsz];    
+  }
+
+  
+  if(*state < ht->buf_cap){
+    (*state)++;
+    return bucket->contents;
+  }
+
+
+  return NULL;
+}
+
+void *htab_iterate(hashp ht){
+  static ulong state = 0;
+  static hashp htab = NULL;
+
+  if(ht != htab){
+    htab = ht;
+    state = 0;
+  }
+
+  return htab_iterate_r(htab, &state);
 }

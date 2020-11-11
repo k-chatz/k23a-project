@@ -24,9 +24,6 @@ typedef LISTOF(SpecEntry *) SpecList;
   same item
  */
 typedef struct {
-    /*! @brief List of specs, in case we need to iterate over them */
-    StrList *keys;
-
     /*! @brief Index of specs */
     hashp ht;
 } STS;
@@ -35,10 +32,8 @@ typedef struct {
   @brief STS hashtable entry.
  */
 struct SpecEntry_s {
-    /*! @brief Spec id */
-    char *id;
     /*! @brief Set of similar specs. */
-    SpecList *similar;
+    StrList *similar;
 };
 
 /*!
