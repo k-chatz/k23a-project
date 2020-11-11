@@ -32,9 +32,20 @@ typedef struct {
   @brief STS hashtable entry.
  */
 struct SpecEntry_s {
+    /*! @brief spec id */
+    char *id;
     /*! @brief Set of similar specs. */
-    StrList *similar;
+    char *parent;
+    /*! @brief Contents of the set
+      if this node is the representative of the set, this is the list of the elements;
+      otherwise, this is NULL
+     */
+    StrList *similar, *similar_tail;
+    /*! @brief Length of similar */
+    ulong similar_len;
 };
+
+SpecEntry *findRoot(SpecEntry *spec);
 
 /*!
   @brief Creates a new STS structure
@@ -63,6 +74,6 @@ int sts_merge(STS *sts, char *id1, char *id2);
 
 SpecEntry *sts_get(STS *sts, char *id);
 
-void print_sts(STS *sts);
+void print_sts(FILE *file, STS *sts, bool verbose);
 
 #endif

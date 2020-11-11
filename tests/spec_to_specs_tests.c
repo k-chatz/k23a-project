@@ -38,7 +38,7 @@ void merge_test(void) {
     }
     sts_merge(sts, "1", "1");
     sts_merge(sts, "1", "2");
-    sts_merge(sts, "1", "3");
+    sts_merge(sts, "2", "3");
     sts_merge(sts, "2", "5");
     sts_merge(sts, "3", "6");
     sts_merge(sts, "4", "6");
@@ -52,11 +52,11 @@ void merge_test(void) {
     s6 = sts_get(sts, "6");
 
     /* check if s1 and s2 point to the same list */
-            TEST_CHECK(s1->similar == s2->similar);
-            TEST_CHECK(s2->similar == s3->similar);
-            TEST_CHECK(s3->similar == s6->similar);
-            TEST_CHECK(s2->similar == s4->similar);
-            TEST_CHECK(s4->similar == s5->similar);
+    TEST_CHECK(findRoot(s1) == findRoot(s2));
+    TEST_CHECK(findRoot(s2) == findRoot(s3));
+    TEST_CHECK(findRoot(s3) == findRoot(s6));
+    TEST_CHECK(findRoot(s2) == findRoot(s4));
+    TEST_CHECK(findRoot(s4) == findRoot(s5));
 
 /*    for (int i = 0; i < 2; i++) {
                 TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
