@@ -28,7 +28,7 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec){
     /* three shortening */
     spec->parent = ((SpecEntry*)htab_get(sts->ht, spec->parent))->parent;
 
-    return findRoot(root);
+    return findRoot(sts, root);
 }
 
 /* Destroy a spec */
@@ -96,6 +96,7 @@ int sts_add(STS *sts, char *id) {
     newspec->similar = malloc(sizeof(SpecList));
     newspec->similar->data = id_dup;
     newspec->similar->next = NULL;
+    newspec->parent = id_dup;
     newspec->similar_tail = newspec->similar;
     newspec->similar_len = 1;
 
@@ -115,8 +116,8 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     }
 #endif    
     SpecEntry *spec1, *spec2;
-    spec1 = findRoot(htab_get(sts->ht, id1));
-    spec2 = findRoot(htab_get(sts->ht, id2));
+    spec1 = findRoot(sts, htab_get(sts->ht, id1));
+    spec2 = findRoot(sts, htab_get(sts->ht, id2));
 
     if(spec1->similar_len < spec2->similar_len){
 	/* swap */
@@ -150,17 +151,19 @@ SpecEntry *sts_get(STS *sts, char *id) { return htab_get(sts->ht, id); }
 
 void print_sts(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "digraph {\n\n");
-    StrList *keys = sts->keys;
-    LLFOREACH(key, keys) {
+    ulong iter_state = 0;
+    for(char *key = htab_iterate_r(sts->ht, &iter_state);
+	key != NULL;
+	key = htab_iterate_r(sts->ht, &iter_state)){
         SpecEntry *sp, *root;
-	sp = ht_get(sts->ht, key->data);
-	root = findRoot(sp);
-        SpecList *similar = root->similar;
+	sp = htab_get(sts->ht, key);
+	root = findRoot(sts, sp);
+        StrList *similar = root->similar;
 
 	if(verbose || sp == root){
 	    fprintf(file, "\"%s\" -> \"%p\"\n", sp->id, similar);
 	} else {
-	    fprintf(file, "\"%s\" -> \"%s\"", sp->id, sp->parent->id);
+	    fprintf(file, "\"%s\" -> \"%s\"", sp->id, sp->parent);
 	}
 	
 	char buf[500];
@@ -171,26 +174,26 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
             strcpy(buf, "()");
             break;
           case 1:
-            sprintf(buf, "(%s)", root->similar->data->id);
+            sprintf(buf, "(%s)", root->similar->data);
             break;
           case 2:
-            sprintf(buf, "(%s, %s)", root->similar->data->id,
+            sprintf(buf, "(%s, %s)", root->similar->data,
                     ((SpecList *)ll_nth(root->similar, 1))->data->id);
             break;
           case 3:
-            sprintf(buf, "(%s, %s, %s)", root->similar->data->id,
-                    ((SpecList *)ll_nth(root->similar, 1))->data->id,
-                    ((SpecList *)ll_nth(root->similar, 2))->data->id);
+            sprintf(buf, "(%s, %s, %s)", root->similar->data,
+                    ((StrList *)ll_nth(root->similar, 1))->data,
+                    ((StrList *)ll_nth(root->similar, 2))->data);
             break;
           default:
-            sprintf(buf, "(%s, %s, %s, ...)", root->similar->data->id,
-                    ((SpecList *)ll_nth(root->similar, 1))->data->id,
-                    ((SpecList *)ll_nth(root->similar, 2))->data->id);
+            sprintf(buf, "(%s, %s, %s, ...)", root->similar->data,
+                    ((StrList *)ll_nth(root->similar, 1))->data,
+                    ((StrList *)ll_nth(root->similar, 2))->data);
             break;
           }
           fprintf(file, "\n\"%p\"[label=\"%s\"]\n", root->similar, buf);
         }
->>>>>>> origin/SimilarOptimization
+
     }
     fprintf(file, "\n}\n");
 }

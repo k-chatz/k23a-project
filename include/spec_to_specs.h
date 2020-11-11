@@ -45,7 +45,7 @@ struct SpecEntry_s {
     ulong similar_len;
 };
 
-SpecEntry *findRoot(SpecEntry *spec);
+SpecEntry *findRoot(STS *sts, SpecEntry *spec);
 
 /*!
   @brief Creates a new STS structure
