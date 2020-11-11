@@ -392,13 +392,42 @@ static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = ll_nth(*rest, 1);
         hashp kvs;
-	kvs = htab_new(djb2_str, 256, sizeof(JSON_ENTITY*), 128);
+	kvs = htab_new(djb2_str, 2, sizeof(JSON_ENTITY*), 1);
 	kvs->cmp = (ht_cmp_func)strncmp;
 	kvs->keycpy = (ht_key_cpy_func)strncpy;
 
         StringList *keys = NULL;
         struct JSON_OBJ_ENTRY new_ent = json_parse_object_entry(*rest, rest);
         while (new_ent.value) {
+	        bool rehash = false;
+		int new_keysz = kvs->key_sz;
+		int new_buf_cap = kvs->buf_cap;
+    
+		if((((float)kvs->buf_load) / kvs->buf_cap) > 0.7) {
+		    new_buf_cap *= 2;
+		    rehash = true;
+		}
+
+		if(strlen(new_ent.key) > kvs->key_sz){
+		    while(new_keysz < strlen(new_ent.key))
+			new_keysz *= 2;			
+		    
+		    rehash = true;
+		}
+
+		if(rehash){
+		    hashp new_ht = htab_new(djb2_str,
+					    new_keysz,
+					    sizeof(JSON_ENTITY*),
+					    new_buf_cap);
+		    new_ht->keycpy = (ht_key_cpy_func)strncpy;
+		    new_ht->cmp = (ht_cmp_func)strncmp;
+		    htab_rehash(kvs, new_ht);
+		    free(kvs);
+		    kvs = new_ht;
+		}
+
+
             StringList *keys_node = malloc(sizeof(StringList));
             keys_node->data = strdup(new_ent.key);
             ll_push(&keys, keys_node);
