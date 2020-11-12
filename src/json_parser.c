@@ -176,7 +176,7 @@ typedef struct {
 /*! @private */
 typedef struct {
     StringList *keys;
-    Hashtable contents;
+    hashp contents;
 } JSON_OBJECT_DATA;
 
 static JSON_ENTITY *json_new_num(double num) {
@@ -213,7 +213,7 @@ static JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length) {
     return new;
 }
 
-static JSON_ENTITY *json_new_obj(Hashtable kvs, StringList *keys) {
+static JSON_ENTITY *json_new_obj(hashp kvs, StringList *keys) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(JSON_OBJECT_DATA));
     /* new->json_vt = json_int_vt; */
     *((json_type *)(&new->type)) = JSON_OBJ; /* assign to const */
@@ -311,7 +311,7 @@ JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...) {
         char *key = va_arg(arglist, char *);
         JSON_OBJECT_DATA *dp = (void *)(&Ent->data);
         va_end(arglist);
-        return ((struct JSON_OBJ_ENTRY *)ht_get(dp->contents, key))->value;
+        return *(JSON_ENTITY**)htab_get(dp->contents, key);
     }
     case JSON_ARRAY: {
         int index = va_arg(arglist, int);
@@ -345,7 +345,9 @@ void json_entity_free(JSON_ENTITY *ent) {
         free(ent);
     } break;
     case JSON_OBJ: {
-        ht_destroy(&((JSON_OBJECT_DATA *)&ent->data)->contents, true);
+        htab_free_entries(((JSON_OBJECT_DATA *)&ent->data)->contents,
+			  (void (*)(void*))json_entity_free);
+	free(((JSON_OBJECT_DATA *)&ent->data)->contents);
         ll_free(json_get_obj_keys(ent), free);
         free(ent);
     } break;
@@ -361,72 +363,80 @@ void json_entity_free(JSON_ENTITY *ent) {
 /*     return new; */
 /* } */
 
-static void *ht_create_id(void *valargs) { return valargs; }
-
-static int json_obj_entry_cmp(void *obj, void *key) {
-    return strcmp(((struct JSON_OBJ_ENTRY *)obj)->key, key);
-}
-
-static ulong hash_str(void *id, ulong htcap) {
-    ulong sum = 0;
-    while (*(char *)id) {
-        sum *= 47; /* multiply by a prime number */
-        sum += *((char *)id);
-        id++;
-    }
-    return sum % htcap;
-}
-
-static ulong json_obj_entry_free(void *joe) {
-    struct JSON_OBJ_ENTRY *e = joe;
-    free(e->key);
-    json_entity_free(e->value);
-    free(joe);
-    return 0;
-}
-
-static struct JSON_OBJ_ENTRY *json_parse_object_entry(StringList *tokens,
+static struct JSON_OBJ_ENTRY json_parse_object_entry(StringList *tokens,
                                                       StringList **rest) {
+    const struct JSON_OBJ_ENTRY invalid = {0, NULL};
     StringList *key, *colon, *val_start;
     key = ll_nth(tokens, 0);
     colon = ll_nth(tokens, 1);
     val_start = ll_nth(tokens, 2);
 
     if (!val_start)
-        return NULL;
+        return invalid;
 
     if (key->data[0] == '"' && strcmp(colon->data, ":") == 0) {
         JSON_ENTITY *val = json_parse_value(val_start, rest);
         if (val) {
-            struct JSON_OBJ_ENTRY *entry = malloc(sizeof(*entry));
-            entry->key = strdup(key->data);
-            entry->value = val;
+            struct JSON_OBJ_ENTRY entry = {
+		key->data, val
+	    };
             return entry;
         }
     }
     *rest = tokens;
-    return NULL;
+    return invalid;
 }
 
 static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = ll_nth(*rest, 1);
-        Hashtable kvs;
-        ht_init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
-                &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
+        hashp kvs;
+	kvs = htab_new(djb2_str, 2, sizeof(JSON_ENTITY*), 1);
+	kvs->cmp = (ht_cmp_func)strncmp;
+	kvs->keycpy = (ht_key_cpy_func)strncpy;
+
         StringList *keys = NULL;
-        struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
-        while (new_ent) {
+        struct JSON_OBJ_ENTRY new_ent = json_parse_object_entry(*rest, rest);
+        while (new_ent.value) {
+	        bool rehash = false;
+		int new_keysz = kvs->key_sz;
+		int new_buf_cap = kvs->buf_cap;
+    
+		if((((float)kvs->buf_load) / kvs->buf_cap) > 0.7) {
+		    new_buf_cap *= 2;
+		    rehash = true;
+		}
+
+		if(strlen(new_ent.key) > kvs->key_sz){
+		    while(new_keysz < strlen(new_ent.key))
+			new_keysz *= 2;			
+		    
+		    rehash = true;
+		}
+
+		if(rehash){
+		    hashp new_ht = htab_new(djb2_str,
+					    new_keysz,
+					    sizeof(JSON_ENTITY*),
+					    new_buf_cap);
+		    new_ht->keycpy = (ht_key_cpy_func)strncpy;
+		    new_ht->cmp = (ht_cmp_func)strncmp;
+		    htab_rehash(kvs, new_ht);
+		    free(kvs);
+		    kvs = new_ht;
+		}
+
+
             StringList *keys_node = malloc(sizeof(StringList));
-            keys_node->data = new_ent->key;
+            keys_node->data = strdup(new_ent.key);
             ll_push(&keys, keys_node);
-            void *_;
-            ht_insert(kvs, new_ent->key, new_ent, &_);
+            htab_put(kvs, new_ent.key, &new_ent.value);
+	    
             if (strcmp((*rest)->data, ",") == 0)
                 new_ent = json_parse_object_entry(ll_nth(*rest, 1), rest);
             else
-                new_ent = NULL;
+                new_ent = (struct JSON_OBJ_ENTRY){0, NULL};
         }
         JSON_ENTITY *obj = json_new_obj(kvs, keys);
         if (strcmp("}", (*rest)->data) == 0) {
