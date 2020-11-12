@@ -76,4 +76,6 @@ SpecEntry *sts_get(STS *sts, char *id);
 
 void print_sts(FILE *file, STS *sts, bool verbose);
 
+void print_sts_(FILE *file, STS *sts, bool verbose);
+
 #endif

@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     //print result
-    /* print_sts(dataset_X); */
+    print_sts_(stdout, dataset_X, false);
 
     return 0;
 }

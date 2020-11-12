@@ -198,4 +198,28 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
+void print_sts_(FILE *file, STS *sts, bool verbose) {
+    fprintf(file, "digraph {\n\n");
+    ulong iter_state = 0;
+    for (char *key = htab_iterate_r(sts->ht, &iter_state);
+         key != NULL;
+         key = htab_iterate_r(sts->ht, &iter_state)) {
+
+
+
+        SpecEntry *sp, *root;
+        sp = htab_get(sts->ht, key);
+        root = findRoot(sts, sp);
+        for (StrList *similar = root->similar; similar ; similar = ll_nth(similar, 1)) {
+            printf("%s, ", similar->data);
+        }
+        printf("\n");
+
+    }
+
+
+
+    fprintf(file, "\n}\n");
+}
+
 /* _______ END of STS Functions _______ */
