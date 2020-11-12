@@ -198,27 +198,48 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
+// typedef struct list_s list;
+
+// struct list_s {
+//     list *next;
+//     int data;
+// };
+
+bool eq_pred(void *node, va_list vargs) {
+    char* x = va_arg(vargs, char*);
+    StrList *n = (StrList *) node;
+    return !strcmp(n->data, x);
+}
+
+StrList *create_node(char* id){
+
+  StrList* node = malloc(sizeof(StrList));
+  node->data = strdup(id);
+  node->next = NULL;
+  return node;
+}
+
 void print_sts_(FILE *file, STS *sts, bool verbose) {
-    fprintf(file, "digraph {\n\n");
+    StrList* list = NULL;
     ulong iter_state = 0;
     for (char *key = htab_iterate_r(sts->ht, &iter_state);
-         key != NULL;
-         key = htab_iterate_r(sts->ht, &iter_state)) {
-
-
-
+        key != NULL;
+        key = htab_iterate_r(sts->ht, &iter_state)) {
         SpecEntry *sp, *root;
         sp = htab_get(sts->ht, key);
         root = findRoot(sts, sp);
-        for (StrList *similar = root->similar; similar ; similar = ll_nth(similar, 1)) {
-            printf("%s, ", similar->data);
+        if (!strcmp(root->id, sp->id)){
+            continue;
         }
-        printf("\n");
-
+        StrList* result = ll_search(list, &eq_pred, root->id);
+        if(result == NULL){
+            for (StrList *similar = root->similar; similar ; similar = ll_nth(similar, 1)) {
+                printf("%s%s",  similar == root->similar ? "" : ", ", similar->data);
+            }
+            printf("\n");
+            ll_push(&list, create_node(root->id));
+        }
     }
-
-
-
     fprintf(file, "\n}\n");
 }
 
