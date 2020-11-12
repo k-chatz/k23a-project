@@ -23,12 +23,21 @@ JSON_OBJS = $(patsubst %.o, ../objs/%.o,     \
 			hash.o		     \
 			lists.o)
 
+HASH_OBJS = $(patsubst %.o, ../objs/%.o,     \
+			hash_tests.o         \
+			hash.o)
+
+
 .PHONY: phony
 
 all:     phony		     \
+	 hash_tests	     \
 	 spec_to_specs_tests \
 	 lists_tests	     \
 	 json_parser_tests
+
+hash_tests: $(HASH_OBJS)
+	$(CC) $(CFLAGS) -ohash_tests $(HASH_OBJS) $(LFLAGS)
 
 spec_to_specs_tests: $(SPEC_TO_SPECS_OBJS)
 	$(CC) $(CFLAGS) -ospec_to_specs_tests $(SPEC_TO_SPECS_OBJS) $(LFLAGS)

@@ -4,6 +4,7 @@
   <component name="CidrRootsConfiguration">
     <excludeRoots>
       <file path="$PROJECT_DIR$/.githooks" />
+      <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/Datasets" />
       <file path="$PROJECT_DIR$/deps" />
       <file path="$PROJECT_DIR$/html" />

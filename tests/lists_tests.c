@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "../include/acutest.h"
+
 #ifndef ACUTEST_H
 
 #define TEST_CHECK assert

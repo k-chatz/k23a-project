@@ -35,48 +35,50 @@ MATCH_TOKEN(is_lbracket, "[");
 MATCH_TOKEN(is_rbracket, "]");
 
 static char *is_number(char *input) {
-    enum { INTEGER, FRAC, EXP, DONE } state = INTEGER;
+    enum {
+        INTEGER, FRAC, EXP, DONE
+    } state = INTEGER;
     size_t total_size = 0;
     while (state != DONE) {
         switch (state) {
-        case INTEGER:
-            if (input[total_size] == '-')
-                total_size++;
-            if (input[total_size] == '0') {
-                total_size++;
-            } else if (input[total_size] > '0' && input[total_size] <= '9') {
-                total_size++;
-                total_size += strspn(input + total_size, DIGITS);
-            } else {
-                state = DONE;
-            }
-            state = FRAC;
-            break;
-        case FRAC:
-            if (input[total_size] == '.') {
-                size_t frac_size = 1;
-                frac_size += strspn(input + total_size + 1, DIGITS);
-                if (frac_size > 1) {
-                    total_size += frac_size;
+            case INTEGER:
+                if (input[total_size] == '-')
+                    total_size++;
+                if (input[total_size] == '0') {
+                    total_size++;
+                } else if (input[total_size] > '0' && input[total_size] <= '9') {
+                    total_size++;
+                    total_size += strspn(input + total_size, DIGITS);
+                } else {
+                    state = DONE;
                 }
-            }
-            state = EXP;
-            break;
-        case EXP:
-            if (strspn(input + total_size, "eE") == 1) {
-                size_t exp_size = 0;
-                size_t digits_size = 0;
-                exp_size++;
-                if (strspn(input + total_size + exp_size, "+-") == 1)
+                state = FRAC;
+                break;
+            case FRAC:
+                if (input[total_size] == '.') {
+                    size_t frac_size = 1;
+                    frac_size += strspn(input + total_size + 1, DIGITS);
+                    if (frac_size > 1) {
+                        total_size += frac_size;
+                    }
+                }
+                state = EXP;
+                break;
+            case EXP:
+                if (strspn(input + total_size, "eE") == 1) {
+                    size_t exp_size = 0;
+                    size_t digits_size = 0;
                     exp_size++;
-                digits_size = strspn(input + total_size + exp_size, DIGITS);
-                if (digits_size > 0)
-                    total_size += exp_size + digits_size;
-            }
-            state = DONE;
-            break;
-        case DONE:
-            break;
+                    if (strspn(input + total_size + exp_size, "+-") == 1)
+                        exp_size++;
+                    digits_size = strspn(input + total_size + exp_size, DIGITS);
+                    if (digits_size > 0)
+                        total_size += exp_size + digits_size;
+                }
+                state = DONE;
+                break;
+            case DONE:
+                break;
         }
     }
 
@@ -91,18 +93,18 @@ static char *is_string(char *input) {
             if (input[curr] == '\\') {
                 /* escape */
                 switch (input[curr + 1]) {
-                case 'u':
-                    curr += 4;
-                case '"':
-                case '\\':
-                case '/':
-                case 'b':
-                case 'f':
-                case 'n':
-                case 'r':
-                case 't':
-                    curr += 2;
-                    break;
+                    case 'u':
+                        curr += 4;
+                    case '"':
+                    case '\\':
+                    case '/':
+                    case 'b':
+                    case 'f':
+                    case 'n':
+                    case 'r':
+                    case 't':
+                        curr += 2;
+                        break;
                 }
             } else {
                 curr++;
@@ -117,8 +119,8 @@ static char *is_string(char *input) {
 }
 
 static char *json_next_token(char *input, int *cursor) {
-    matcher tokenizers[] = {is_true,     is_false,  is_null,   is_lbrace,
-                            is_rbrace,   is_comma,  is_colon,  is_lbracket,
+    matcher tokenizers[] = {is_true, is_false, is_null, is_lbrace,
+                            is_rbrace, is_comma, is_colon, is_lbracket,
                             is_rbracket, is_number, is_string, NULL};
 
     char *match;
@@ -176,30 +178,30 @@ typedef struct {
 /*! @private */
 typedef struct {
     StringList *keys;
-    Hashtable contents;
+    hashp contents;
 } JSON_OBJECT_DATA;
 
 static JSON_ENTITY *json_new_num(double num) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(num));
     /* new->json_vt = json_int_vt; */
-    *((json_type *)(&new->type)) = JSON_NUM; /* assign to const */
-    *((double *)(&new->data)) = num;
+    *((json_type *) (&new->type)) = JSON_NUM; /* assign to const */
+    *((double *) (&new->data)) = num;
     return new;
 }
 
 static JSON_ENTITY *json_new_str(char *str) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(str));
     /* new->json_vt = json_int_vt; */
-    *((json_type *)(&new->type)) = JSON_STRING; /* assign to const */
-    *((char **)(&new->data)) = str;
+    *((json_type *) (&new->type)) = JSON_STRING; /* assign to const */
+    *((char **) (&new->data)) = str;
     return new;
 }
 
 static JSON_ENTITY *json_new_bool(bool b) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(b));
     /* new->json_vt = json_int_vt; */
-    *((json_type *)(&new->type)) = JSON_BOOL; /* assign to const */
-    *((bool *)(&new->data)) = b;
+    *((json_type *) (&new->type)) = JSON_BOOL; /* assign to const */
+    *((bool *) (&new->data)) = b;
     return new;
 }
 
@@ -213,11 +215,11 @@ static JSON_ENTITY *json_new_arr(JSON_ENTITY **arr, int length) {
     return new;
 }
 
-static JSON_ENTITY *json_new_obj(Hashtable kvs, StringList *keys) {
+static JSON_ENTITY *json_new_obj(hashp kvs, StringList *keys) {
     JSON_ENTITY *new = malloc(sizeof(*new) + sizeof(JSON_OBJECT_DATA));
     /* new->json_vt = json_int_vt; */
-    *((json_type *)(&new->type)) = JSON_OBJ; /* assign to const */
-    JSON_OBJECT_DATA *datap = (void *)&new->data;
+    *((json_type *) (&new->type)) = JSON_OBJ; /* assign to const */
+    JSON_OBJECT_DATA *datap = (void *) &new->data;
     datap->keys = keys;
     datap->contents = kvs;
     return new;
@@ -227,20 +229,20 @@ static JSON_ENTITY json_null_ent = {JSON_NULL};
 
 char *json_type_to_str(json_type t) {
     switch (t) {
-    case JSON_OBJ:
-        return "JSON_OBJ";
-    case JSON_ARRAY:
-        return "JSON_ARRAY";
-    case JSON_NUM:
-        return "JSON_NUM";
-    case JSON_BOOL:
-        return "JSON_BOOL";
-    case JSON_STRING:
-        return "JSON_STRING";
-    case JSON_NULL:
-	return "JSON_NULL";
-    default:
-        return "JSON_INVALID";
+        case JSON_OBJ:
+            return "JSON_OBJ";
+        case JSON_ARRAY:
+            return "JSON_ARRAY";
+        case JSON_NUM:
+            return "JSON_NUM";
+        case JSON_BOOL:
+            return "JSON_BOOL";
+        case JSON_STRING:
+            return "JSON_STRING";
+        case JSON_NULL:
+            return "JSON_NULL";
+        default:
+            return "JSON_INVALID";
     }
 }
 
@@ -251,7 +253,7 @@ double json_to_double(JSON_ENTITY *Ent) {
                 json_type_to_str(Ent->type));
         return 0;
     }
-    return *((double *)&(Ent->data));
+    return *((double *) &(Ent->data));
 }
 
 char *json_to_string(JSON_ENTITY *Ent) {
@@ -261,7 +263,7 @@ char *json_to_string(JSON_ENTITY *Ent) {
                 json_type_to_str(Ent->type));
         return 0;
     }
-    return *((char **)&(Ent->data));
+    return *((char **) &(Ent->data));
 }
 
 bool json_to_bool(JSON_ENTITY *Ent) {
@@ -270,7 +272,7 @@ bool json_to_bool(JSON_ENTITY *Ent) {
                 json_type_to_str(Ent->type));
         return 0;
     }
-    return *((bool *)&(Ent->data));
+    return *((bool *) &(Ent->data));
 }
 
 int json_get_arr_length(JSON_ENTITY *Ent) {
@@ -281,7 +283,7 @@ int json_get_arr_length(JSON_ENTITY *Ent) {
                 json_type_to_str(Ent->type));
         return 0;
     }
-    JSON_ARRAY_DATA *datap = (void *)(&Ent->data);
+    JSON_ARRAY_DATA *datap = (void *) (&Ent->data);
     return datap->length;
 }
 
@@ -293,7 +295,7 @@ StringList *json_get_obj_keys(JSON_ENTITY *Ent) {
                 json_type_to_str(Ent->type));
         return 0;
     }
-    JSON_OBJECT_DATA *datap = (void *)(&Ent->data);
+    JSON_OBJECT_DATA *datap = (void *) (&Ent->data);
     return datap->keys;
 }
 
@@ -307,50 +309,54 @@ JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...) {
     va_list arglist;
     va_start(arglist, Ent);
     switch (Ent->type) {
-    case JSON_OBJ: {
-        char *key = va_arg(arglist, char *);
-        JSON_OBJECT_DATA *dp = (void *)(&Ent->data);
-        va_end(arglist);
-        return ((struct JSON_OBJ_ENTRY *)ht_get(dp->contents, key))->value;
-    }
-    case JSON_ARRAY: {
-        int index = va_arg(arglist, int);
-        JSON_ARRAY_DATA *dp = (void *)(&Ent->data);
-        va_end(arglist);
-        return dp->contents[index];
-    }
-    default:
-        fprintf(stderr,
-                "Error in json_get. Expected either JSON_OBJ or "
-                "JSON_ARRAY. Got %s instead.",
-                json_type_to_str(Ent->type));
-        return NULL;
+        case JSON_OBJ: {
+            char *key = va_arg(arglist, char *);
+            JSON_OBJECT_DATA *dp = (void *) (&Ent->data);
+            va_end(arglist);
+            return *(JSON_ENTITY **) htab_get(dp->contents, key);
+        }
+        case JSON_ARRAY: {
+            int index = va_arg(arglist, int);
+            JSON_ARRAY_DATA *dp = (void *) (&Ent->data);
+            va_end(arglist);
+            return dp->contents[index];
+        }
+        default:
+            fprintf(stderr,
+                    "Error in json_get. Expected either JSON_OBJ or "
+                    "JSON_ARRAY. Got %s instead.",
+                    json_type_to_str(Ent->type));
+            return NULL;
     }
 }
 
 void json_entity_free(JSON_ENTITY *ent) {
     switch (ent->type) {
-    case JSON_STRING:
-        free(json_to_string(ent));
-    case JSON_NUM:
-    case JSON_BOOL:
-        free(ent);
-        break;
-    case JSON_ARRAY: {
-        int len = json_get_arr_length(ent);
-        for (int i = 0; i < len; i++) {
-            json_entity_free(json_get(ent, i));
+        case JSON_STRING:
+            free(json_to_string(ent));
+        case JSON_NUM:
+        case JSON_BOOL:
+            free(ent);
+            break;
+        case JSON_ARRAY: {
+            int len = json_get_arr_length(ent);
+            for (int i = 0; i < len; i++) {
+                json_entity_free(json_get(ent, i));
+            }
+            free(((JSON_ARRAY_DATA *) (&ent->data))->contents);
+            free(ent);
         }
-        free(((JSON_ARRAY_DATA *)(&ent->data))->contents);
-        free(ent);
-    } break;
-    case JSON_OBJ: {
-        ht_destroy(&((JSON_OBJECT_DATA *)&ent->data)->contents, true);
-        ll_free(json_get_obj_keys(ent), free);
-        free(ent);
-    } break;
-    case JSON_NULL:
-        break;
+            break;
+        case JSON_OBJ: {
+            htab_free_entries(((JSON_OBJECT_DATA *) &ent->data)->contents,
+                              (void (*)(void *)) json_entity_free);
+            free(((JSON_OBJECT_DATA *) &ent->data)->contents);
+            ll_free(json_get_obj_keys(ent), free);
+            free(ent);
+        }
+            break;
+        case JSON_NULL:
+            break;
     }
 }
 
@@ -361,72 +367,80 @@ void json_entity_free(JSON_ENTITY *ent) {
 /*     return new; */
 /* } */
 
-static void *ht_create_id(void *valargs) { return valargs; }
-
-static int json_obj_entry_cmp(void *obj, void *key) {
-    return strcmp(((struct JSON_OBJ_ENTRY *)obj)->key, key);
-}
-
-static ulong hash_str(void *id, ulong htcap) {
-    ulong sum = 0;
-    while (*(char *)id) {
-        sum *= 47; /* multiply by a prime number */
-        sum += *((char *)id);
-        id++;
-    }
-    return sum % htcap;
-}
-
-static ulong json_obj_entry_free(void *joe) {
-    struct JSON_OBJ_ENTRY *e = joe;
-    free(e->key);
-    json_entity_free(e->value);
-    free(joe);
-    return 0;
-}
-
-static struct JSON_OBJ_ENTRY *json_parse_object_entry(StringList *tokens,
-                                                      StringList **rest) {
+static struct JSON_OBJ_ENTRY json_parse_object_entry(StringList *tokens,
+                                                     StringList **rest) {
+    const struct JSON_OBJ_ENTRY invalid = {0, NULL};
     StringList *key, *colon, *val_start;
     key = ll_nth(tokens, 0);
     colon = ll_nth(tokens, 1);
     val_start = ll_nth(tokens, 2);
 
     if (!val_start)
-        return NULL;
+        return invalid;
 
     if (key->data[0] == '"' && strcmp(colon->data, ":") == 0) {
         JSON_ENTITY *val = json_parse_value(val_start, rest);
         if (val) {
-            struct JSON_OBJ_ENTRY *entry = malloc(sizeof(*entry));
-            entry->key = strdup(key->data);
-            entry->value = val;
+            struct JSON_OBJ_ENTRY entry = {
+                    key->data, val
+            };
             return entry;
         }
     }
     *rest = tokens;
-    return NULL;
+    return invalid;
 }
 
 static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = ll_nth(*rest, 1);
-        Hashtable kvs;
-        ht_init(&kvs, 10, 2 * sizeof(void *) + sizeof(ulong), &ht_create_id,
-                &json_obj_entry_cmp, NULL, &hash_str, json_obj_entry_free);
+        hashp kvs;
+        kvs = htab_new(djb2_str, 2, sizeof(JSON_ENTITY *), 1);
+        kvs->cmp = (ht_cmp_func) strncmp;
+        kvs->keycpy = (ht_key_cpy_func) strncpy;
+
         StringList *keys = NULL;
-        struct JSON_OBJ_ENTRY *new_ent = json_parse_object_entry(*rest, rest);
-        while (new_ent) {
+        struct JSON_OBJ_ENTRY new_ent = json_parse_object_entry(*rest, rest);
+        while (new_ent.value) {
+            bool rehash = false;
+            int new_keysz = kvs->key_sz;
+            int new_buf_cap = kvs->buf_cap;
+
+            if ((((float) kvs->buf_load) / kvs->buf_cap) > 0.7) {
+                new_buf_cap *= 2;
+                rehash = true;
+            }
+
+            if (strlen(new_ent.key) > kvs->key_sz) {
+                while (new_keysz < strlen(new_ent.key))
+                    new_keysz *= 2;
+
+                rehash = true;
+            }
+
+            if (rehash) {
+                hashp new_ht = htab_new(djb2_str,
+                                        new_keysz,
+                                        sizeof(JSON_ENTITY *),
+                                        new_buf_cap);
+                new_ht->keycpy = (ht_key_cpy_func) strncpy;
+                new_ht->cmp = (ht_cmp_func) strncmp;
+                htab_rehash(kvs, new_ht);
+                free(kvs);
+                kvs = new_ht;
+            }
+
+
             StringList *keys_node = malloc(sizeof(StringList));
-            keys_node->data = new_ent->key;
+            keys_node->data = strdup(new_ent.key);
             ll_push(&keys, keys_node);
-            void *_;
-            ht_insert(kvs, new_ent->key, new_ent, &_);
+            htab_put(kvs, new_ent.key, &new_ent.value);
+
             if (strcmp((*rest)->data, ",") == 0)
                 new_ent = json_parse_object_entry(ll_nth(*rest, 1), rest);
             else
-                new_ent = NULL;
+                new_ent = (struct JSON_OBJ_ENTRY) {0, NULL};
         }
         JSON_ENTITY *obj = json_new_obj(kvs, keys);
         if (strcmp("}", (*rest)->data) == 0) {
@@ -506,9 +520,9 @@ JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest) {
     } else if (strcmp("[", first_tok) == 0) {
         /* array */
         return json_parse_array(tokens, rest);
-    } else if(strcmp("null", first_tok) == 0){
-	/* null */
-	return &json_null_ent;
+    } else if (strcmp("null", first_tok) == 0) {
+        /* null */
+        return &json_null_ent;
     }
     *rest = tokens;
     return NULL;
@@ -516,39 +530,41 @@ JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest) {
 
 void json_print_value(JSON_ENTITY *val) {
     switch (val->type) {
-    case JSON_NUM:
-        printf("%lf", json_to_double(val));
-        break;
-    case JSON_NULL:
-	printf("null");
-	break;
-    case JSON_BOOL:
-        printf("%s", json_to_bool(val) ? "true" : "false");
-        break;
-    case JSON_STRING:
-        printf("%s", json_to_string(val));
-        break;
-    case JSON_ARRAY: {
-        int length = json_get_arr_length(val);
-        printf("[");
-        json_print_value(json_get(val, 0));
-        for (int i = 1; i < length; i++) {
-            printf(", ");
-            json_print_value(json_get(val, i));
+        case JSON_NUM:
+            printf("%lf", json_to_double(val));
+            break;
+        case JSON_NULL:
+            printf("null");
+            break;
+        case JSON_BOOL:
+            printf("%s", json_to_bool(val) ? "true" : "false");
+            break;
+        case JSON_STRING:
+            printf("%s", json_to_string(val));
+            break;
+        case JSON_ARRAY: {
+            int length = json_get_arr_length(val);
+            printf("[");
+            json_print_value(json_get(val, 0));
+            for (int i = 1; i < length; i++) {
+                printf(", ");
+                json_print_value(json_get(val, i));
+            }
+            printf("]");
         }
-        printf("]");
-    } break;
-    case JSON_OBJ: {
-        StringList *keys = json_get_obj_keys(val);
-        printf("{");
-        LLFOREACH(key, keys) {
-            printf("%s : ", key->data);
-            json_print_value(json_get(val, key->data));
+            break;
+        case JSON_OBJ: {
+            StringList *keys = json_get_obj_keys(val);
+            printf("{");
+            LLFOREACH(key, keys) {
+                printf("%s : ", key->data);
+                json_print_value(json_get(val, key->data));
+            }
+            printf("}");
         }
-        printf("}");
-    } break;
-    default:
-        printf("<JSON_INVALID@%p>", val);
+            break;
+        default:
+            printf("<JSON_INVALID@%p>", val);
     }
 }
 

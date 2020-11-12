@@ -1,98 +1,109 @@
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
 
+#include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-typedef void *pointer;
+#define MAX_PROBES 32
 
-typedef struct Hashtable *Hashtable;
-
-/*!
-@brief key pointer type
-@showinitializer
-*/
 typedef void *keyp;
-/*!
-@brief val pointer type
-@showinitializer
-*/
 typedef void *valp;
 
-/*! @brief hashtable value contructor */
-typedef valp (*hash_create_val_f)(valp);
-/*! @brief hashtable comparator */
-typedef int (*hash_compare_f)(valp, keyp);
-/*! @brief hashtable printing function */
-typedef void (*hash_print_value_f)(valp);
-/*! @brief hashtable hashing function */
-typedef ulong (*hash_hashfunc_f)(keyp, ulong);
-/*! @brief hashtable value destructor */
-typedef ulong (*hash_destroy_value)(valp);
+typedef uint (*ht_hash_func)(keyp key, size_t key_sz);
 
-/*!
-@relates Hashtable
-@brief Create a new hashtable.
-@param[out] ht : The new Hashtable.
-@param[in] capacity : The capacity of the hashtable's buffer.
-@param[in] bucketSize : The capacity of a bucket.
-@param[in] createValue : value contructor.
-@param[in] cmp : value comparator.
-@param[in] printValue : value printer.
-@param[in] hash : hash function to be used.
-@param[in] destroy : value destruction function to be used.
-@returns returns TRUE on success
-*/
-bool ht_init(Hashtable *ht, unsigned long capacity,
-             unsigned long int bucketSize, hash_create_val_f createValue,
-             hash_compare_f cmp, hash_print_value_f printValue,
-             hash_hashfunc_f hash, hash_destroy_value destroy);
+typedef int (*ht_cmp_func)(keyp key1, keyp key2, size_t keysz);
 
-/*!
-@relates Hashtable
-@brief Inserts a new (key, value) pair to the hashtable.
-@param[in] ht : the hashtable
-@param[in] key : the new key
-@param[in] val : the new value
-@param[out] value_out : the newly inserted value
-@returns non-zero on success
- */
-int ht_insert(Hashtable ht, keyp key, valp val, valp *value_out);
+typedef void (*ht_key_cpy_func)(keyp dest, keyp src, size_t keysz);
 
-/*!
-@relates Hashtable
-@brief Finds a key on the hashtable
-@param[in] ht : the hashtable
-@param[in] key : the key to search for
-@returns pointer to the value associated with key. NULL on failure*/
-valp ht_get(Hashtable ht, keyp key);
+/*! @brief hashtable bucket states */
+enum {
+    HT_ENTRY_FLAGS_CLEAR = 0,
+    HT_ENTRY_FLAGS_OCCUPIED = 0b1,
+    HT_ENTRY_FLAGS_DELETED = 0b10
+};
 
-/*!
-@relates Hashtable
-@brief Deletes a key, value pair from the hashtable
-@param[in] ht : the hashtable
-@param[in] key : the key
-@param[in] valueParams : the value
-@param[in] forcedestroyitem : whether to free the deleted item using ht->destroy
-@returns non-zero on success
-*/
-int ht_remove(Hashtable ht, keyp key, valp valueParams, bool forceDestroyItem);
+/*! @brief hashtable entry struct */
+typedef struct htab_entry_s {
+    u_int8_t flags;
+    /*!  */
+    uint hash;
+    /*!
+      @brief the buffer for the entry
+      shold be of size htab_s.buf_cap * htab_entry_sz(htab_s)
+     */
+    char contents[]; /* contains hash, key, val */
+} htab_entry_t;
 
-/*!
-@relates Hashtable
-@brief Destroys the hashtable, optionally freeing the items in it
-@param[in] ht : the hash table
-@param[in] forceDestroyItem : whether to destroy the items with ht->destroy
- */
-void ht_destroy(Hashtable *ht, bool forceDestroyItem);
+/*! hashtable ADT */
+typedef struct htab_s {
+    /*! @brief hash function used to hash the keys */
+    ht_hash_func h;
+    /*! @brief comparison function to compare 2 keys (default: memcmp) */
+    ht_cmp_func cmp;
+    /*! @brief copying function that copies a key to the hashtable (default: memcpy) */
+    ht_key_cpy_func keycpy;
+    /*! @brief size of key in the hashtable */
+    size_t key_sz;
+    /*! @brief size of val in the hashtable */
+    size_t val_sz;
+    /*! @brief capacity of buf */
+    ulong buf_cap;
+    /*! @brief occupied entries of buf */
+    ulong buf_load;
+    /*! @brief the buffer where the entries are stored */
+    char buf[];
+} htab_t;
 
-/*!
-@relates Hashtable
-@brief Prints the contents of the hashtable
-@param[in] ht : the hashtable
- */
+typedef htab_t *hashp;
 
-void ht_print(Hashtable ht);
+/*! @brief calculates the entry size for a hashtable with key_sz = key_sz and val_sz = val_sz */
+static inline size_t htab_entry_size2(size_t key_sz, size_t val_sz) {
+    return sizeof(htab_entry_t) + key_sz + val_sz + sizeof(uintmax_t);
+}
+
+/*! @brief calculates the entry size for ht */
+static inline size_t htab_entry_size(hashp ht) {
+    return htab_entry_size2(ht->key_sz, ht->val_sz);
+}
+
+/*! @brief calculates the total size of a hashtable, given capacity and key and value sizes */
+static inline size_t htab_size(ulong buf_cap, size_t key_sz, size_t val_sz) {
+    return sizeof(htab_t) + htab_entry_size2(key_sz, val_sz) * buf_cap;
+}
+
+void htab_init(hashp ht, ht_hash_func h, size_t key_sz, size_t val_sz,
+               ulong buf_cap);
+
+hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap);
+
+void htab_free_entries(hashp ht, void (*free)(void *));
+
+bool htab_put(hashp ht_info, keyp key, valp val);
+
+valp htab_get(hashp ht_info, keyp key);
+
+const keyp htab_get_keyp_from_valp(hashp ht, valp val);
+
+const keyp htab_get_keyp(hashp ht_info, keyp key);
+
+valp htab_del(hashp ht_info, keyp key);
+
+bool htab_rehash(hashp dest, hashp src);
+
+bool htab_rehash_deep(hashp old, hashp new, valp (*copy_val)(valp val));
+
+void *htab_iterate_r(hashp ht, ulong *state);
+
+void *htab_iterate(hashp ht);
+
+/* __________ Some hashing functions to use __________ */
+uint djb2(keyp key, size_t key_sz);
+
+uint djb2_str(keyp key, size_t key_sz);
 
 #endif
