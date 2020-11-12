@@ -51,7 +51,7 @@ STS *sts_new() {
     /* set the buffer */
 #ifdef PRINT_FILE
     if(PRINT_FILE_STREAM == NULL)
-	PRINT_FILE_STREAM = fopen(PRINT_FILE, "w");
+	PRINT_FILE_STREAM = fopen(PRINT_FILE, "w+");
 #endif
 
     return new;
@@ -160,7 +160,7 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
 	root = findRoot(sts, sp);
         StrList *similar = root->similar;
 
-	if(verbose || sp == root){
+	if(!verbose || sp == root){
 	    fprintf(file, "\"%s\" -> \"%p\"\n", sp->id, similar);
 	} else {
 	    fprintf(file, "\"%s\" -> \"%s\"", sp->id, sp->parent);
@@ -178,7 +178,7 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
             break;
           case 2:
             sprintf(buf, "(%s, %s)", root->similar->data,
-                    ((SpecList *)ll_nth(root->similar, 1))->data->id);
+                    ((StrList *)ll_nth(root->similar, 1))->data);
             break;
           case 3:
             sprintf(buf, "(%s, %s, %s)", root->similar->data,
