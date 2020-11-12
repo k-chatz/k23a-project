@@ -193,6 +193,7 @@ void json_print_value(JSON_ENTITY *val);
 @param[in] tokens : the list of tokens
  */
 JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
+
 /*! @} */
 
 void json_free_StringList(StringList *list);

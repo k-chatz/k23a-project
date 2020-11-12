@@ -17,14 +17,14 @@ void add_test(void) {
     ulong i, j = 0;
     for (i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
-	SpecEntry *test = sts_get(sts, ids[i]);
-	TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->ht, test),
-			  ids[i]) == 0);
+        SpecEntry *test = sts_get(sts, ids[i]);
+                TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->ht, test),
+                                  ids[i]) == 0);
     }
     i = N;
-    for(char *key = htab_iterate_r(sts->ht, &j);
-	key != NULL;
-	key = htab_iterate_r(sts->ht, &j)){
+    for (char *key = htab_iterate_r(sts->ht, &j);
+         key != NULL;
+         key = htab_iterate_r(sts->ht, &j)) {
         ids_from_sts[--i] = key;
     }
 }
@@ -52,11 +52,11 @@ void merge_test(void) {
     s6 = sts_get(sts, "6");
 
     /* check if s1 and s2 point to the same list */
-    TEST_CHECK(findRoot(sts, s1) == findRoot(sts, s2));
-    TEST_CHECK(findRoot(sts, s2) == findRoot(sts, s3));
-    TEST_CHECK(findRoot(sts, s3) == findRoot(sts, s6));
-    TEST_CHECK(findRoot(sts, s2) == findRoot(sts, s4));
-    TEST_CHECK(findRoot(sts, s4) == findRoot(sts, s5));
+            TEST_CHECK(findRoot(sts, s1) == findRoot(sts, s2));
+            TEST_CHECK(findRoot(sts, s2) == findRoot(sts, s3));
+            TEST_CHECK(findRoot(sts, s3) == findRoot(sts, s6));
+            TEST_CHECK(findRoot(sts, s2) == findRoot(sts, s4));
+            TEST_CHECK(findRoot(sts, s4) == findRoot(sts, s5));
 
 /*    for (int i = 0; i < 2; i++) {
                 TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
