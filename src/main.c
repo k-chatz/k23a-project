@@ -30,19 +30,24 @@ int main(int argc, char *argv[]) {
     readOptions(argc, argv, &dir, &csv);
 
     dataset_X = get_spec_ids(dir);
-    fp = fopen(csv, "r");
+    // fp = fopen(csv, "r");
 
-    //skip first row fseek
-    fseek(fp, 33, SEEK_SET);
-    while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
-        if (!strcmp(label, "1") && strcmp(left_spec_id, right_spec_id) != 0) {
-            sts_merge(dataset_X, left_spec_id, right_spec_id);
-        }
-    }
-    fclose(fp);
+    // //skip first row fseek
+    // fseek(fp, 33, SEEK_SET);
+    // while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
+    //     if (!strcmp(label, "1") && strcmp(left_spec_id, right_spec_id) != 0) {
+    //         sts_merge(dataset_X, left_spec_id, right_spec_id);
+    //     }
+    // }
+    // fclose(fp);
 
     //print result
-    print_sts_(stdout, dataset_X, false);
+   // print_sts_(stdout, dataset_X, false);
 
+
+// 12,894,598
+
+
+    sts_destroy(&dataset_X);
     return 0;
 }

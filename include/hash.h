@@ -36,7 +36,7 @@ typedef struct htab_entry_s {
       @brief the buffer for the entry
       shold be of size htab_s.buf_cap * htab_entry_sz(htab_s)
      */
-    char contents[]; /* contains hash, key, val */
+    char contents[]; /* contains key, val */
 } htab_entry_t;
 
 /*! hashtable ADT */
@@ -80,6 +80,8 @@ void htab_init(hashp ht, ht_hash_func h, size_t key_sz, size_t val_sz,
                ulong buf_cap);
 
 hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap);
+
+void htab_destroy(hashp *ht, void (*free)(void *));
 
 void htab_free_entries(hashp ht, void (*free)(void *));
 

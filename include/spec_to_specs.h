@@ -52,6 +52,9 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec);
 */
 STS *sts_new();
 
+//TODO: Documentation (Dont touch it! 😡)
+void sts_destroy(STS *sts);
+
 /*!
   @relates STS
 

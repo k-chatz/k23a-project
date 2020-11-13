@@ -35,6 +35,11 @@ hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap) {
     return new;
 }
 
+void htab_destroy(hashp *ht, void (*free)(void *)) {
+    htab_free_entries(ht, free);
+    free((*ht)->buf);
+}
+
 void htab_free_entries(hashp ht, void (*free)(void *)) {
     htab_entry_t *bucket;
     size_t entry_sz = htab_entry_size(ht);

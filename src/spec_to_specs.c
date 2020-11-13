@@ -57,6 +57,14 @@ STS *sts_new() {
     return new;
 }
 
+
+
+void sts_destroy(STS *sts) {
+    htab_destroy(&(sts)->ht, &destroy_spec);
+    // free((*sts));
+
+}
+
 /* adds a node to the sts */
 
 int sts_add(STS *sts, char *id) {
@@ -91,6 +99,7 @@ int sts_add(STS *sts, char *id) {
 
     temp.id = id_dup;
     htab_put(sts->ht, id, &temp);
+
     SpecEntry *newspec = htab_get(sts->ht, id);
 
     newspec->similar = malloc(sizeof(SpecList));
@@ -149,6 +158,11 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 SpecEntry *sts_get(STS *sts, char *id) { return htab_get(sts->ht, id); }
 
 
+void free_StrList_data(StrList *list){
+  free(list->data);
+  free(list);
+}
+
 void print_sts(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "digraph {\n\n");
     ulong iter_state = 0;
@@ -195,7 +209,7 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
         }
 
     }
-    fprintf(file, "\n}\n");
+    fprintf(file, "\n}\n");    
 }
 
 // typedef struct list_s list;
@@ -240,7 +254,7 @@ void print_sts_(FILE *file, STS *sts, bool verbose) {
             ll_push(&list, create_node(root->id));
         }
     }
-    fprintf(file, "\n}\n");
+    ll_free(list, (llfree_f)free_StrList_data);
 }
 
 /* _______ END of STS Functions _______ */
