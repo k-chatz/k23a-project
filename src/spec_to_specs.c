@@ -32,11 +32,10 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec) {
 }
 
 /* Destroy a spec */
-static ulong destroy_spec(void *spec) {
+static void destroy_spec(void *spec) {
     ll_free(((SpecEntry *) spec)->similar, free);
     free(((SpecEntry *) spec)->id);
     free(spec);
-    return 1;
 }
 
 /* __________ STS Functions __________ */
@@ -57,12 +56,9 @@ STS *sts_new() {
     return new;
 }
 
-
-
 void sts_destroy(STS *sts) {
-    htab_destroy(&(sts)->ht, &destroy_spec);
-    // free((*sts));
-
+    htab_destroy(&(sts)->ht, destroy_spec);
+   // free(sts);
 }
 
 /* adds a node to the sts */

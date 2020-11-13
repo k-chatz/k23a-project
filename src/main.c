@@ -42,12 +42,9 @@ int main(int argc, char *argv[]) {
     // fclose(fp);
 
     //print result
-   // print_sts_(stdout, dataset_X, false);
+    // print_sts_(stdout, dataset_X, false);
 
-
-// 12,894,598
-
-
-    sts_destroy(&dataset_X);
+    // 12,894,598
+    sts_destroy(dataset_X);
     return 0;
 }
