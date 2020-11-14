@@ -35,18 +35,18 @@ hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap) {
     return new;
 }
 
-void htab_destroy(hashp *ht, void (*free)(void *)) {
-    htab_free_entries(*ht, free);
-    //free((*ht)->buf);
+void htab_destroy(hashp ht, void (*free_t)(void *)) {
+    htab_free_entries(ht, free_t);
+    free(ht);
 }
 
-void htab_free_entries(hashp ht, void (*free)(void *)) {
+void htab_free_entries(hashp ht, void (*free_t)(void *)) {
     htab_entry_t *bucket;
     size_t entry_sz = htab_entry_size(ht);
     for (uint i = 0; i < ht->buf_cap; i++) {
         bucket = (void *) &ht->buf[entry_sz * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED)
-            free(bucket->contents + ht->key_sz);
+            free_t(bucket->contents + ht->key_sz);
     }
 }
 

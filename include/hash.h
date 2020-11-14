@@ -81,9 +81,9 @@ void htab_init(hashp ht, ht_hash_func h, size_t key_sz, size_t val_sz,
 
 hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap);
 
-void htab_destroy(hashp *ht, void (*free)(void *));
+void htab_destroy(hashp ht, void (*free_t)(void *));
 
-void htab_free_entries(hashp ht, void (*free)(void *));
+void htab_free_entries(hashp ht, void (*free_t)(void *));
 
 bool htab_put(hashp ht_info, keyp key, valp val);
 
