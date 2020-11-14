@@ -63,15 +63,20 @@ int sts_add(STS *sts, char *id) {
     bool rehash = false;
     int new_keysz = sts->ht->key_sz;
     int new_buf_cap = sts->ht->buf_cap;
+
+    // Todo: inline function
     if ((((float) sts->ht->buf_load) / sts->ht->buf_cap) > 0.7) {
         new_buf_cap *= 2;
         rehash = true;
     }
+
     if (strlen(id) > sts->ht->key_sz) {
         new_keysz *= 2;
         rehash = true;
     }
+
     if (rehash) {
+        // Todo: change htab_rehash, execute below commands inside rehash
         hashp new_ht = htab_new(djb2_str, new_keysz, sizeof(SpecEntry), new_buf_cap);
         new_ht->keycpy = (ht_key_cpy_func) strncpy;
         new_ht->cmp = (ht_cmp_func) strncmp;
