@@ -31,19 +31,11 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec) {
     return findRoot(sts, root);
 }
 
-/* Destroy a spec */
-static void destroy_spec(void *spec) {
-    ll_free(((SpecEntry *) spec)->similar, free);
-    free(((SpecEntry *) spec)->id);
-    free(spec);
-}
-
 /* __________ STS Functions __________ */
 /* Create a new sts */
 STS *sts_new() {
     /* allocate the sts */
     STS *new = malloc(sizeof(STS));
-
     new->ht = htab_new(djb2_str, MAX_ID_LEN, sizeof(SpecEntry), 1999);
     new->ht->cmp = (ht_cmp_func) strncmp;
     new->ht->keycpy = (ht_key_cpy_func) strncpy;
@@ -52,59 +44,52 @@ STS *sts_new() {
     if(PRINT_FILE_STREAM == NULL)
     PRINT_FILE_STREAM = fopen(PRINT_FILE, "w+");
 #endif
-
     return new;
 }
 
+/* Destroy a spec */
+static void destroy_spec(SpecEntry *spec) {
+    ll_free(spec->similar, free);
+    free(spec->id);
+}
+
 void sts_destroy(STS *sts) {
-    htab_destroy(&(sts)->ht, destroy_spec);
-   // free(sts);
+    htab_destroy(sts->ht, (void (*)(void *)) destroy_spec);
+    free(sts);
 }
 
 /* adds a node to the sts */
-
 int sts_add(STS *sts, char *id) {
     bool rehash = false;
     int new_keysz = sts->ht->key_sz;
     int new_buf_cap = sts->ht->buf_cap;
-
     if ((((float) sts->ht->buf_load) / sts->ht->buf_cap) > 0.7) {
         new_buf_cap *= 2;
         rehash = true;
     }
-
     if (strlen(id) > sts->ht->key_sz) {
         new_keysz *= 2;
         rehash = true;
     }
-
     if (rehash) {
-        hashp new_ht = htab_new(djb2_str,
-                                new_keysz,
-                                sizeof(SpecEntry),
-                                new_buf_cap);
+        hashp new_ht = htab_new(djb2_str, new_keysz, sizeof(SpecEntry), new_buf_cap);
         new_ht->keycpy = (ht_key_cpy_func) strncpy;
         new_ht->cmp = (ht_cmp_func) strncmp;
         htab_rehash(sts->ht, new_ht);
         free(sts->ht);
         sts->ht = new_ht;
     }
-
     SpecEntry temp = (SpecEntry) {};
     char *id_dup = strdup(id);
-
     temp.id = id_dup;
     htab_put(sts->ht, id, &temp);
-
     SpecEntry *newspec = htab_get(sts->ht, id);
-
     newspec->similar = malloc(sizeof(SpecList));
     newspec->similar->data = id_dup;
     newspec->similar->next = NULL;
     newspec->parent = id_dup;
     newspec->similar_tail = newspec->similar;
     newspec->similar_len = 1;
-
     return 0;
 }
 
@@ -162,9 +147,7 @@ void free_StrList_data(StrList *list){
 void print_sts(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "digraph {\n\n");
     ulong iter_state = 0;
-    for (char *key = htab_iterate_r(sts->ht, &iter_state);
-         key != NULL;
-         key = htab_iterate_r(sts->ht, &iter_state)) {
+    for (char *key = htab_iterate_r(sts->ht, &iter_state); key != NULL; key = htab_iterate_r(sts->ht, &iter_state)) {
         SpecEntry *sp, *root;
         sp = htab_get(sts->ht, key);
         root = findRoot(sts, sp);
