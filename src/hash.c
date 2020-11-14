@@ -53,7 +53,6 @@ void htab_free_entries(hashp ht, void (*free_t)(void *)) {
 bool htab_put(hashp ht, keyp key, valp val) {
     uint hash = ht->h(key, ht->key_sz);
     size_t entry_sz = htab_entry_size(ht);
-
     htab_entry_t *bucket = (void *) &ht->buf[entry_sz * (hash % ht->buf_cap)];
     for (int probes = 0; probes < MAX_PROBES; probes++) {
         if (!bucket->flags || (bucket->flags & HT_ENTRY_FLAGS_DELETED)) {
@@ -129,6 +128,7 @@ bool htab_rehash(hashp old, hashp new) {
             htab_put(new, new_key, bucket->contents + old->key_sz);
         }
     }
+    free(new_key);
     return true;
 }
 
