@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "sstream": "c",
+        "array": "c",
+        "hash_map": "c",
+        "deque": "c",
+        "list": "c",
+        "string": "c",
+        "vector": "c",
+        "iterator": "c",
+        "string_view": "c"
+    }
+}
