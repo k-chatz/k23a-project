@@ -1,6 +1,6 @@
-OBJS	= main.o lists.o spec_to_specs.o spec_ids.o hash.o
-SOURCE	= main.c lists.c spec_to_specs.c spec_ids.c	hash.c
-HEADER	= lists.h spec_to_specs.h spec_ids.h hash.h
+OBJS	= main.o lists.o spec_to_specs.o spec_ids.o hash.o json_parser.o
+SOURCE	= main.c lists.c spec_to_specs.c spec_ids.c	hash.c json_parser.c
+HEADER	= lists.h spec_to_specs.h spec_ids.h hash.h json_parser.h
 OUT		= project
 CC		= gcc
 CFLAGS	= -g -Wall
