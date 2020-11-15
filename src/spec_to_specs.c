@@ -123,9 +123,9 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 
     if (spec1 == spec2)
         /* sets are already merged; nothing to do */
-        return 0;
+        return -1;
 
-    ll_push(spec1->similar_tail, spec2->similar); /* append spec2->similar to spec1->similar */
+    spec1->similar_tail->next = spec2->similar;	/* append spec2->similar to spec1->similar */
     spec1->similar_tail = spec2->similar_tail;     /* set the new tail */
     spec1->similar_len += spec2->similar_len;     /* add the lengths */
     spec2->similar = NULL;

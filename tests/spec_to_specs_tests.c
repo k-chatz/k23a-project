@@ -13,20 +13,14 @@
 void add_test(void) {
     STS *sts = sts_new();
     char *ids[] = {"www.ebay.com//123", "2", "3", "4", "5"};
-    char *ids_from_sts[sizeof(ids) / sizeof(char *)];
-    ulong i, j = 0;
+    ulong i;
     for (i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
         SpecEntry *test = sts_get(sts, ids[i]);
                 TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->ht, test),
                                   ids[i]) == 0);
     }
-    i = N;
-    for (char *key = htab_iterate_r(sts->ht, &j);
-         key != NULL;
-         key = htab_iterate_r(sts->ht, &j)) {
-        ids_from_sts[--i] = key;
-    }
+    sts_destroy(sts);
 }
 
 void merge_test(void) {
@@ -61,6 +55,7 @@ void merge_test(void) {
 /*    for (int i = 0; i < 2; i++) {
                 TEST_CHECK(strcmp(ids[1 - i], ((SpecList *) ll_nth(s1->similar, i))->data->id) == 0);
     }*/
+    sts_destroy(sts);
 }
 
 #ifndef ACUTEST_H

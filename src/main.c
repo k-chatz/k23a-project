@@ -30,10 +30,12 @@ int main(int argc, char *argv[]) {
 
     fp = fopen(csv, "r");
     //skip first row fseek
+    uint merges = 0;
     fseek(fp, 33, SEEK_SET);
     while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
         if (!strcmp(label, "1") && strcmp(left_spec_id, right_spec_id) != 0) {
-            sts_merge(dataset_X, left_spec_id, right_spec_id);
+	  merges +=
+	    sts_merge(dataset_X, left_spec_id, right_spec_id) >= 0;
         }
     }
     fclose(fp);
