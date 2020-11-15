@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
     hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY*), dataset_X->ht->buf_cap);
     ulong iter_state = 0;
     for (char *key = htab_iterate_r(dataset_X->ht, &iter_state); key != NULL; key = htab_iterate_r(dataset_X->ht, &iter_state)) {
-        char* json_name = sscanf(key, "%[^/]//%[^/]", json_website, json_num);
+        sscanf(key, "%[^/]//%[^/]", json_website, json_num);
         snprintf(json_path, 128, "%s/%s/%s.json", dir, json_website, json_num);
         fd = open(json_path, O_RDONLY);
         read_err = read(fd, contents, 1 << 20);
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]) {
         if (rest_tok[0] != '\0'){
             printf("rest not null");
             goto label;
-            
+
         }
         StringList *rest_ent;
         JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
@@ -70,7 +72,8 @@ int main(int argc, char *argv[]) {
              
 
         // empty tokens list
-        label: ll_free(tokens, json_free_StringList);
+    label:
+	ll_free(tokens, (llfree_f)json_free_StringList);
         close(fd);
     }
 
