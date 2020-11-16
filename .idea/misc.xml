@@ -3,6 +3,7 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <excludeRoots>
+      <file path="$PROJECT_DIR$/.ccls-cache" />
       <file path="$PROJECT_DIR$/.githooks" />
       <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/Datasets" />

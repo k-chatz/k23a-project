@@ -125,7 +125,7 @@ int sts_merge(STS *sts, char *id1, char *id2) {
         /* sets are already merged; nothing to do */
         return -1;
 
-    spec1->similar_tail->next = spec2->similar;	/* append spec2->similar to spec1->similar */
+    spec1->similar_tail->next = spec2->similar;    /* append spec2->similar to spec1->similar */
     spec1->similar_tail = spec2->similar_tail;     /* set the new tail */
     spec1->similar_len += spec2->similar_len;     /* add the lengths */
     spec2->similar = NULL;
@@ -144,9 +144,9 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 SpecEntry *sts_get(STS *sts, char *id) { return htab_get(sts->ht, id); }
 
 
-void free_StrList_data(StrList *list){
-  free(list->data);
-  free(list);
+void free_StrList_data(StrList *list) {
+    free(list->data);
+    free(list);
 }
 
 void print_sts(FILE *file, STS *sts, bool verbose) {
@@ -193,7 +193,7 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
         }
 
     }
-    fprintf(file, "\n}\n");    
+    fprintf(file, "\n}\n");
 }
 
 // typedef struct list_s list;
@@ -204,41 +204,41 @@ void print_sts(FILE *file, STS *sts, bool verbose) {
 // };
 
 bool eq_pred(void *node, va_list vargs) {
-    char* x = va_arg(vargs, char*);
+    char *x = va_arg(vargs, char*);
     StrList *n = (StrList *) node;
     return !strcmp(n->data, x);
 }
 
-StrList *create_node(char* id){
+StrList *create_node(char *id) {
 
-  StrList* node = malloc(sizeof(StrList));
-  node->data = strdup(id);
-  node->next = NULL;
-  return node;
+    StrList *node = malloc(sizeof(StrList));
+    node->data = strdup(id);
+    node->next = NULL;
+    return node;
 }
 
 void print_sts_(FILE *file, STS *sts, bool verbose) {
-    StrList* list = NULL;
+    StrList *list = NULL;
     ulong iter_state = 0;
     for (char *key = htab_iterate_r(sts->ht, &iter_state);
-        key != NULL;
-        key = htab_iterate_r(sts->ht, &iter_state)) {
+         key != NULL;
+         key = htab_iterate_r(sts->ht, &iter_state)) {
         SpecEntry *sp, *root;
         sp = htab_get(sts->ht, key);
         root = findRoot(sts, sp);
-        if (!strcmp(root->id, sp->id)){
+        if (!strcmp(root->id, sp->id)) {
             continue;
         }
-        StrList* result = ll_search(list, &eq_pred, root->id);
-        if(result == NULL){
-            for (StrList *similar = root->similar; similar ; similar = ll_nth(similar, 1)) {
-                printf("%s%s",  similar == root->similar ? "" : ", ", similar->data);
+        StrList *result = ll_search(list, &eq_pred, root->id);
+        if (result == NULL) {
+            for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
+                printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
             }
             printf("\n");
             ll_push(&list, create_node(root->id));
         }
     }
-    ll_free(list, (llfree_f)free_StrList_data);
+    ll_free(list, (llfree_f) free_StrList_data);
 }
 
 /* _______ END of STS Functions _______ */
