@@ -3,7 +3,7 @@ SOURCE	= main.c lists.c spec_to_specs.c spec_ids.c	hash.c json_parser.c
 HEADER	= lists.h spec_to_specs.h spec_ids.h hash.h json_parser.h
 OUT		= project
 CC		= gcc
-CFLAGS	= -g -Wall
+CFLAGS	= -g -O3 -Wall
 
 .PHONY: tests all clean githooks docs phony
 

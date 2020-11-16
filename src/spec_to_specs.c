@@ -70,8 +70,11 @@ int sts_add(STS *sts, char *id) {
         rehash = true;
     }
 
-    if (strlen(id) > sts->ht->key_sz) {
-        new_keysz *= 2;
+    if (strlen(id) + 1 >= sts->ht->key_sz) {
+	do {
+	    new_keysz *= 2;	    
+	} while(strlen(id) + 1 >= new_keysz);
+
         rehash = true;
     }
 

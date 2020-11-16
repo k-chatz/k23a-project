@@ -296,10 +296,9 @@ void parse_obj_complex(void) {
 
     char *_;
     StringList *tokens = json_tokenize_str(json, &_);
-    char *expected_keys[] = {"\"foo\"", "\"bar\"", "\"baz\""};
     StringList *rest;
     JSON_ENTITY *ent = json_parse_value(tokens, &rest);
-    TEST_CHECK(ent);
+    TEST_CHECK(ent != NULL);
     CLEANUP();
 }
 

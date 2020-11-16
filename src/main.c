@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     //print result
     print_sts_(stdout, dataset_X, false);
     int fd;
-    char json_website[128], json_num[128], json_path[128], *contents, *rest_tok;
+    char json_website[128], json_num[128], json_path[280], *contents, *rest_tok;
     int read_err = 0;
     contents = malloc(1 << 20);
     hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), dataset_X->ht->buf_cap);
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     for (char *key = htab_iterate_r(dataset_X->ht, &iter_state);
          key != NULL; key = htab_iterate_r(dataset_X->ht, &iter_state)) {
         sscanf(key, "%[^/]//%[^/]", json_website, json_num);
-        snprintf(json_path, 128, "%s/%s/%s.json", dir, json_website, json_num);
+        snprintf(json_path, 280, "%s/%s/%s.json", dir, json_website, json_num);
         fd = open(json_path, O_RDONLY);
         read_err = read(fd, contents, 1 << 20);
 	if(read_err < 0) {
