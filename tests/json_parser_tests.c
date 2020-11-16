@@ -141,8 +141,8 @@ void tokenize_number(void) {
 }
 
 void tokenize_string(void) {
-    char *str_contents[] = {"fhasdj", "foo bar", "foo 123bar _@@!@#$%^&*()_+/",
-      "\\\"", "\\uAbFf"};
+    char *str_contents[] = {"fhasdj","foo bar","foo 123bar _@@!@#$%^&*()_+/",
+                            "\\\"", "\\uAbFf"};
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
         sprintf(buf, "\"%s\"", str_contents[i]);
@@ -152,7 +152,7 @@ void tokenize_string(void) {
 
 void tokenize_big_string(void) {
     char *bigstr = "\"Used: An item that has been used previously. The item may have some signs of cosmetic wear, but is fully\noperational and functions as intended. This item may be a floor model or store return that has been used. See the seller\\u00e2\\u0080\\u0099s listing for full details and description of any imperfections.\nSee all condition definitions- opens in a new window or tab\n... Read moreabout the condition\"";
-    
+
     TEST_CHECK(tokenize_word(bigstr));
 }
 
@@ -325,7 +325,7 @@ TEST_LIST = {{"tokenize_true",       tokenize_true},
              {"tokenize_rbracket",   tokenize_rbracket},
              {"tokenize_comma",      tokenize_comma},
              {"tokenize_number",     tokenize_number},
-             {"tokenize_big_string",     tokenize_big_string},
+             {"tokenize_big_string", tokenize_big_string},
              {"tokenize_string",     tokenize_string},
              {"tokenize_whitespace", tokenize_whitespace},
              {"tokenize_multiword",  tokenize_multiword},
