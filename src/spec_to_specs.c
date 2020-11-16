@@ -199,13 +199,6 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-// typedef struct list_s list;
-
-// struct list_s {
-//     list *next;
-//     int data;
-// };
-
 bool eq_pred(void *node, va_list vargs) {
     char *x = va_arg(vargs, char*);
     StrList *n = (StrList *) node;

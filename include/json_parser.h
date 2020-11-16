@@ -127,6 +127,13 @@ char *json_to_string(JSON_ENTITY *jsonEntity);
  */
 bool json_to_bool(JSON_ENTITY *jsonEntity);
 
+/*!
+@relates JSON_ENTITY
+@brief Converts a json string to JSON_ENTITY
+
+@param[in] json : A json string
+@returns the parsed JSON_ENTITY
+ */
 JSON_ENTITY *json_to_entity(char *json);
 
 /*!
@@ -198,4 +205,7 @@ JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
 
 /*! @} */
 
+/*!
+@private
+ */
 void json_free_StringList(StringList *list);

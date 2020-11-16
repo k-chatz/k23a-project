@@ -323,7 +323,7 @@ JSON_ENTITY *json_get(JSON_ENTITY *jsonEntity, ...) {
     switch (jsonEntity->type) {
         case JSON_OBJ: {
             char *key = va_arg(arglist, char *);
-            if (key == 0x1) {
+            if (key == (void *) 0x1) {
                 return NULL;
             }
             JSON_OBJECT_DATA *dp = (void *) (&jsonEntity->data);
