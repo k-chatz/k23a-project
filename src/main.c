@@ -26,6 +26,10 @@ void readOptions(int argc, char **argv, char **dir, char **csv) {
     }
 }
 
+void free_json_ht_ent(JSON_ENTITY **val){
+  json_entity_free(*val);
+}
+
 int main(int argc, char *argv[]) {
    char left_spec_id[50], right_spec_id[50], label[50], *dir = NULL, *csv = NULL;
    FILE *fp;
@@ -60,17 +64,24 @@ int main(int argc, char *argv[]) {
         snprintf(json_path, 128, "%s/%s/%s.json", dir, json_website, json_num);
         fd = open(json_path, O_RDONLY);
         read_err = read(fd, contents, 1 << 20);
+	if(read_err < 0) {
+	  perror("read");
+	} else {
+	  contents[read_err] = '\0';
+	}
         StringList *tokens = json_tokenize_str(contents, &rest_tok);
+
         if (rest_tok[0] != '\0'){
             printf("rest not null");
             goto label;
 
         }
+	memset(contents, 0, 1 << 20);
         StringList *rest_ent;
         JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
-        htab_put(json_ht, key, ent);
+        htab_put(json_ht, key, &ent);
              
-
+	
         // empty tokens list
     label:
 	ll_free(tokens, (llfree_f)json_free_StringList);
@@ -80,5 +91,8 @@ int main(int argc, char *argv[]) {
 
     
     sts_destroy(dataset_X);
+    htab_free_entries(json_ht, (void (*)(void*))free_json_ht_ent);
+    free(json_ht);
+    free(contents);
     return 0;
 }

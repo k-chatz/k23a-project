@@ -12,7 +12,8 @@ uint djb2(keyp key, size_t key_sz) {
 uint djb2_str(keyp key, size_t key_sz) {
     /* djb2 hashing function from http://www.cse.yorku.ca/~oz/hash.html */
     uint hash = 5381;
-    for (uint i = 0; i < key_sz && ((char *) key)[i]; i++) {
+    uint i = 0;
+    for (; i < key_sz && ((char *) key)[i]; i++) {
         hash = ((hash << 5) + hash) + ((char *) key)[i];
     }
     return hash;

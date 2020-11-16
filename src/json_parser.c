@@ -148,7 +148,7 @@ static char *eat_ws(char *str) {
 StringList *json_tokenize_str(char *str, char **rest) {
     StringList *out = NULL;
     char *current;
-    int current_len;
+    int current_len = 0;
     do {
         str = eat_ws(str);
         current = json_next_token(str, &current_len);
@@ -330,6 +330,10 @@ JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...) {
     }
 }
 
+void json_entityp_free(JSON_ENTITY **ent){
+  json_entity_free(*ent);
+}
+
 void json_entity_free(JSON_ENTITY *ent) {
     switch (ent->type) {
         case JSON_STRING:
@@ -349,9 +353,9 @@ void json_entity_free(JSON_ENTITY *ent) {
             break;
         case JSON_OBJ: {
             htab_free_entries(((JSON_OBJECT_DATA *) &ent->data)->contents,
-                              (void (*)(void *)) json_entity_free);
+                              (void (*)(void *)) json_entityp_free);
             free(((JSON_OBJECT_DATA *) &ent->data)->contents);
-            ll_free(json_get_obj_keys(ent), free);
+            ll_free(json_get_obj_keys(ent), (llfree_f)json_free_StringList);
             free(ent);
         }
             break;
@@ -395,11 +399,10 @@ static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
         *rest = ll_nth(*rest, 1);
-        hashp kvs;
-        kvs = htab_new(djb2_str, 2, sizeof(JSON_ENTITY *), 1);
+        hashp kvs =
+	  htab_new(djb2_str, 16, sizeof(JSON_ENTITY *), 1);
         kvs->cmp = (ht_cmp_func) strncmp;
         kvs->keycpy = (ht_key_cpy_func) strncpy;
-
         StringList *keys = NULL;
         struct JSON_OBJ_ENTRY new_ent = json_parse_object_entry(*rest, rest);
         while (new_ent.value) {
@@ -412,8 +415,8 @@ static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
                 rehash = true;
             }
 
-            if (strlen(new_ent.key) > kvs->key_sz) {
-                while (new_keysz < strlen(new_ent.key))
+            if (strlen(new_ent.key) + 1 >= kvs->key_sz) {
+                while (new_keysz <= strlen(new_ent.key))
                     new_keysz *= 2;
 
                 rehash = true;
