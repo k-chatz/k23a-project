@@ -127,7 +127,7 @@ char *json_to_string(JSON_ENTITY *jsonEntity);
  */
 bool json_to_bool(JSON_ENTITY *jsonEntity);
 
-JSON_ENTITY *json_to_entity(char * json);
+JSON_ENTITY *json_to_entity(char *json);
 
 /*!
 @relates JSON_ENTITY

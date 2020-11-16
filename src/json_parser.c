@@ -323,7 +323,7 @@ JSON_ENTITY *json_get(JSON_ENTITY *jsonEntity, ...) {
     switch (jsonEntity->type) {
         case JSON_OBJ: {
             char *key = va_arg(arglist, char *);
-            if (key == 0x1 ) {
+            if (key == 0x1) {
                 return NULL;
             }
             JSON_OBJECT_DATA *dp = (void *) (&jsonEntity->data);
@@ -345,8 +345,8 @@ JSON_ENTITY *json_get(JSON_ENTITY *jsonEntity, ...) {
     }
 }
 
-void json_entityp_free(JSON_ENTITY **ent){
-  json_entity_free(*ent);
+void json_entityp_free(JSON_ENTITY **ent) {
+    json_entity_free(*ent);
 }
 
 void json_entity_free(JSON_ENTITY *jsonEntity) {
@@ -370,7 +370,7 @@ void json_entity_free(JSON_ENTITY *jsonEntity) {
             htab_free_entries(((JSON_OBJECT_DATA *) &jsonEntity->data)->contents,
                               (void (*)(void *)) json_entityp_free);
             free(((JSON_OBJECT_DATA *) &jsonEntity->data)->contents);
-            ll_free(json_get_obj_keys(jsonEntity), (llfree_f)json_free_StringList);
+            ll_free(json_get_obj_keys(jsonEntity), (llfree_f) json_free_StringList);
             free(jsonEntity);
         }
             break;
@@ -407,7 +407,7 @@ static struct JSON_OBJ_ENTRY json_parse_object_entry(StringList *tokens, StringL
     return invalid;
 }
 
-void print_strlist(StringList *stringList){
+void print_strlist(StringList *stringList) {
     for (StringList *x = stringList; x; x = ll_nth(x, 1)) {
         printf("%s\n", x->data);
     }

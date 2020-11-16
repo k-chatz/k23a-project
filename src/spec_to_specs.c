@@ -71,9 +71,9 @@ int sts_add(STS *sts, char *id) {
     }
 
     if (strlen(id) + 1 >= sts->ht->key_sz) {
-	do {
-	    new_keysz *= 2;	    
-	} while(strlen(id) + 1 >= new_keysz);
+        do {
+            new_keysz *= 2;
+        } while (strlen(id) + 1 >= new_keysz);
 
         rehash = true;
     }
@@ -225,17 +225,17 @@ void print_sts(FILE *file, STS *sts) {
     for (char *key = htab_iterate_r(sts->ht, &iter_state);
          key != NULL;
          key = htab_iterate_r(sts->ht, &iter_state)) {
-	/* get the spec */
+        /* get the spec */
         SpecEntry *sp = htab_get(sts->ht, key);
-	/* is sp a representative? */
-	if(sp == findRoot(sts, sp)){
-	    /* sp is a set representative */
-	    LLFOREACH(A, sp->similar){
-		LLFOREACH(B, (StrList*)A->next){
-		    fprintf(file, "%s, %s\n", A->data, B->data);
-		}
-	    }
-	}
+        /* is sp a representative? */
+        if (sp == findRoot(sts, sp)) {
+            /* sp is a set representative */
+            LLFOREACH(A, sp->similar) {
+                LLFOREACH(B, (StrList *) A->next) {
+                    fprintf(file, "%s, %s\n", A->data, B->data);
+                }
+            }
+        }
     }
 }
 

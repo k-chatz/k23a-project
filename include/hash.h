@@ -186,6 +186,7 @@ void *htab_iterate(hashp ht);
 /* __________ Some hashing functions to use __________ */
 /*! @brief djb2 hashing function */
 uint djb2(keyp key, size_t key_sz);
+
 /*! @brief djb2 hashing function for strings */
 uint djb2_str(keyp key, size_t key_sz);
 

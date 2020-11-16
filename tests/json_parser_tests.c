@@ -141,7 +141,7 @@ void tokenize_number(void) {
 }
 
 void tokenize_string(void) {
-    char *str_contents[] = {"fhasdj","foo bar","foo 123bar _@@!@#$%^&*()_+/",
+    char *str_contents[] = {"fhasdj", "foo bar", "foo 123bar _@@!@#$%^&*()_+/",
                             "\\\"", "\\uAbFf"};
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
