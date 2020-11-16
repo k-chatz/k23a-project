@@ -417,8 +417,6 @@ static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
     *rest = tokens;
     if (strcmp("{", (*rest)->data) == 0) {
 
-        print_strlist(*rest);
-
         *rest = ll_nth(*rest, 1);
         hashp kvs = htab_new(djb2_str, 16, sizeof(JSON_ENTITY *), 1);
         kvs->cmp = (ht_cmp_func) strncmp;
@@ -426,8 +424,6 @@ static JSON_ENTITY *json_parse_object(StringList *tokens, StringList **rest) {
         StringList *keys = NULL;
 
         struct JSON_OBJ_ENTRY new_ent = json_parse_object_entry(*rest, rest);
-
-        print_strlist(*rest);
 
         while (new_ent.value) {
             bool rehash = false;
