@@ -235,3 +235,9 @@ void ll_free(void *l, llfree_f free_node) {
         }
     }
 }
+
+void ll_iterate(void *l, void (*callback)(void *)) {
+    for (void *x = l; x; x = ll_nth(x, 1)) {
+        callback(x);
+    }
+}

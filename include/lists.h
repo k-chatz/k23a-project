@@ -247,6 +247,8 @@ void *ll_map(void *INs, mapfunc_t map_func, ...);
  */
 void ll_free(void *l, llfree_f free_data);
 
+void ll_iterate(void *l, void (*callback)(void *));
+
 /* function: ll_search */
 /*!
 @brief Searches a list.
