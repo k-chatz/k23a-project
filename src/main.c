@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     //print result
-    print_sts_(stdout, dataset_X, false);
+    print_sts(stdout, dataset_X, false);
     int fd;
     char json_website[128], json_num[128], json_path[280], *contents, *rest_tok;
     int read_err = 0;

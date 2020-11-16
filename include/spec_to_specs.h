@@ -52,7 +52,12 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec);
 */
 STS *sts_new();
 
-//TODO: Documentation (Dont touch it! 😡)
+/*!
+  @relates STS
+
+  @brief Destroys an STS structure
+  @param[in] sts : the sts structure
+*/
 void sts_destroy(STS *sts);
 
 /*!
@@ -61,6 +66,7 @@ void sts_destroy(STS *sts);
   @brief Adds a new entry to the STS
   @param[in] sts : the sts structure
   @param[in] id : the id to be added
+  @returns void
 */
 int sts_add(STS *sts, char *id);
 
@@ -75,10 +81,42 @@ int sts_add(STS *sts, char *id);
  */
 int sts_merge(STS *sts, char *id1, char *id2);
 
+/*!
+  @relates STS
+
+  @brief Gets the SpecEntry of a specific id.
+
+  @param[in] sts : the sts structure
+  @param[in] id : the id of the entry that will be returned
+
+  @returns SpecEntry of a given id.
+*/
 SpecEntry *sts_get(STS *sts, char *id);
 
-void print_sts(FILE *file, STS *sts, bool verbose);
+/*!
+  @relates STS
 
-void print_sts_(FILE *file, STS *sts, bool verbose);
+  @brief Used to print the dot structure
+
+  @param[in] file : the output file
+  @param[in] sts : the sts structure
+  @param[in] verbose : if True prints specs thoroughly, else prints only similar
+
+  @returns void
+*/
+
+void print_sts_dot(FILE *file, STS *sts, bool verbose);
+
+/*!
+  @relates STS
+
+  @brief Prints the the similar pairs
+
+  @param[in] file : the output file
+  @param[in] sts : the sts structure
+
+  @returns void
+*/
+void print_sts(FILE *file, STS *sts);
 
 #endif

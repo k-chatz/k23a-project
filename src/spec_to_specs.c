@@ -152,7 +152,7 @@ void free_StrList_data(StrList *list) {
     free(list);
 }
 
-void print_sts(FILE *file, STS *sts, bool verbose) {
+void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "digraph {\n\n");
     ulong iter_state = 0;
     for (char *key = htab_iterate_r(sts->ht, &iter_state); key != NULL; key = htab_iterate_r(sts->ht, &iter_state)) {
@@ -220,7 +220,7 @@ StrList *create_node(char *id) {
     return node;
 }
 
-void print_sts_(FILE *file, STS *sts, bool verbose) {
+void print_sts(FILE *file, STS *sts) {
     ulong iter_state = 0;
     for (char *key = htab_iterate_r(sts->ht, &iter_state);
          key != NULL;
@@ -232,7 +232,7 @@ void print_sts_(FILE *file, STS *sts, bool verbose) {
 	    /* sp is a set representative */
 	    LLFOREACH(A, sp->similar){
 		LLFOREACH(B, (StrList*)A->next){
-		    printf("%s, %s\n", A->data, B->data);
+		    fprintf(file, "%s, %s\n", A->data, B->data);
 		}
 	    }
 	}
