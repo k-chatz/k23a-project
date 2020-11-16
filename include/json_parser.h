@@ -95,55 +95,57 @@ StringList *json_tokenize_str(char *str, char **rest);
 @brief Converts a json_type to a string representation.
 
 The string is statically allocated and does not need to be freed
-@param[in] t : the json_type
+@param[in] type : the json_type
 @returns a string that describes t
  */
-char *json_type_to_str(json_type t);
+char *json_type_to_str(json_type type);
 
 /*!
 @relates JSON_ENTITY
 @brief Converts a JSON_ENTITY encapsulated double to a C double
 
-@param[in] Ent : A JSON_ENTITY with type JSON_NUM
+@param[in] jsonEntity : A JSON_ENTITY with type JSON_NUM
 @returns the number stored in the entity
  */
-double json_to_double(JSON_ENTITY *Ent);
+double json_to_double(JSON_ENTITY *jsonEntity);
 
 /*!
 @relates JSON_ENTITY
 @brief Converts a JSON_ENTITY encapsulated string to a C string
 
-@param[in] Ent : A JSON_ENTITY with type JSON_STRING
+@param[in] jsonEntity : A JSON_ENTITY with type JSON_STRING
 @returns the string stored in the entity
  */
-char *json_to_string(JSON_ENTITY *Ent);
+char *json_to_string(JSON_ENTITY *jsonEntity);
 
 /*!
 @relates JSON_ENTITY
 @brief Converts a JSON_ENTITY encapsulated bool to a C bool
 
-@param[in] Ent : A JSON_ENTITY with type JSON_BOOL
+@param[in] jsonEntity : A JSON_ENTITY with type JSON_BOOL
 @returns the bool stored in the entity
  */
-bool json_to_bool(JSON_ENTITY *Ent);
+bool json_to_bool(JSON_ENTITY *jsonEntity);
+
+JSON_ENTITY *json_to_entity(char * json);
 
 /*!
 @relates JSON_ENTITY
 @brief Get the length of a JSON_ARRAY
 
-@param[in] Ent : A JSON_ENTITY with type JSON_ARRAY
+@param[in] jsonEntity : A JSON_ENTITY with type JSON_ARRAY
 @returns the length of the array stored in the entity
  */
-int json_get_arr_length(JSON_ENTITY *Ent);
+int json_get_arr_length(JSON_ENTITY *jsonEntity);
 
 /*!
 @relates JSON_ENTITY
 @brief Get the keys of a JSON_OBJECT
 
-@param[in] Ent : A JSON_ENTITY with type JSON_OBJ
+@param[in] jsonEntity : A JSON_ENTITY with type JSON_OBJ
 @returns the list of keys of the json object stored in the entity
  */
-StringList *json_get_obj_keys(JSON_ENTITY *Ent);
+StringList *json_get_obj_keys(JSON_ENTITY *jsonEntity);
 
 /*!
 @relates JSON_ENTITY
@@ -151,22 +153,22 @@ StringList *json_get_obj_keys(JSON_ENTITY *Ent);
 
 can either be called as json_get(JSON_ENTITY*, int) or
 json_get(JSON_ENTITY*, char*)
-@param[in] Ent : A JSON_ENTITY with type of either JSON_ARRAY or JSON_OBJ
+@param[in] jsonEntity : A JSON_ENTITY with type of either JSON_ARRAY or JSON_OBJ
 @param[in] key_or_index : If Ent is a JSON_OBJ,
 this is interpreted as a string and returns the JSON_ENTITY associated with the
 key on the object. Otherwise, if Ent is a JSON_ARRAY, this is interpreted as an
 int and the key_or_index-th element of the array is returned.
  */
-JSON_ENTITY *json_get(JSON_ENTITY *Ent, ...);
+JSON_ENTITY *json_get(JSON_ENTITY *jsonEntity, ...);
 
 /*!
 @relates JSON_ENTITY
 @brief Frees a JSON_ENTITY. 
 
 If it is an object or an array, this recursively frees the contents as well.
-@param[in] ent : the entity to be freed
+@param[in] jsonEntity : the entity to be freed
  */
-void json_entity_free(JSON_ENTITY *ent);
+void json_entity_free(JSON_ENTITY *jsonEntity);
 
 /*!
 @brief Parses a json value from a list of tokens.
@@ -183,9 +185,9 @@ JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
 
 /*!
 @brief Prints a json value
-@param[in] val : the value to be printed
+@param[in] jsonEntity : the value to be printed
  */
-void json_print_value(JSON_ENTITY *val);
+void json_print_value(JSON_ENTITY *jsonEntity);
 
 /*!
 @brief Parses a list of tokens that represents a json file
