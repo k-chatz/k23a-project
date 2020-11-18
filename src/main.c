@@ -69,15 +69,15 @@ int main(int argc, char *argv[]) {
         }
         StringList *tokens = json_tokenize_str(contents, &rest_tok);
         if (rest_tok[0] != '\0') {
-            printf("rest not null");
-            goto label;
+            fprintf(stderr, "rest not null");
+            goto abort;
         }
         memset(contents, 0, 1 << 20);
         StringList *rest_ent;
         JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
         htab_put(json_ht, key, &ent);
         // empty tokens list
-        label:
+        abort:
         ll_free(tokens, (llfree_f) json_free_StringList);
         close(fd);
     }

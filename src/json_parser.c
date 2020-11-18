@@ -13,7 +13,7 @@ typedef char *(*matcher)(char *input);
         int cmp = strncmp(input, TOK, strlen(TOK));                            \
         if (!cmp)                                                              \
             return strdup(TOK);                                                \
-        return strdup("");                                                     \
+        return NULL;                                                     \
     }
 
 MATCH_TOKEN(is_true, "true");
@@ -81,9 +81,7 @@ static char *is_number(char *input) {
                 break;
         }
     }
-
-    char *num = strndup(input, total_size);
-    return num;
+    return total_size > 0 ? strndup(input, total_size) : NULL;
 }
 
 static char *is_string(char *input) {
@@ -115,27 +113,34 @@ static char *is_string(char *input) {
             return out;
         }
     }
-    return strdup("");
+    return NULL;
 }
 
 static char *json_next_token(char *input, int *cursor) {
-    matcher tokenizers[] = {is_true, is_false, is_null, is_lbrace,
-                            is_rbrace, is_comma, is_colon, is_lbracket,
-                            is_rbracket, is_number, is_string, NULL};
-
+    matcher tokenizers[] = {
+            is_true,
+            is_false,
+            is_null,
+            is_lbrace,
+            is_rbrace,
+            is_comma,
+            is_colon,
+            is_lbracket,
+            is_rbracket,
+            is_number,
+            is_string,
+            NULL
+    };
     char *match;
     for (int i = 0; tokenizers[i] != NULL; i++) {
         match = tokenizers[i](input);
-        int len = strlen(match);
-        if (strlen(match) > 0) {
-            *cursor = len;
+        if (match != NULL) {
+            *cursor = (int) strlen(match);
             return match;
-        } else {
-            free(match);
         }
     }
     *cursor = 0;
-    return strdup("");
+    return NULL;
 }
 
 static char *eat_ws(char *str) {
@@ -145,25 +150,22 @@ static char *eat_ws(char *str) {
     return out;
 }
 
-StringList *json_tokenize_str(char *str, char **rest) {
+StringList *json_tokenize_str(char *input, char **rest) {
     StringList *out = NULL;
     char *current;
-    int current_len = 0;
+    int cursor = 0;
     do {
-        str = eat_ws(str);
-        current = json_next_token(str, &current_len);
-        str += current_len;
-        if (current_len > 0) {
+        input = eat_ws(input);
+        current = json_next_token(input, &cursor);
+        input += cursor;
+        if (cursor > 0) {
             StringList *thisTok = malloc(sizeof(StringList));
             thisTok->data = current;
             ll_push(&out, thisTok);
-        } else {
-            free(current);
         }
-    } while (str[0] != '\0' && current_len > 0);
-
+    } while (input[0] != '\0' && cursor > 0);
     ll_reverse(&out);
-    *rest = str;
+    *rest = input;
     return out;
 }
 
@@ -275,16 +277,20 @@ bool json_to_bool(JSON_ENTITY *jsonEntity) {
 
 JSON_ENTITY *json_to_entity(char *json) {
     char *rest;
-    JSON_ENTITY *je = NULL;
+    JSON_ENTITY *jsonEntity = NULL;
     StringList *rest_tokens;
     StringList *tokens = json_tokenize_str(json, &rest);
-    if (!rest[0]) {
-        je = json_parse_value(tokens, &rest_tokens);
-        if (rest_tokens != NULL) {
-            je = NULL;
-        }
+    if (rest[0] != '\0') {
+        fprintf(stderr, "rest not null");
+        goto abort;
     }
-    return je;
+    jsonEntity = json_parse_value(tokens, &rest_tokens);
+    if (rest_tokens != NULL) {
+        jsonEntity = NULL;
+    }
+    abort:
+    ll_free(tokens, (llfree_f) json_free_StringList);
+    return jsonEntity;
 }
 
 int json_get_arr_length(JSON_ENTITY *jsonEntity) {
@@ -350,6 +356,8 @@ void json_entityp_free(JSON_ENTITY **ent) {
 }
 
 void json_entity_free(JSON_ENTITY *jsonEntity) {
+    if (jsonEntity == NULL)
+        return;
     switch (jsonEntity->type) {
         case JSON_STRING:
             free(json_to_string(jsonEntity));

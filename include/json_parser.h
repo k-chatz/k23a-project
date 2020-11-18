@@ -85,11 +85,11 @@ Tokens produced from the tokenizer are:
 + strings as defined in the json standard
 
 
-@param[in] str : the input string
+@param[in] input : the input string
 @param[out] rest : a pointer to the postfix of str, that failed to be tokenized.
 @returns a list of tokens
  */
-StringList *json_tokenize_str(char *str, char **rest);
+StringList *json_tokenize_str(char *input, char **rest);
 
 /*!
 @brief Converts a json_type to a string representation.
