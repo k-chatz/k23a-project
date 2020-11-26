@@ -114,7 +114,7 @@ int sts_add(STS *sts, char *id) {
     temp.id = id_dup;
     htab_put(sts->ht, id, &temp);
     SpecEntry *newspec = htab_get(sts->ht, id);
-    newspec->similar = malloc(sizeof(SpecList));
+    newspec->similar = malloc(sizeof(StrList));
     newspec->similar->data = id_dup;
     newspec->similar->next = NULL;
     newspec->parent = id_dup;
@@ -205,15 +205,6 @@ int sts_diff(STS *sts, char *id1, char *id2) {
             ll_push(spec2->different, create_node(spec1->id));
         }
     }
-
-    // spec1->similar_tail->next = spec2->similar;    /* append spec2->similar to spec1->similar */
-    // spec1->similar_tail = spec2->similar_tail;     /* set the new tail */
-    // spec1->similar_len += spec2->similar_len;     /* add the lengths */
-    // spec2->similar = NULL;
-    // spec2->similar_tail = NULL;
-
-    // spec2->parent = spec1->id;
-
 #ifdef PRINT_FILE
     print_sts(PRINT_FILE_STREAM, sts, PRINT_FILE_VERBOSE);
 #endif
