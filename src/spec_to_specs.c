@@ -1,5 +1,6 @@
 /* file: spec_to_specs.h */
 #include "../include/spec_to_specs.h"
+#include "../include/lists.h"
 #include <stdbool.h>
 
 
@@ -15,6 +16,22 @@
 #ifdef PRINT_FILE
 FILE *PRINT_FILE_STREAM = NULL;
 #endif
+
+
+
+bool eq_pred(void *node, va_list vargs) {
+    char *x = va_arg(vargs, char*);
+    StrList *n = (StrList *) node;
+    return !strcmp(n->data, x);
+}
+
+
+StrList *create_node(char *id) {
+    StrList *node = malloc(sizeof(StrList));
+    node->data = strdup(id);
+    node->next = NULL;
+    return node;
+}
 
 void print_spec(void *spec) {
     printf("spec_id = %s\n", ((SpecEntry *) spec)->id);
@@ -149,6 +166,65 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     return 0;
 }
 
+/* Merges two sts nodes to point to the same expanded list */
+int sts_diff(STS *sts, char *id1, char *id2) {
+
+    SpecEntry *spec1, *spec2;
+    spec1 = findRoot(sts, htab_get(sts->ht, id1));
+    spec2 = findRoot(sts, htab_get(sts->ht, id2));
+
+    if (spec1->different_len < spec2->different_len) {
+        /* swap */
+        SpecEntry *temp = spec1;
+        spec1 = spec2;
+        spec2 = temp;
+    }
+
+    if(spec1->different == NULL){
+        spec1->different = malloc(sizeof(StrList));
+        spec1->different->data = strdup(spec2->id);
+        spec1->different->next = NULL;
+        spec1->different_tail = spec1->different;
+        spec1->different_len = 1;
+    } else {
+        StrList * result = ll_search(spec1->different, &eq_pred, spec2->id);
+        if (result == NULL){
+            ll_push(spec1->different, create_node(spec2->id));
+        }
+    }
+
+    if(spec2->different == NULL){
+        spec2->different = malloc(sizeof(StrList));
+        spec2->different->data = strdup(spec1->id);
+        spec2->different->next = NULL;
+        spec2->different_tail = spec2->different;
+        spec2->different_len = 1;
+    } else {
+        StrList * result = ll_search(spec2->different, &eq_pred, spec1->id);
+        if (result == NULL){
+            ll_push(spec2->different, create_node(spec1->id));
+        }
+    }
+
+    // spec1->similar_tail->next = spec2->similar;    /* append spec2->similar to spec1->similar */
+    // spec1->similar_tail = spec2->similar_tail;     /* set the new tail */
+    // spec1->similar_len += spec2->similar_len;     /* add the lengths */
+    // spec2->similar = NULL;
+    // spec2->similar_tail = NULL;
+
+    // spec2->parent = spec1->id;
+
+#ifdef PRINT_FILE
+    print_sts(PRINT_FILE_STREAM, sts, PRINT_FILE_VERBOSE);
+#endif
+
+
+    return 0;
+}
+
+
+
+
 SpecEntry *sts_get(STS *sts, char *id) { return htab_get(sts->ht, id); }
 
 
@@ -204,19 +280,8 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-bool eq_pred(void *node, va_list vargs) {
-    char *x = va_arg(vargs, char*);
-    StrList *n = (StrList *) node;
-    return !strcmp(n->data, x);
-}
 
-StrList *create_node(char *id) {
 
-    StrList *node = malloc(sizeof(StrList));
-    node->data = strdup(id);
-    node->next = NULL;
-    return node;
-}
 
 void print_sts(FILE *file, STS *sts) {
     ulong iter_state = 0;

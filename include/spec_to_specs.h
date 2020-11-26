@@ -40,9 +40,9 @@ struct SpecEntry_s {
       if this node is the representative of the set, this is the list of the elements;
       otherwise, this is NULL
      */
-    StrList *similar, *similar_tail;
+    StrList *similar, *similar_tail, *different, *different_tail;
     /*! @brief Length of similar */
-    ulong similar_len;
+    ulong similar_len, different_len;
 };
 
 SpecEntry *findRoot(STS *sts, SpecEntry *spec);
@@ -80,6 +80,17 @@ int sts_add(STS *sts, char *id);
 
  */
 int sts_merge(STS *sts, char *id1, char *id2);
+
+/*!
+  @relates STS
+
+  @brief Marks two spec ids as similar, unifying their similar sets.
+  @param[in] sts : the sts structure
+  @param[in] id1 : first id to be checked for differences
+  @param[in] id2 : second id to be checked for differences
+
+ */
+int sts_diff(STS *sts, char *id1, char *id2);
 
 /*!
   @relates STS
