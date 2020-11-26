@@ -47,10 +47,15 @@ STS *sts_new() {
     return new;
 }
 
+void destroyStrListNode(void * node){
+    free(((StrList *)node)->data);
+    free(node);
+}
+
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
-    ll_free(spec->similar, free);
-    free(spec->id);
+    ll_free(spec->similar, &destroyStrListNode);
+    ll_free(spec->different, &destroyStrListNode);
 }
 
 void sts_destroy(STS *sts) {
