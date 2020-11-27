@@ -30,25 +30,26 @@ void free_json_ht_ent(JSON_ENTITY **val) {
     json_entity_free(*val);
 }
 
-void read_csv(STS* dataset_X, char* csv,  char* flag){
+void read_csv(STS *dataset_X, char *csv, char *flag) {
 
     FILE *fp = fopen(csv, "r");
-     char left_spec_id[50], right_spec_id[50], label[50];
+    char left_spec_id[50], right_spec_id[50], label[50];
     //skip first row fseek
     uint merges = 0, diffs = 0;
     fseek(fp, 33, SEEK_SET);
     while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
-    
-        if (!strcmp(label, flag) && strcmp(left_spec_id, right_spec_id) != 0) {   
-            if (!strncmp(flag, "1", 1)){
+
+        if (!strcmp(label, flag) && strcmp(left_spec_id, right_spec_id) != 0) {
+            if (!strncmp(flag, "1", 1)) {
                 merges += sts_merge(dataset_X, left_spec_id, right_spec_id) >= 0;
             } else {
                 diffs += sts_diff(dataset_X, left_spec_id, right_spec_id) >= 0;
-            }    
+            }
         }
     }
     fclose(fp);
 }
+
 int main(int argc, char *argv[]) {
     char left_spec_id[50], right_spec_id[50], label[50], *dir = NULL, *csv = NULL;
     FILE *fp;

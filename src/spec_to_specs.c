@@ -18,7 +18,6 @@ FILE *PRINT_FILE_STREAM = NULL;
 #endif
 
 
-
 bool eq_pred(void *node, va_list vargs) {
     char *x = va_arg(vargs, char*);
     StrList *n = (StrList *) node;
@@ -64,8 +63,8 @@ STS *sts_new() {
     return new;
 }
 
-void destroyStrListNode(void * node){
-    free(((StrList *)node)->data);
+void destroyStrListNode(void *node) {
+    free(((StrList *) node)->data);
     free(node);
 }
 
@@ -180,28 +179,28 @@ int sts_diff(STS *sts, char *id1, char *id2) {
         spec2 = temp;
     }
 
-    if(spec1->different == NULL){
+    if (spec1->different == NULL) {
         spec1->different = malloc(sizeof(StrList));
         spec1->different->data = strdup(spec2->id);
         spec1->different->next = NULL;
         spec1->different_tail = spec1->different;
         spec1->different_len = 1;
     } else {
-        StrList * result = ll_search(spec1->different, &eq_pred, spec2->id);
-        if (result == NULL){
+        StrList *result = ll_search(spec1->different, &eq_pred, spec2->id);
+        if (result == NULL) {
             ll_push(spec1->different, create_node(spec2->id));
         }
     }
 
-    if(spec2->different == NULL){
+    if (spec2->different == NULL) {
         spec2->different = malloc(sizeof(StrList));
         spec2->different->data = strdup(spec1->id);
         spec2->different->next = NULL;
         spec2->different_tail = spec2->different;
         spec2->different_len = 1;
     } else {
-        StrList * result = ll_search(spec2->different, &eq_pred, spec1->id);
-        if (result == NULL){
+        StrList *result = ll_search(spec2->different, &eq_pred, spec1->id);
+        if (result == NULL) {
             ll_push(spec2->different, create_node(spec1->id));
         }
     }
@@ -212,8 +211,6 @@ int sts_diff(STS *sts, char *id1, char *id2) {
 
     return 0;
 }
-
-
 
 
 SpecEntry *sts_get(STS *sts, char *id) { return htab_get(sts->ht, id); }
@@ -270,8 +267,6 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     }
     fprintf(file, "\n}\n");
 }
-
-
 
 
 void print_sts(FILE *file, STS *sts) {
