@@ -25,7 +25,7 @@ typedef LISTOF(SpecEntry *) SpecList;
  */
 typedef struct {
     /*! @brief Index of specs */
-    hashp ht;
+    dictp ht;
 } STS;
 
 /*!
