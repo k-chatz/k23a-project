@@ -223,22 +223,116 @@ typedef struct {
 
 typedef dict_t *dictp;
 
+/*! 
+@brief create a new dict
+ */
 dictp dict_new2(size_t key_sz, size_t val_sz);
+/*!
+@brief create a new dict
+@param[in] key_sz : the size of keys
+@param[in] val_sz : the size of vals
+@param[in] bufcap : the capacity of the buffer
+@returns the new dict
+*/
 dictp dict_new3(size_t key_sz, size_t val_sz, ulong bufcap);
 
-dictp dict_set_hfunc(dictp d, ht_hash_func f);
-dictp dict_set_keycpy(dictp d, ht_key_cpy_func f);
-dictp dict_set_cmp(dictp d, ht_cmp_func f);
-dictp dict_set_max_load_factor(dictp d, double lf);
-dictp dict_set_key_sz_f(dictp d, size_t (*f)(keyp key));
+typedef
+enum {
+    /*! @brief ends the conf argument list */
+    DICT_CONF_DONE,
+    /*! @brief the argument after this is a hashing function */
+    DICT_CONF_HASH_FUNC,
+    /*! @brief the argument after this is a ht_key_cpy_func */
+    DICT_CONF_KEY_CPY,
+    /*! @brief the argument after this is a ht_cmp_func */
+    DICT_CONF_CMP,
+    /*! @brief the argument after this the max load factor for this dict */
+    DICT_CONF_LF,
+    /*! @brief the argument after this is a function that calculates a key's size */
+    DICT_CONF_KEY_SZ_F,
+} dict_conf_key;
 
+/*!
+@brief configures a dict
+
+Accepts an ordered list of arguments of the form dict_conf_key, dict_conf_val, ...
+the list is terminated by a DICT_CONF_DONE in the key position
+
+@param[in] d : the dict
+@param[in] ... : CONF_KEY, CONF_VAL, ..., CONF_DONE
+@returns the dict
+ */
+dictp dict_config(dictp d, ...);
+/*!
+@brief sets the hashing function for dict
+ */
+dictp dict_set_hfunc(dictp d, ht_hash_func f);
+/*!
+@brief sets the key copying method for d
+ */
+dictp dict_set_keycpy(dictp d, ht_key_cpy_func f);
+/*!
+@brief sets the key compare method for d
+ */
+dictp dict_set_cmp(dictp d, ht_cmp_func f);
+/*!
+@brief sets the target load factor for d
+ */
+dictp dict_set_max_load_factor(dictp d, double lf);
+/*!
+@brief sets the target load factor for d
+ */
+dictp dict_set_key_sz_f(dictp d, size_t (*f)(keyp key));
+/*!
+@brief put an element in dict
+ */
 dictp dict_put(dictp dict, keyp key, valp val);
+/*!
+@brief put many elements in dict
+@param[in] dict : the dict
+@param[out] num_put : the number of elements successfully put in dict
+@param[in] ... : a null terminated series of key value pairs
+ */
 dictp dict_putv(dictp dict, int *num_put, ...);
+/*!
+@brief gen an element from dict
+ */
 valp dict_get(dictp dict, keyp key);
 
+/*!
+@brief force a rehash on d
+ */
 dictp dict_force_rehash2(dictp d, ulong new_bufcap);
+/*!
+@brief force a rehash on d with a new key size 
+*/
 dictp dict_force_rehash3(dictp d, ulong new_bufcap, size_t new_keysz);
-/* @} */
+
+/*!
+@brief see htab_del
+ */
+valp dict_del(dictp d, keyp key);
+
+/*!
+@brief see htab_iterate
+ */
+keyp dict_iterate_r(dictp d, ulong *state);
+keyp dict_iterate(dictp d);
+
+/*!
+@brief free the dict
+see htab_destroy
+ */
+void dict_free(dictp dict, void (*free_t)(void *));
+
+/* __________ Some utility functions __________ */
+
+/*!
+@brief get size of string key
+ */
+size_t str_sz(keyp key);
+
+/*! @} */
 
 /* __________ Some hashing functions to use __________ */
 /*! @brief djb2 hashing function */
@@ -246,6 +340,7 @@ uint djb2(keyp key, size_t key_sz);
 
 /*! @brief djb2 hashing function for strings */
 uint djb2_str(keyp key, size_t key_sz);
+
 
 /*! @} */
 

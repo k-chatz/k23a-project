@@ -193,6 +193,35 @@ dictp dict_new3(size_t key_sz, size_t val_sz, ulong bufcap) {
     return new;
 }
 
+dictp dict_config(dictp d, ...){
+    va_list vargs;
+    va_start(vargs, d);
+    dict_conf_key k = va_arg(vargs, int);
+    while(k != DICT_CONF_DONE){
+	switch(k) {
+	case DICT_CONF_HASH_FUNC:
+	    dict_set_hfunc(d, va_arg(vargs, void*));
+	    break;
+	case DICT_CONF_KEY_CPY:
+	    dict_set_keycpy(d, va_arg(vargs, void*));
+	    break;
+	case DICT_CONF_CMP:
+	    dict_set_cmp(d, va_arg(vargs, void*));
+	    break;
+	case DICT_CONF_LF:
+	    dict_set_max_load_factor(d, va_arg(vargs, double));
+	    break;
+	case DICT_CONF_KEY_SZ_F:
+	    dict_set_key_sz_f(d, va_arg(vargs, void*));
+	    break;
+	default:
+	    break;
+	}
+	k = va_arg(vargs, int);
+    }
+    return d;
+}
+
 dictp dict_set_hfunc(dictp d, ht_hash_func f) {
     d->htab->h = f;
     return d;
@@ -283,4 +312,25 @@ dictp dict_force_rehash3(dictp d, ulong new_bufcap, size_t new_keysz) {
 
 dictp dict_force_rehash2(dictp d, ulong new_bufcap) {
     return dict_force_rehash3(d, new_bufcap, d->htab->key_sz);
+}
+
+valp dict_del(dictp d, keyp key){
+    return htab_del(d->htab, key);
+}
+
+keyp dict_iterate_r(dictp d, ulong *state){
+    return htab_iterate_r(d->htab, state);
+}
+
+keyp dict_iterate(dictp d){
+    return htab_iterate(d->htab);
+}
+
+void dict_free(dictp dict, void (*free_t)(void *)){
+    htab_destroy(dict->htab, free_t);
+    free(dict);
+}
+
+size_t str_sz(keyp key){
+    return strlen(key) + 1;
 }

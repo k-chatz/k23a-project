@@ -1,5 +1,5 @@
 CC	 = gcc
-CFLAGS	 = -g -O3 -Wall
+CFLAGS	 = -g -Wall
 LFLAGS	 = 
 
 CSRC := $(wildcard *.c)
