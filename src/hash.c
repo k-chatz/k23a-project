@@ -193,9 +193,9 @@ dictp dict_new3(size_t key_sz, size_t val_sz, ulong bufcap) {
     return new;
 }
 
-dictp dict_config(dictp d, ...){
+dictp dict_config_va(dictp d, va_list vargs_) {
     va_list vargs;
-    va_start(vargs, d);
+    va_copy(vargs, vargs_);
     dict_conf_key k = va_arg(vargs, int);
     while(k != DICT_CONF_DONE){
 	switch(k) {
@@ -219,6 +219,15 @@ dictp dict_config(dictp d, ...){
 	}
 	k = va_arg(vargs, int);
     }
+    va_end(vargs);
+    return d;
+}
+
+dictp dict_config(dictp d, ...){
+    va_list vargs;
+    va_start(vargs, d);
+    dict_config_va(d, vargs);
+    va_end(vargs);
     return d;
 }
 

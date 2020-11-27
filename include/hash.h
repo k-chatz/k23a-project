@@ -263,6 +263,7 @@ the list is terminated by a DICT_CONF_DONE in the key position
 @returns the dict
  */
 dictp dict_config(dictp d, ...);
+dictp dict_config_va(dictp d, va_list vargs);
 /*!
 @brief sets the hashing function for dict
  */
