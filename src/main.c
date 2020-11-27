@@ -58,7 +58,9 @@ int main(int argc, char *argv[]) {
     read_csv(dataset_X, csv, "1");
 
     //print result
-    print_sts(stdout, dataset_X);
+    //print_sts(stdout, dataset_X);
+    print_sts_similar(stdout, dataset_X);
+
     int fd;
     char json_website[128], json_num[128], json_path[280], *contents, *rest_tok;
     int read_err = 0;
@@ -91,8 +93,11 @@ int main(int argc, char *argv[]) {
         close(fd);
     }
 
-
     read_csv(dataset_X, csv, "0");
+
+    printf("\n\n\n\n");
+
+    print_sts_diff(stdout, dataset_X);
 
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);

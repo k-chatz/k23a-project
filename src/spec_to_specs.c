@@ -293,4 +293,50 @@ void print_sts(FILE *file, STS *sts) {
     }
 }
 
+void print_sts_similar(FILE *file, STS *sts) {
+    StrList *list = NULL;
+    ulong iter_state = 0;
+    for (char *key = htab_iterate_r(sts->ht, &iter_state); key != NULL; key = htab_iterate_r(sts->ht, &iter_state)) {
+        SpecEntry *sp, *root;
+        sp = htab_get(sts->ht, key);
+        root = findRoot(sts, sp);
+        if (!strcmp(root->id, sp->id)) {
+            continue;
+        }
+        StrList *result = ll_search(list, &eq_pred, root->id);
+        if (result == NULL) {
+            for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
+                printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
+            }
+            printf("\n");
+            ll_push(&list, create_node(root->id));
+        }
+    }
+    ll_free(list, (llfree_f) destroyStrListNode);
+
+}
+
+void print_sts_diff(FILE *file, STS *sts) {
+    StrList *list = NULL;
+    ulong iter_state = 0;
+    for (char *key = htab_iterate_r(sts->ht, &iter_state); key != NULL; key = htab_iterate_r(sts->ht, &iter_state)) {
+        SpecEntry *sp, *root;
+        sp = htab_get(sts->ht, key);
+        root = findRoot(sts, sp);
+        if (!strcmp(root->id, sp->id)) {
+            continue;
+        }
+        StrList *result = ll_search(list, &eq_pred, root->id);
+        if (result == NULL) {
+            for (StrList *diff = root->different; diff; diff = ll_nth(diff, 1)) {
+                printf("%s%s", diff == root->different ? "" : ", ", diff->data);
+            }
+            printf("\n");
+            ll_push(&list, create_node(root->id));
+        }
+    }
+    ll_free(list, (llfree_f) destroyStrListNode);
+}
+
+
 /* _______ END of STS Functions _______ */

@@ -130,4 +130,8 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 */
 void print_sts(FILE *file, STS *sts);
 
+void print_sts_similar(FILE *file, STS *sts);
+
+void print_sts_diff(FILE *file, STS *sts);
+
 #endif
