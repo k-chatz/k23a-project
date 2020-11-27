@@ -5,6 +5,7 @@
     <excludeRoots>
       <file path="$PROJECT_DIR$/.ccls-cache" />
       <file path="$PROJECT_DIR$/.githooks" />
+      <file path="$PROJECT_DIR$/.github" />
       <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/Datasets" />
       <file path="$PROJECT_DIR$/deps" />
