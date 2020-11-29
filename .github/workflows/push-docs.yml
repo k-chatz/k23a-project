@@ -16,16 +16,17 @@ jobs:
         fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
     - name: Make docs
       run: |
-      	make docs
-	git add --force docs
+        make docs
+        git add --force docs
     - name: Commit files
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "Add changes" -a
-	git subtree push --prefix=docs origin gh-pages
+        git subtree push --prefix=docs origin gh-pages
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref }}
+        branch: gh-pages
+        publish-directory: docs
