@@ -16,6 +16,9 @@ jobs:
         fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
     - name: Make docs
       uses: mattnotmitt/doxygen-action@v1
+      with:   
+         working-directory: .
+         doxyfile-path: ./Doxyfile
     - name: Commit files
       run: |
         git config --local user.email "action@github.com"
