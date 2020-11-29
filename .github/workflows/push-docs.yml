@@ -23,12 +23,12 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add --force docs
-        git commit -m "Docs for $GITHUB_SHA" -a
-        git subtree push --prefix=docs origin gh-pages
+        git add --force docs/
+        git commit --amend --no-edit
     - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages
-        publish-directory: docs
+      uses: s0/git-publish-subdir-action@develop
+      env:
+        REPO: self
+        BRANCH: gh-pages
+        FOLDER: docs
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
