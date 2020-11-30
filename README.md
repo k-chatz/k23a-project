@@ -36,7 +36,7 @@
  <a name="hash_table"></a>
 ## Hash table  
 
-![enter image description here](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/hash.png?token=AMOC6I6CKFXV7YQAJ5V36Q27YVF5U)
+![hash table](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/hash.png?token=AMOC6I5XYRY6WBUE7WOMQ3C7YVWJ6)
 
 Για την υλοποίηση του hash table, χρησιμοποιήσαμε generic **open addressing hash table** με **random probing**.
 
@@ -119,7 +119,7 @@ struct SpecEntry_s {
 
  <a name="flow"></a>
 ## Ροή του προγράμματος 
-
+![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I5XYRY6WBUE7WOMQ3C7YVWJ6)
 
 
   
