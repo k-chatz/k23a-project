@@ -1,4 +1,23 @@
+<h1 align="center">ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ</h1>
 
+<p align="center">
+  <br>
+  <b>Entity resolution</b>
+  <br>
+</p>
+
+<p align="center">
+  <a target="_blank" href="https://vasilisp100.github.io/k23a-project/"><strong>Documentation</strong></a>
+  <br>
+</p>
+
+<p align="center">
+  <a href="https://discord.gg/nSGmntAX">
+    <img alt="Discord" src="https://img.shields.io/discord/765286458243153950?color=7389d8&label=Discord&logo=Discord&logoColor=fff">
+  </a>
+</p>
+
+<hr>
   
 # Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών  
 ### Τμήμα Πληροφορικής και Τηλεπικοινωνιών  
