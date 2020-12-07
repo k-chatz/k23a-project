@@ -1,5 +1,6 @@
 /* file: spec_to_specs.h */
 #include "../include/spec_to_specs.h"
+#include "../include/lists.h"
 #include <stdbool.h>
 
 #define MAX_ID_LEN 128 /* assume that domain+spec_id is not 128 chars long */
@@ -15,8 +16,22 @@
 FILE *PRINT_FILE_STREAM = NULL;
 #endif
 
+bool eq_pred(void *node, va_list vargs) {
+    char *x = va_arg(vargs, char *);
+    StrList *n = (StrList *) node;
+    return !strcmp(n->data, x);
+}
+
+StrList *create_node(char *id) {
+    StrList *node = malloc(sizeof(StrList));
+    node->data = strdup(id);
+    node->next = NULL;
+    return node;
+}
+
+
 void print_spec(void *spec) {
-    printf("spec_id = %s\n", ((SpecEntry *)spec)->id);
+    printf("spec_id = %s\n", ((SpecEntry *) spec)->id);
 }
 
 SpecEntry *findRoot(STS *sts, SpecEntry *spec) {
@@ -25,7 +40,7 @@ SpecEntry *findRoot(STS *sts, SpecEntry *spec) {
         return spec;
 
     /* three shortening */
-    spec->parent = ((SpecEntry *)dict_get(sts->ht, spec->parent))->parent;
+    spec->parent = ((SpecEntry *) dict_get(sts->ht, spec->parent))->parent;
 
     return findRoot(sts, root);
 }
@@ -37,14 +52,14 @@ STS *sts_new() {
     STS *new = malloc(sizeof(STS));
     /* clang-format off */
     /* @formatter:off */
-    new->ht =
-	dict_config
-	(dict_new2(MAX_ID_LEN	, sizeof(SpecEntry)),
-	 DICT_CONF_HASH_FUNC	, djb2_str,
-	 DICT_CONF_KEY_CPY	, (ht_key_cpy_func)strncpy,
-	 DICT_CONF_CMP		, (ht_cmp_func)strncmp,
-	 DICT_CONF_KEY_SZ_F	, str_sz,
-	 DICT_CONF_DONE);
+    new->ht = dict_config(
+            dict_new2(MAX_ID_LEN, sizeof(SpecEntry)),
+            DICT_CONF_HASH_FUNC, djb2_str,
+            DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+            DICT_CONF_CMP, (ht_cmp_func) strncmp,
+            DICT_CONF_KEY_SZ_F, str_sz,
+            DICT_CONF_DONE
+    );
     /* clang-format on */
     /* @formatter:on */
     /* set the buffer */
@@ -55,14 +70,19 @@ STS *sts_new() {
     return new;
 }
 
+void destroyStrListNode(void *node) {
+    free(((StrList *) node)->data);
+    free(node);
+}
+
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
-    ll_free(spec->similar, free);
-    free(spec->id);
+    ll_free(spec->similar, &destroyStrListNode);
+    ll_free(spec->different, &destroyStrListNode);
 }
 
 void sts_destroy(STS *sts) {
-    dict_free(sts->ht, (void (*)(void *))destroy_spec);
+    dict_free(sts->ht, (void (*)(void *)) destroy_spec);
     free(sts);
 }
 
@@ -70,15 +90,13 @@ void sts_destroy(STS *sts) {
 int sts_add(STS *sts, char *id) {
     SpecEntry temp;
     temp.id = strdup(id);
-    temp.similar = malloc(sizeof(SpecList));
+    temp.similar = malloc(sizeof(StrList));
     temp.similar->data = temp.id;
     temp.similar->next = NULL;
     temp.parent = temp.id;
     temp.similar_tail = temp.similar;
     temp.similar_len = 1;
-
     dict_put(sts->ht, id, &temp);
-    SpecEntry *newspec = dict_get(sts->ht, id);
     return 0;
 }
 
@@ -110,7 +128,7 @@ int sts_merge(STS *sts, char *id1, char *id2) {
         return -1;
 
     spec1->similar_tail->next =
-        spec2->similar; /* append spec2->similar to spec1->similar */
+            spec2->similar; /* append spec2->similar to spec1->similar */
     spec1->similar_tail = spec2->similar_tail; /* set the new tail */
     spec1->similar_len += spec2->similar_len;  /* add the lengths */
     spec2->similar = NULL;
@@ -125,7 +143,54 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     return 0;
 }
 
-SpecEntry *sts_get(STS *sts, char *id) { return dict_get(sts->ht, id); }
+/* Merges two sts nodes to point to the same expanded list */
+int sts_diff(STS *sts, char *id1, char *id2) {
+    SpecEntry *spec1, *spec2;
+    spec1 = findRoot(sts, dict_get(sts->ht, id1));
+    spec2 = findRoot(sts, dict_get(sts->ht, id2));
+
+    if (spec1->different_len < spec2->different_len) {
+        /* swap */
+        SpecEntry *temp = spec1;
+        spec1 = spec2;
+        spec2 = temp;
+    }
+
+    if (spec1->different == NULL) {
+        spec1->different = malloc(sizeof(StrList));
+        spec1->different->data = strdup(spec2->id);
+        spec1->different->next = NULL;
+        spec1->different_tail = spec1->different;
+        spec1->different_len = 1;
+    } else {
+        StrList *result = ll_search(spec1->different, &eq_pred, spec2->id);
+        if (result == NULL) {
+            ll_push(spec1->different, create_node(spec2->id));
+        }
+    }
+
+    if (spec2->different == NULL) {
+        spec2->different = malloc(sizeof(StrList));
+        spec2->different->data = strdup(spec1->id);
+        spec2->different->next = NULL;
+        spec2->different_tail = spec2->different;
+        spec2->different_len = 1;
+    } else {
+        StrList *result = ll_search(spec2->different, &eq_pred, spec1->id);
+        if (result == NULL) {
+            ll_push(spec2->different, create_node(spec1->id));
+        }
+    }
+#ifdef PRINT_FILE
+    print_sts(PRINT_FILE_STREAM, sts, PRINT_FILE_VERBOSE);
+#endif
+
+    return 0;
+}
+
+SpecEntry *sts_get(STS *sts, char *id) {
+    return dict_get(sts->ht, id);
+}
 
 void free_StrList_data(StrList *list) {
     free(list->data);
@@ -152,45 +217,31 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
 
         if (root == sp) {
             switch (root->similar_len) {
-            case 0:
-                strcpy(buf, "()");
-                break;
-            case 1:
-                sprintf(buf, "(%s)", root->similar->data);
-                break;
-            case 2:
-                sprintf(buf, "(%s, %s)", root->similar->data,
-                        ((StrList *)ll_nth(root->similar, 1))->data);
-                break;
-            case 3:
-                sprintf(buf, "(%s, %s, %s)", root->similar->data,
-                        ((StrList *)ll_nth(root->similar, 1))->data,
-                        ((StrList *)ll_nth(root->similar, 2))->data);
-                break;
-            default:
-                sprintf(buf, "(%s, %s, %s, ...)", root->similar->data,
-                        ((StrList *)ll_nth(root->similar, 1))->data,
-                        ((StrList *)ll_nth(root->similar, 2))->data);
-                break;
+                case 0:
+                    strcpy(buf, "()");
+                    break;
+                case 1:
+                    sprintf(buf, "(%s)", root->similar->data);
+                    break;
+                case 2:
+                    sprintf(buf, "(%s, %s)", root->similar->data,
+                            ((StrList *) ll_nth(root->similar, 1))->data);
+                    break;
+                case 3:
+                    sprintf(buf, "(%s, %s, %s)", root->similar->data,
+                            ((StrList *) ll_nth(root->similar, 1))->data,
+                            ((StrList *) ll_nth(root->similar, 2))->data);
+                    break;
+                default:
+                    sprintf(buf, "(%s, %s, %s, ...)", root->similar->data,
+                            ((StrList *) ll_nth(root->similar, 1))->data,
+                            ((StrList *) ll_nth(root->similar, 2))->data);
+                    break;
             }
             fprintf(file, "\n\"%p\"[label=\"%s\"]\n", root->similar, buf);
         }
     }
     fprintf(file, "\n}\n");
-}
-
-bool eq_pred(void *node, va_list vargs) {
-    char *x = va_arg(vargs, char *);
-    StrList *n = (StrList *)node;
-    return !strcmp(n->data, x);
-}
-
-StrList *create_node(char *id) {
-
-    StrList *node = malloc(sizeof(StrList));
-    node->data = strdup(id);
-    node->next = NULL;
-    return node;
 }
 
 void print_sts(FILE *file, STS *sts) {
@@ -203,12 +254,58 @@ void print_sts(FILE *file, STS *sts) {
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
             LLFOREACH(A, sp->similar) {
-                LLFOREACH(B, (StrList *)A->next) {
+                LLFOREACH(B, (StrList *) A->next) {
                     fprintf(file, "%s, %s\n", A->data, B->data);
                 }
             }
         }
     }
 }
+
+void print_sts_similar(FILE *file, STS *sts) {
+    StrList *list = NULL;
+    ulong iter_state = 0;
+    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
+        SpecEntry *sp, *root;
+        sp = dict_get(sts->ht, key);
+        root = findRoot(sts, sp);
+        if (!strcmp(root->id, sp->id)) {
+            continue;
+        }
+        StrList *result = ll_search(list, &eq_pred, root->id);
+        if (result == NULL) {
+            for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
+                printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
+            }
+            printf("\n");
+            ll_push(&list, create_node(root->id));
+        }
+    }
+    ll_free(list, (llfree_f) destroyStrListNode);
+
+}
+
+void print_sts_diff(FILE *file, STS *sts) {
+    StrList *list = NULL;
+    ulong iter_state = 0;
+    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
+        SpecEntry *sp, *root;
+        sp = dict_get(sts->ht, key);
+        root = findRoot(sts, sp);
+        if (!strcmp(root->id, sp->id)) {
+            continue;
+        }
+        StrList *result = ll_search(list, &eq_pred, root->id);
+        if (result == NULL) {
+            for (StrList *diff = root->different; diff; diff = ll_nth(diff, 1)) {
+                printf("%s%s", diff == root->different ? "" : ", ", diff->data);
+            }
+            printf("\n");
+            ll_push(&list, create_node(root->id));
+        }
+    }
+    ll_free(list, (llfree_f) destroyStrListNode);
+}
+
 
 /* _______ END of STS Functions _______ */

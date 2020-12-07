@@ -217,7 +217,9 @@ void *htab_iterate(hashp ht);
  */
 typedef struct {
     double max_load_factor;
+
     size_t (*key_sz)(keyp key);
+
     htab_t *htab;
 } dict_t;
 
@@ -227,6 +229,7 @@ typedef dict_t *dictp;
 @brief create a new dict
  */
 dictp dict_new2(size_t key_sz, size_t val_sz);
+
 /*!
 @brief create a new dict
 @param[in] key_sz : the size of keys
@@ -263,30 +266,37 @@ the list is terminated by a DICT_CONF_DONE in the key position
 @returns the dict
  */
 dictp dict_config(dictp d, ...);
+
 /*!
 @brief sets the hashing function for dict
  */
 dictp dict_set_hfunc(dictp d, ht_hash_func f);
+
 /*!
 @brief sets the key copying method for d
  */
 dictp dict_set_keycpy(dictp d, ht_key_cpy_func f);
+
 /*!
 @brief sets the key compare method for d
  */
 dictp dict_set_cmp(dictp d, ht_cmp_func f);
+
 /*!
 @brief sets the target load factor for d
  */
 dictp dict_set_max_load_factor(dictp d, double lf);
+
 /*!
 @brief sets the target load factor for d
  */
 dictp dict_set_key_sz_f(dictp d, size_t (*f)(keyp key));
+
 /*!
 @brief put an element in dict
  */
 dictp dict_put(dictp dict, keyp key, valp val);
+
 /*!
 @brief put many elements in dict
 @param[in] dict : the dict
@@ -294,6 +304,7 @@ dictp dict_put(dictp dict, keyp key, valp val);
 @param[in] ... : a null terminated series of key value pairs
  */
 dictp dict_putv(dictp dict, int *num_put, ...);
+
 /*!
 @brief gen an element from dict
  */
@@ -303,6 +314,7 @@ valp dict_get(dictp dict, keyp key);
 @brief force a rehash on d
  */
 dictp dict_force_rehash2(dictp d, ulong new_bufcap);
+
 /*!
 @brief force a rehash on d with a new key size 
 */
@@ -317,6 +329,7 @@ valp dict_del(dictp d, keyp key);
 @brief see htab_iterate
  */
 keyp dict_iterate_r(dictp d, ulong *state);
+
 keyp dict_iterate(dictp d);
 
 /*!

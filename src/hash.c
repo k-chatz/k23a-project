@@ -4,7 +4,7 @@ uint djb2(keyp key, size_t key_sz) {
     /* djb2 hashing function from http://www.cse.yorku.ca/~oz/hash.html */
     uint hash = 5381;
     for (uint i = 0; i < key_sz; i++) {
-        hash = ((hash << 5) + hash) + ((uint8_t *)key)[i];
+        hash = ((hash << 5) + hash) + ((uint8_t *) key)[i];
     }
     return hash;
 }
@@ -13,8 +13,8 @@ uint djb2_str(keyp key, size_t key_sz) {
     /* djb2 hashing function from http://www.cse.yorku.ca/~oz/hash.html */
     uint hash = 5381;
     uint i = 0;
-    for (; i < key_sz && ((char *)key)[i]; i++) {
-        hash = ((hash << 5) + hash) + ((char *)key)[i];
+    for (; i < key_sz && ((char *) key)[i]; i++) {
+        hash = ((hash << 5) + hash) + ((char *) key)[i];
     }
     return hash;
 }
@@ -26,14 +26,14 @@ void htab_init(htab_t *ht, ht_hash_func h, size_t key_sz, size_t val_sz,
     ht->buf_cap = buf_cap;
     ht->buf_load = 0;
     ht->h = h;
-    ht->cmp = (ht_cmp_func)memcmp;
-    ht->keycpy = (ht_key_cpy_func)memcpy;
+    ht->cmp = (ht_cmp_func) memcmp;
+    ht->keycpy = (ht_key_cpy_func) memcpy;
     memset(ht->buf, 0, buf_cap * htab_entry_size(ht));
 }
 
 htab_t *htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap) {
     htab_t *new =
-        malloc(sizeof(htab_t) + htab_entry_size2(key_sz, val_sz) * buf_cap);
+            malloc(sizeof(htab_t) + htab_entry_size2(key_sz, val_sz) * buf_cap);
     htab_init(new, h, key_sz, val_sz, buf_cap);
     return new;
 }
@@ -47,7 +47,7 @@ void htab_free_entries(htab_t *ht, void (*free_t)(void *)) {
     htab_entry_t *bucket;
     size_t entry_sz = htab_entry_size(ht);
     for (uint i = 0; i < ht->buf_cap; i++) {
-        bucket = (void *)&ht->buf[entry_sz * i];
+        bucket = (void *) &ht->buf[entry_sz * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED)
             free_t(bucket->contents + ht->key_sz);
     }
@@ -56,7 +56,7 @@ void htab_free_entries(htab_t *ht, void (*free_t)(void *)) {
 bool htab_put(htab_t *ht, keyp key, valp val) {
     uint hash = ht->h(key, ht->key_sz);
     size_t entry_sz = htab_entry_size(ht);
-    htab_entry_t *bucket = (void *)&ht->buf[entry_sz * (hash % ht->buf_cap)];
+    htab_entry_t *bucket = (void *) &ht->buf[entry_sz * (hash % ht->buf_cap)];
     for (int probes = 0; probes < MAX_PROBES; probes++) {
         if (!bucket->flags || (bucket->flags & HT_ENTRY_FLAGS_DELETED)) {
             /* bucket is empty; add the entry */
@@ -68,7 +68,7 @@ bool htab_put(htab_t *ht, keyp key, valp val) {
             return true;
         }
         /* pseudo-random probing */
-        bucket = (void *)&ht->buf[entry_sz * (rand_r(&hash) % ht->buf_cap)];
+        bucket = (void *) &ht->buf[entry_sz * (rand_r(&hash) % ht->buf_cap)];
     }
     /* we failed to put the element in the hash table */
     return false;
@@ -78,7 +78,7 @@ valp htab_get(htab_t *ht, keyp key) {
     uint hash = ht->h(key, ht->key_sz);
     size_t entry_sz = htab_entry_size(ht);
 
-    htab_entry_t *bucket = (void *)&ht->buf[entry_sz * (hash % ht->buf_cap)];
+    htab_entry_t *bucket = (void *) &ht->buf[entry_sz * (hash % ht->buf_cap)];
 
     while (bucket->flags) {
         /* while the bucket is not empty; */
@@ -87,7 +87,7 @@ valp htab_get(htab_t *ht, keyp key) {
             /* we found it! */
             return bucket->contents + ht->key_sz;
         }
-        bucket = (void *)&ht->buf[entry_sz * (rand_r(&hash) % ht->buf_cap)];
+        bucket = (void *) &ht->buf[entry_sz * (rand_r(&hash) % ht->buf_cap)];
     }
 
     /* we failed to put the element in the hash table */
@@ -121,10 +121,9 @@ valp htab_del(htab_t *ht, keyp key) {
 
 bool htab_rehash(htab_t *old, htab_t *new) {
     size_t entsz_old = htab_entry_size(old);
-    size_t entsz_new = htab_entry_size(new);
     char *new_key = malloc(new->key_sz);
     for (uint i = 0; i < old->buf_cap; i++) {
-        htab_entry_t *bucket = (void *)&old->buf[entsz_old * i];
+        htab_entry_t *bucket = (void *) &old->buf[entsz_old * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED) {
             /* bucket is occupied */
             old->keycpy(new_key, bucket->contents, old->key_sz);
@@ -138,7 +137,7 @@ bool htab_rehash(htab_t *old, htab_t *new) {
 bool htab_rehash_deep(htab_t *old, htab_t *new, valp (*copy)(valp)) {
     size_t entsz = htab_entry_size(old);
     for (uint i = 0; i < old->buf_cap; i++) {
-        htab_entry_t *bucket = (void *)&old->buf[entsz * i];
+        htab_entry_t *bucket = (void *) &old->buf[entsz * i];
         if (bucket->flags & HT_ENTRY_FLAGS_OCCUPIED) {
             /* bucket is occupied */
             htab_put(new, bucket->contents,
@@ -150,10 +149,10 @@ bool htab_rehash_deep(htab_t *old, htab_t *new, valp (*copy)(valp)) {
 
 void *htab_iterate_r(htab_t *ht, ulong *state) {
     size_t entsz = htab_entry_size(ht);
-    htab_entry_t *bucket = (void *)&ht->buf[*state * entsz];
+    htab_entry_t *bucket = (void *) &ht->buf[*state * entsz];
     while (*state < ht->buf_cap && bucket->flags != HT_ENTRY_FLAGS_OCCUPIED) {
         (*state)++;
-        bucket = (void *)&ht->buf[*state * entsz];
+        bucket = (void *) &ht->buf[*state * entsz];
     }
 
     if (*state < ht->buf_cap) {
@@ -193,31 +192,39 @@ dictp dict_new3(size_t key_sz, size_t val_sz, ulong bufcap) {
     return new;
 }
 
-dictp dict_config(dictp d, ...){
+dictp dict_config(dictp d, ...) {
     va_list vargs;
     va_start(vargs, d);
-    dict_conf_key k = va_arg(vargs, int);
-    while(k != DICT_CONF_DONE){
-	switch(k) {
-	case DICT_CONF_HASH_FUNC:
-	    dict_set_hfunc(d, va_arg(vargs, void*));
-	    break;
-	case DICT_CONF_KEY_CPY:
-	    dict_set_keycpy(d, va_arg(vargs, void*));
-	    break;
-	case DICT_CONF_CMP:
-	    dict_set_cmp(d, va_arg(vargs, void*));
-	    break;
-	case DICT_CONF_LF:
-	    dict_set_max_load_factor(d, va_arg(vargs, double));
-	    break;
-	case DICT_CONF_KEY_SZ_F:
-	    dict_set_key_sz_f(d, va_arg(vargs, void*));
-	    break;
-	default:
-	    break;
-	}
-	k = va_arg(vargs, int);
+    dict_conf_key
+    k = va_arg(vargs,
+    int);
+    while (k != DICT_CONF_DONE) {
+        switch (k) {
+            case DICT_CONF_HASH_FUNC:
+                dict_set_hfunc(d, va_arg(vargs,
+                void*));
+                break;
+            case DICT_CONF_KEY_CPY:
+                dict_set_keycpy(d, va_arg(vargs,
+                void*));
+                break;
+            case DICT_CONF_CMP:
+                dict_set_cmp(d, va_arg(vargs,
+                void*));
+                break;
+            case DICT_CONF_LF:
+                dict_set_max_load_factor(d, va_arg(vargs,
+                double));
+                break;
+            case DICT_CONF_KEY_SZ_F:
+                dict_set_key_sz_f(d, va_arg(vargs,
+                void*));
+                break;
+            default:
+                break;
+        }
+        k = va_arg(vargs,
+        int);
     }
     return d;
 }
@@ -261,7 +268,7 @@ dictp dict_put(dictp dict, keyp key, valp val) {
         rehash = true;
     }
 
-    if (((double)(dict->htab->buf_load + 1) / dict->htab->buf_cap) >
+    if (((double) (dict->htab->buf_load + 1) / dict->htab->buf_cap) >
         dict->max_load_factor) {
         new_buf_load = new_buf_load << 1;
         rehash = true;
@@ -301,7 +308,7 @@ valp dict_get(dictp dict, keyp key) {
 
 dictp dict_force_rehash3(dictp d, ulong new_bufcap, size_t new_keysz) {
     htab_t *new_ht =
-        htab_new(d->htab->h, new_keysz, d->htab->val_sz, new_bufcap);
+            htab_new(d->htab->h, new_keysz, d->htab->val_sz, new_bufcap);
     new_ht->cmp = d->htab->cmp;
     new_ht->keycpy = d->htab->keycpy;
     htab_rehash(d->htab, new_ht);
@@ -314,23 +321,23 @@ dictp dict_force_rehash2(dictp d, ulong new_bufcap) {
     return dict_force_rehash3(d, new_bufcap, d->htab->key_sz);
 }
 
-valp dict_del(dictp d, keyp key){
+valp dict_del(dictp d, keyp key) {
     return htab_del(d->htab, key);
 }
 
-keyp dict_iterate_r(dictp d, ulong *state){
+keyp dict_iterate_r(dictp d, ulong *state) {
     return htab_iterate_r(d->htab, state);
 }
 
-keyp dict_iterate(dictp d){
+keyp dict_iterate(dictp d) {
     return htab_iterate(d->htab);
 }
 
-void dict_free(dictp dict, void (*free_t)(void *)){
+void dict_free(dictp dict, void (*free_t)(void *)) {
     htab_destroy(dict->htab, free_t);
     free(dict);
 }
 
-size_t str_sz(keyp key){
+size_t str_sz(keyp key) {
     return strlen(key) + 1;
 }
