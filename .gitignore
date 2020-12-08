@@ -185,3 +185,4 @@ project
 html/
 docs/
 .ccls-cache/
+objs/*
