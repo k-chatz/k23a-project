@@ -176,11 +176,6 @@ TAGS
 
 # End of https://www.toptal.com/developers/gitignore/api/c,clion,vscode
 
-tests/spec_to_specs_tests
-tests-bin/json_parser_tests
-tests-bin/hash_tests
-tests-bin/lists_tests
-tests-bin/spec_to_specs_tests
 project
 html/
 docs/
@@ -188,3 +183,6 @@ docs/
 
 objs/*
 !objs/.gitkeep
+
+tests-bin/*
+!tests-bin/.gitkeep
