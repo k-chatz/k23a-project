@@ -201,24 +201,19 @@ dictp dict_config(dictp d, ...) {
     while (k != DICT_CONF_DONE) {
         switch (k) {
             case DICT_CONF_HASH_FUNC:
-                dict_set_hfunc(d, va_arg(vargs,
-                void*));
+                dict_set_hfunc(d, va_arg(vargs, void*));
                 break;
             case DICT_CONF_KEY_CPY:
-                dict_set_keycpy(d, va_arg(vargs,
-                void*));
+                dict_set_keycpy(d, va_arg(vargs, void*));
                 break;
             case DICT_CONF_CMP:
-                dict_set_cmp(d, va_arg(vargs,
-                void*));
+                dict_set_cmp(d, va_arg(vargs, void*));
                 break;
             case DICT_CONF_LF:
-                dict_set_max_load_factor(d, va_arg(vargs,
-                double));
+                dict_set_max_load_factor(d, va_arg(vargs, double));
                 break;
             case DICT_CONF_KEY_SZ_F:
-                dict_set_key_sz_f(d, va_arg(vargs,
-                void*));
+                dict_set_key_sz_f(d, va_arg(vargs, void*));
                 break;
             default:
                 break;
