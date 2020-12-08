@@ -1,7 +1,4 @@
-#include <fcntl.h>
-#include <unistd.h>
-//#include "../include/acutest.h"
-#include "../include/json_parser.h"
+#include "../include/acutest.h"
 
 #ifndef ACUTEST_H
 
@@ -13,24 +10,8 @@
 
 #define N (sizeof(ids) / sizeof(ids[0]))
 
-void entities(void) {
-    char *contents = NULL, *json_path = NULL;
-    int fd = 0, bytes = 0;
-    JSON_ENTITY *json_a = NULL, *json_b = NULL;
-    contents = malloc(1 << 20);
-    memset(contents, 0, 1 << 20);
-    json_path = "tests/731.json";
-    fd = open(json_path, O_RDONLY);
-            TEST_ASSERT(fd > 2);
-    bytes = read(fd, contents, 1 << 20);
-            TEST_ASSERT(bytes > 0);
-    hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), 10);
-            TEST_ASSERT(json_ht != NULL);
-    json_a = json_to_entity(contents);
-            TEST_ASSERT(json_a != NULL);
-            TEST_CHECK(htab_put(json_ht, json_path, &json_a));
-    json_b = (JSON_ENTITY *) htab_get(json_ht, json_path);
-            //TEST_CHECK(&(*json_a) == &(*json_b));
+void test(void) {
+
 }
 
 #ifndef ACUTEST_H
@@ -45,7 +26,6 @@ struct test_ {
 #endif
 
 TEST_LIST = {
-        {"entities", entities},
         {NULL, NULL}
 };
 

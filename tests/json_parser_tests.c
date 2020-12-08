@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #define TEST_CHECK assert
+#define TEST_ASSERT assert
 #endif
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
