@@ -1,6 +1,6 @@
 #include "../include/hash.h"
 
-/* #include "../include/acutest.h" */
+#include "../include/acutest.h"
 #ifndef ACUTEST_H
 
 #include <assert.h>
