@@ -185,4 +185,6 @@ project
 html/
 docs/
 .ccls-cache/
+
 objs/*
+!objs/.gitkeep
