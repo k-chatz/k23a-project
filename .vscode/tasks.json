@@ -28,6 +28,11 @@
                 "reveal": "always",
                 "panel": "new"
             }
+        }, 
+        {
+            "label": "Build Test",
+            "type": "shell",
+            "command": "gcc tests/general_tests.c src/json_parser.c src/lists.c src/hash.c -o general_tests"
         }
     ]
 }
