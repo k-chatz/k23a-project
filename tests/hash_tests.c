@@ -31,7 +31,14 @@ void rehash(void) {
 }
 
 void put_get_int_pointer() {
-
+    int *a = NULL, *b = NULL, c = 10;
+    a = &c;
+    hashp json_ht = htab_new(djb2_str, 128, sizeof(int *), 10);
+            TEST_ASSERT(json_ht != NULL);
+            TEST_CHECK(htab_put(json_ht, "key", &a));
+    b = htab_get(json_ht, "key");
+            TEST_ASSERT(b != NULL);
+    //TEST_CHECK(a == b);
 }
 
 void put_get_json_entity(void) {
