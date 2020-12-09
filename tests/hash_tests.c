@@ -18,7 +18,7 @@ void put_get_string(void) {
     hashp hash = htab_new(djb2_str, 10, 10, 5000);
     htab_put(hash, "foo", "foo");
     char *foo = htab_get(hash, "foo");
-            TEST_CHECK((strcmp("foo", foo) == 0));
+    TEST_CHECK((strcmp("foo", foo) == 0));
 }
 
 void rehash(void) {
@@ -27,46 +27,37 @@ void rehash(void) {
 
     hashp bigger = htab_new(djb2_str, 100, 100, 5000);
     char *foo = htab_get(bigger, "foo");
-            TEST_CHECK((strcmp(foo, "foo") == 0));
+    TEST_CHECK((strcmp(foo, "foo") == 0));
 }
 
 void put_get_int_pointer() {
-    int *a = NULL, *b = NULL;
-    a = malloc(sizeof(int));
-    *a = 10;
-
-    printf("\na:[%p][%p][%d]\n", &a, a, *a );
-
+    int *a = NULL, **b = NULL, c = 10;
+    a = &c;
     hashp json_ht = htab_new(djb2_str, 128, sizeof(int *), 10);
-            TEST_ASSERT(json_ht != NULL);
-            TEST_CHECK(htab_put(json_ht, "key", &a));
-    b = (int *) htab_get(json_ht, "key");
-            TEST_ASSERT(b != NULL);
-    printf("\nb:[%p][%p][%d]\n", &b, b, *b );
-
-    // TEST_CHECK(a == b);
+    TEST_ASSERT(json_ht != NULL);
+    TEST_CHECK(htab_put(json_ht, "key", &a));
+    b = (int **) htab_get(json_ht, "key");
+    TEST_ASSERT(b != NULL);
+    TEST_CHECK(a == *b);
 }
 
 void put_get_json_entity(void) {
-    char *contents = NULL, *json_path = NULL;
-    int fd = 0, bytes = 0;
-    JSON_ENTITY *json_a = NULL, *json_b = NULL;
-    contents = malloc(1 << 20);
-    memset(contents, 0, 1 << 20);
-    json_path = "tests/731.json";
-    fd = open(json_path, O_RDONLY);
-            TEST_ASSERT(fd > 2);
-    bytes = read(fd, contents, 1 << 20);
-            TEST_ASSERT(bytes > 0);
+    JSON_ENTITY *json_a = NULL, **json_b = NULL;
     hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), 10);
-            TEST_ASSERT(json_ht != NULL);
-    json_a = json_to_entity(contents);
-            TEST_ASSERT(json_a != NULL);
-            TEST_CHECK(htab_put(json_ht, json_path, json_a));
-    json_b = htab_get(json_ht, json_path);
-            TEST_ASSERT(json_b != NULL);
-    json_b = json_b;
-            //TEST_CHECK(&(*json_a) == &(*json_b));
+    TEST_ASSERT(json_ht != NULL);
+    json_a = json_to_entity("{\n"
+                            "  \"<page title>\": \"Olympus OM-D E-M10 Black Digital Camera (16.1 MP, SD/SDHC/SDXC Card Slot) Price Comparison at Buy.net\",\n"
+                            "  \"camera body only\": \"Body Only\",\n"
+                            "  \"camera type\": \"Mirrorless Interchangeable Lens Camera\",\n"
+                            "  \"depth\": \"1.8 in\",\n"
+                            "  \"effective megapixels\": \"16100000 pixels\",\n"
+                            "  \"environmental protection\": \"Water Resistant\"\n"
+                            "}");
+    TEST_ASSERT(json_a != NULL);
+    TEST_CHECK(htab_put(json_ht, "key", &json_a));
+    json_b = htab_get(json_ht, "key");
+    TEST_ASSERT(json_b != NULL);
+    TEST_CHECK(json_a == *json_b);
 }
 
 #ifndef ACUTEST_H
