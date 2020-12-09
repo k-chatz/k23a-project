@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "../include/hash.h"
 #include "../include/json_parser.h"
-//#include "../include/acutest.h"
+#include "../include/acutest.h"
 
 #ifndef ACUTEST_H
 
@@ -31,14 +31,20 @@ void rehash(void) {
 }
 
 void put_get_int_pointer() {
-    int *a = NULL, *b = NULL, c = 10;
-    a = &c;
+    int *a = NULL, *b = NULL;
+    a = malloc(sizeof(int));
+    *a = 10;
+
+    printf("\na:[%p][%p][%d]\n", &a, a, *a );
+
     hashp json_ht = htab_new(djb2_str, 128, sizeof(int *), 10);
             TEST_ASSERT(json_ht != NULL);
             TEST_CHECK(htab_put(json_ht, "key", &a));
-    b = htab_get(json_ht, "key");
+    b = (int *) htab_get(json_ht, "key");
             TEST_ASSERT(b != NULL);
-    //TEST_CHECK(a == b);
+    printf("\nb:[%p][%p][%d]\n", &b, b, *b );
+
+    // TEST_CHECK(a == b);
 }
 
 void put_get_json_entity(void) {
@@ -75,9 +81,9 @@ struct test_ {
 #endif
 
 TEST_LIST = {
-        {"put_get_string",      put_get_string},
+        //"put_get_string",      put_get_string},
         {"put_get_int_pointer", put_get_int_pointer},
-        {"put_get_json_entity", put_get_json_entity},
+        //{"put_get_json_entity", put_get_json_entity},
         {NULL, NULL}
 };
 
