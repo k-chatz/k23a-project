@@ -8,6 +8,7 @@
 #include "../include/spec_to_specs.h"
 #include "../include/spec_ids.h"
 #include "../include/json_parser.h"
+#include "../include/ml.h"
 
 void readOptions(int argc, char **argv, char **dir, char **csv) {
     int i;
@@ -52,42 +53,6 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
 }
 
 
-dictp bag_of_words(char* buf){
-    dictp bow_dict = dict_new2(128, sizeof(char*));
-    dict_config(bow_dict, DICT_CONF_HASH_FUNC, djb2_str);
-    dict_config(bow_dict, DICT_CONF_KEY_CPY, strncpy);
-    dict_config(bow_dict, DICT_CONF_CMP, strncmp);
-    char* token, *rest = NULL;
-    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
-        char *token_word;
-        token_word = dict_get(bow_dict, token);
-        if (token_word == NULL) {
-            char* word = strdup(token);
-            dict_put(bow_dict, word, word);
-        }
-    }
-
-    return bow_dict;
-}
- 
-void rm_punct_and_upper_case(char *input){
-    char* old = input, *new = input;
-    while(*new){
-        if(isupper((unsigned char)*old)){
-            *old = tolower(*old);
-        }
-        if(ispunct((unsigned char)*old)){
-            old++;
-            *new = *old;
-        }
-        else{
-            *new=*old;
-            old++;
-            new++;
-        }
-    }
-    new = '\0';
-}
 
 int main(int argc, char *argv[]) {
     // char *dir = NULL, *csv = NULL;
@@ -139,13 +104,12 @@ int main(int argc, char *argv[]) {
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
     
-    char buf1[128] = "tHe;-. qui,,,.ck. fox.---- j";
+    char buf1[128] = "tHe;-. qui,,,.ck. 25543fox.---- j";
     rm_punct_and_upper_case(buf1);
     printf("string without punctuation: %s\n", buf1);
+    dictp stopwords = stop_words();
     dictp bow_dict = bag_of_words(buf1);
 
-
-   
     char * x = NULL;
     while(x = dict_iterate(bow_dict)){  
         printf("[%s]\n",x);

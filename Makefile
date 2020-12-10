@@ -24,7 +24,7 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-project: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o json_parser.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o json_parser.o ml.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################
