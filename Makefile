@@ -35,7 +35,7 @@ project: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o jso
 #                                                #
 ##################################################
 
-tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests)
+tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests ml_tests)
 	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
 
 tests-bin/hash_tests: $(addprefix objs/, hash_tests.o hash.o json_parser.o lists.o)
@@ -51,6 +51,9 @@ tests-bin/json_parser_tests: $(addprefix objs/, json_parser_tests.o json_parser.
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/general_tests: $(addprefix objs/, general_tests.o json_parser.o hash.o lists.o)
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
+tests-bin/ml_tests: $(addprefix objs/, ml_tests.o ml.o hash.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################

@@ -48,8 +48,7 @@ void rm_punct_and_upper_case(char *input){
     *new = '\0';
 }
 
-dictp stop_words(){
-
+dictp stop_words() {
     /* clang-format off */
     /* @formatter:off */
     dictp sw = 
@@ -100,7 +99,6 @@ void rm_stop_words(char *input){
     input[offset] = '\0';
     free(temp);
 }
-
 
 void rm_digits(char *input){
     char* old = input, *new = input;
