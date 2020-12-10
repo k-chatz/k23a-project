@@ -9,7 +9,7 @@ void rm_punct_and_upper_case(char *input);
 
 dictp stop_words();
 
-char* rm_stop_words(char *buf1,char *buf2);
+void rm_stop_words(char *input);
 
 void rm_digits(char *input);
 

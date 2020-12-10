@@ -105,11 +105,28 @@ int main(int argc, char *argv[]) {
     // print_sts_diff(stdout, dataset_X);
     
     char buf1[128] = "tHe;-. qui,,,.ck. 25543fox.---- j";
+    // char buf1[128] = ";-. qui,,,.ck. 25543fox.---- j- j";
+
+
     char buf2[128];
     rm_punct_and_upper_case(buf1);
     printf("string without punctuation: %s\n", buf1);
-    char* buf_no_sw = rm_stop_words(buf1, buf2);
-    printf("string without stop words: %s\n", buf_no_sw);
+
+
+
+
+
+
+
+    rm_stop_words(buf1);
+
+    printf("string without stop words: %s\n", buf1);
+
+
+
+
+
+
     rm_digits(buf2);
     printf("string without digits: %s\n", buf2);
     dictp bow_dict = bag_of_words(buf2);

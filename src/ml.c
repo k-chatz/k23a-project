@@ -80,19 +80,34 @@ dictp stop_words(){
     return sw;
 }
 
-char* rm_stop_words(char *buf,  char *buf2){
+void rm_stop_words(char *input){
+    int offset = 0;
+    char * temp = malloc(sizeof(char) * strlen(input)), *token, *rest = NULL;
+    char * t = temp;
+    
+    strcpy(t, input);
+
     dictp stopwords = stop_words();
-    char* token, *rest = NULL;
-    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
+    for (token = strtok_r(t, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
         char *token_val;
         token_val = dict_get(stopwords, token);
         if (token_val == NULL) {
-            strcat(buf2, token);
-            strcat(buf2, " ");
+            strcat(input, token);
+            strcat(input, " ");
+            offset += strlen(token) + 1;
         }
     }
-    return buf2;
+
+
+    input[offset] = '\0';
+
+
+
+
+
+    free(temp);
 }
+
 
 void rm_digits(char *input){
     char* old = input, *new = input;
