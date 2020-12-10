@@ -323,6 +323,19 @@ dictp dict_putv(dictp dict, int *num_put, ...);
 valp dict_get(dictp dict, keyp key);
 
 /*!
+@relates dict_t
+@brief Update a key from the hash table.
+If key has a value associated with it, we run mutator_f on it.
+Otherwise, add the pair (key, default_val).
+@param[in] dict : the dict
+@param[in] key : the key to be added
+@param[in] default_val : default value for new keys
+@param[in] mutator_f : function to run when a key is found
+*/
+dictp dict_update(dictp dict, keyp key, valp default_val, void (*mutator_f)(valp));
+
+
+/*!
 @brief force a rehash on d
  */
 dictp dict_force_rehash2(dictp d, ulong new_bufcap);

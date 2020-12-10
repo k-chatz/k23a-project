@@ -307,6 +307,16 @@ dictp dict_putv(dictp dict, int *num_put, ...) {
 
 valp dict_get(dictp dict, keyp key) { return htab_get(dict->htab, key); }
 
+dictp dict_update(dictp dict, keyp key, valp default_val, void (*mutator_f)(valp)){
+    valp v = dict_get(dict, key);
+    if(v != NULL) {
+	mutator_f(v);
+	return true;
+    } else {
+	return dict_put(dict, key, default_val);
+    }
+}
+
 dictp dict_force_rehash3(dictp d, ulong new_bufcap, size_t new_keysz) {
     htab_t *new_ht =
         htab_new(d->htab->h, new_keysz, d->htab->val_sz, new_bufcap);
