@@ -9,6 +9,6 @@ void rm_punct_and_upper_case(char *input);
 
 dictp stop_words();
 
-void rm_stop_words(char *input);
+char* rm_stop_words(char *buf1,char *buf2);
 
 #endif

@@ -105,15 +105,17 @@ int main(int argc, char *argv[]) {
     // print_sts_diff(stdout, dataset_X);
     
     char buf1[128] = "tHe;-. qui,,,.ck. 25543fox.---- j";
+    char buf2[128];
     rm_punct_and_upper_case(buf1);
     printf("string without punctuation: %s\n", buf1);
-    dictp stopwords = stop_words();
+    char* buf_no_sw = rm_stop_words(buf1, buf2);
+    printf("string without stop words: %s\n", buf_no_sw);
     dictp bow_dict = bag_of_words(buf1);
 
-    char * x = NULL;
-    while(x = dict_iterate(bow_dict)){  
-        printf("[%s]\n",x);
-    }
+    // char * x = NULL;
+    // while(x = dict_iterate(bow_dict)){  
+    //     printf("[%s]\n",x);
+    // }
 
     // sts_destroy(dataset_X);
     // htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
-
+#include <string.h>
 #include "../include/hash.h"
 
 dictp bag_of_words(char* buf){
@@ -80,6 +80,17 @@ dictp stop_words(){
     return sw;
 }
 
-void rm_stop_words(char *input){
-
+char* rm_stop_words(char *buf,char *buf2){
+    char buf1[128];
+    dictp stopwords = stop_words();
+    char* token, *rest = NULL;
+    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
+        char *token_val;
+        token_val = dict_get(stopwords, token);
+        if (token_val == NULL) {
+            strcat(buf2, token);
+            strcat(buf2, " ");
+        }
+    }
+    return buf2;
 }
