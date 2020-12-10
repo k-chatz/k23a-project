@@ -23,11 +23,20 @@ void put_get_string(void) {
 
 void rehash(void) {
     hashp hash = htab_new(djb2_str, 10, 10, 50);
+    hash->keycpy = (ht_key_cpy_func)strncpy;
+    hash->cmp = (ht_cmp_func)strncmp;
     htab_put(hash, "foo", "foo");
 
     hashp bigger = htab_new(djb2_str, 100, 100, 5000);
+    bigger->keycpy = (ht_key_cpy_func)strncpy;
+    bigger->cmp = (ht_cmp_func)strncmp;
+    htab_rehash(hash, bigger);
+    
     char *foo = htab_get(bigger, "foo");
     TEST_CHECK((strcmp(foo, "foo") == 0));
+
+    free(hash);
+    free(bigger);
 }
 
 void put_get_int_pointer() {
@@ -60,6 +69,21 @@ void put_get_json_entity(void) {
     TEST_CHECK(json_a == *json_b);
 }
 
+/* NOT A TEST */
+void inc(void *val){
+    (*(int*)val)++;
+}
+
+void update(void) {
+    hashp ht = htab_new(djb2, sizeof(int), sizeof(int), 10);
+    int key = 5, value = 0;
+    for(int i = 0; i < 5; i++){
+	htab_update(ht, &key, &value, inc);
+	value = *(int*)htab_get(ht, &key);
+	TEST_CHECK(i == value);
+    }
+}
+
 #ifndef ACUTEST_H
 
 struct test_ {
@@ -72,10 +96,12 @@ struct test_ {
 #endif
 
 TEST_LIST = {
-        //"put_get_string",      put_get_string},
-        {"put_get_int_pointer", put_get_int_pointer},
-        //{"put_get_json_entity", put_get_json_entity},
-        {NULL, NULL}
+    {"put_get_string",      put_get_string},
+    {"put_get_int_pointer", put_get_int_pointer},
+    {"put_get_json_entity", put_get_json_entity},
+    {"rehashing", rehash},
+    {"update", update},
+    {NULL, NULL}
 };
 
 #ifndef ACUTEST_H
