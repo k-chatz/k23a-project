@@ -11,4 +11,6 @@ dictp stop_words();
 
 char* rm_stop_words(char *buf1,char *buf2);
 
+void rm_digits(char *input);
+
 #endif

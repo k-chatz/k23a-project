@@ -110,7 +110,9 @@ int main(int argc, char *argv[]) {
     printf("string without punctuation: %s\n", buf1);
     char* buf_no_sw = rm_stop_words(buf1, buf2);
     printf("string without stop words: %s\n", buf_no_sw);
-    dictp bow_dict = bag_of_words(buf1);
+    rm_digits(buf2);
+    printf("string without digits: %s\n", buf2);
+    dictp bow_dict = bag_of_words(buf2);
 
     // char * x = NULL;
     // while(x = dict_iterate(bow_dict)){  

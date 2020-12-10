@@ -80,8 +80,7 @@ dictp stop_words(){
     return sw;
 }
 
-char* rm_stop_words(char *buf,char *buf2){
-    char buf1[128];
+char* rm_stop_words(char *buf,  char *buf2){
     dictp stopwords = stop_words();
     char* token, *rest = NULL;
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
@@ -94,3 +93,20 @@ char* rm_stop_words(char *buf,char *buf2){
     }
     return buf2;
 }
+
+void rm_digits(char *input){
+    char* old = input, *new = input;
+    while(*new){
+        if(isdigit((unsigned char)*old)){
+            old++;
+            *new = *old;
+        }
+        else{
+            *new=*old;
+            old++;
+            new++;
+        }
+    }
+    new = '\0';
+}
+
