@@ -3,12 +3,12 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #define MAX_PROBES 32
 
@@ -114,7 +114,7 @@ hashp htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap);
 @brief destroys a hash table
 (for params see htab_free_entries)
  */
-void htab_destroy(hashp ht, void (*free_t)(void *));
+void htab_destroy(hashp ht, void (*free_t)(valp));
 
 /*!
 @relates htab_t
@@ -122,7 +122,7 @@ void htab_destroy(hashp ht, void (*free_t)(void *));
 @param[in] ht : the hash table
 @param[in] free_t : a function to free the values with
  */
-void htab_free_entries(hashp ht, void (*free_t)(void *));
+void htab_free_entries(hashp ht, void (*free_t)(valp));
 
 /*!
 @relates htab_t
@@ -132,6 +132,18 @@ void htab_free_entries(hashp ht, void (*free_t)(void *));
 @param[in] val : the value to be associated with key
 */
 bool htab_put(hashp ht_info, keyp key, valp val);
+
+/*!
+@relates htab_t
+@brief Update a key from the hash table.
+If key has a value associated with it, we run mutator_f on it.
+Otherwise, add the pair (key, default_val).
+@param[in] ht : the hash table
+@param[in] key : the key to be added
+@param[in] default_val : default value for new keys
+@param[in] mutator_f : function to run when a key is found
+*/
+bool htab_update(hashp ht, keyp key, valp default_val, void (*mutator_f)(valp));
 
 /*!
 @relates htab_t
@@ -225,7 +237,7 @@ typedef struct {
 
 typedef dict_t *dictp;
 
-/*! 
+/*!
 @brief create a new dict
  */
 dictp dict_new2(size_t key_sz, size_t val_sz);
@@ -239,8 +251,7 @@ dictp dict_new2(size_t key_sz, size_t val_sz);
 */
 dictp dict_new3(size_t key_sz, size_t val_sz, ulong bufcap);
 
-typedef
-enum {
+typedef enum {
     /*! @brief ends the conf argument list */
     DICT_CONF_DONE,
     /*! @brief the argument after this is a hashing function */
@@ -251,15 +262,16 @@ enum {
     DICT_CONF_CMP,
     /*! @brief the argument after this the max load factor for this dict */
     DICT_CONF_LF,
-    /*! @brief the argument after this is a function that calculates a key's size */
+    /*! @brief the argument after this is a function that calculates a key's
+       size */
     DICT_CONF_KEY_SZ_F,
 } dict_conf_key;
 
 /*!
 @brief configures a dict
 
-Accepts an ordered list of arguments of the form dict_conf_key, dict_conf_val, ...
-the list is terminated by a DICT_CONF_DONE in the key position
+Accepts an ordered list of arguments of the form dict_conf_key, dict_conf_val,
+... the list is terminated by a DICT_CONF_DONE in the key position
 
 @param[in] d : the dict
 @param[in] ... : CONF_KEY, CONF_VAL, ..., CONF_DONE
@@ -316,7 +328,7 @@ valp dict_get(dictp dict, keyp key);
 dictp dict_force_rehash2(dictp d, ulong new_bufcap);
 
 /*!
-@brief force a rehash on d with a new key size 
+@brief force a rehash on d with a new key size
 */
 dictp dict_force_rehash3(dictp d, ulong new_bufcap, size_t new_keysz);
 
@@ -353,7 +365,6 @@ uint djb2(keyp key, size_t key_sz);
 
 /*! @brief djb2 hashing function for strings */
 uint djb2_str(keyp key, size_t key_sz);
-
 
 /*! @} */
 
