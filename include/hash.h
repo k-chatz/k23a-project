@@ -306,6 +306,15 @@ dictp dict_put(dictp dict, keyp key, valp val);
 dictp dict_putv(dictp dict, int *num_put, ...);
 
 /*!
+@brief put many elements in dict with distinct key
+@param[in] dict : the dict
+@param[out] num_put : the number of elements successfully put in dict
+@param[in] ... : a null terminated series of key value pairs
+ */
+dictp dict_putv_distinct(dictp dict, int *num_put, ...);
+
+
+/*!
 @brief gen an element from dict
  */
 valp dict_get(dictp dict, keyp key);

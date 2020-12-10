@@ -294,6 +294,31 @@ dictp dict_putv(dictp dict, int *num_put, ...) {
             (*num_put)++;
         }
     } while (k != NULL);
+
+    va_end(vargs);
+    return dict;
+}
+
+dictp dict_putv_distinct(dictp dict, int *num_put, ...) {
+    *num_put = 0;
+    va_list vargs;
+    va_start(vargs, num_put);
+    keyp k;
+    valp v;
+    do {
+        k = va_arg(vargs, keyp);
+        if (k != NULL) {
+            v = va_arg(vargs, valp);
+
+            if (dict_get(dict, k)){
+                continue;
+            }
+            dict_put(dict, k, v);
+            (*num_put)++;
+        }
+    } while (k != NULL);
+
+    va_end(vargs);
     return dict;
 }
 
