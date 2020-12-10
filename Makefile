@@ -5,6 +5,7 @@ vpath	 %_tests   tests-bin
 
 CC	= gcc
 CFLAGS	= -g3 -Wall
+CFLAGS_OPT = -O3 -ftree-vectorize -msse2 -ftree-vectorizer-verbose=1 -ffast-math
 LFLAGS	=
 
 
