@@ -104,7 +104,17 @@ int main(int argc, char *argv[]) {
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
     
-    char buf1[128] = "tHe;-. qui,,,.ck. 25543fox.---- j";
+    char buf1[128] = "tHe;-. a qui,,,.ck. 255 at 43 a fox.---- j to";
+
+
+//    SET_KEY("the"),
+//            SET_KEY("to"),
+//            SET_KEY("as"),
+//            SET_KEY("a"),
+//            SET_KEY("at"),
+//            SET_KEY("mm"),
+
+
     // char buf1[128] = ";-. qui,,,.ck. 25543fox.---- j- j";
 
 
@@ -113,22 +123,12 @@ int main(int argc, char *argv[]) {
     printf("string without punctuation: %s\n", buf1);
 
 
-
-
-
-
-
     rm_stop_words(buf1);
-
     printf("string without stop words: %s\n", buf1);
 
 
-
-
-
-
-    rm_digits(buf2);
-    printf("string without digits: %s\n", buf2);
+    rm_digits(buf1);
+    printf("string without digits: %s\n", buf1);
     dictp bow_dict = bag_of_words(buf2);
 
     // char * x = NULL;

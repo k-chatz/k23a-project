@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 #include "../include/hash.h"
 
 dictp bag_of_words(char* buf){
@@ -44,7 +45,7 @@ void rm_punct_and_upper_case(char *input){
             new++;
         }
     }
-    new = '\0';
+    *new = '\0';
 }
 
 dictp stop_words(){
@@ -82,11 +83,10 @@ dictp stop_words(){
 
 void rm_stop_words(char *input){
     int offset = 0;
-    char * temp = malloc(sizeof(char) * strlen(input)), *token, *rest = NULL;
+    char * temp = strdup(input), *token, *rest = NULL;
     char * t = temp;
-    
     strcpy(t, input);
-
+    input[0]='\0';
     dictp stopwords = stop_words();
     for (token = strtok_r(t, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
         char *token_val;
@@ -97,14 +97,7 @@ void rm_stop_words(char *input){
             offset += strlen(token) + 1;
         }
     }
-
-
     input[offset] = '\0';
-
-
-
-
-
     free(temp);
 }
 
@@ -116,7 +109,7 @@ void rm_digits(char *input){
             old++;
             *new = *old;
         }
-        else{
+        else {
             *new=*old;
             old++;
             new++;
@@ -124,4 +117,3 @@ void rm_digits(char *input){
     }
     new = '\0';
 }
-
