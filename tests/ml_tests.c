@@ -9,10 +9,6 @@
 #define TEST_ASSERT assert
 #endif
 
-void bag_of_words_(void) {
-            TEST_CHECK(1);
-}
-
 void remove_punctuations_and_replace_lower_case_with_upper_case(void) {
     char buffer[128] = "tHe;-. a qui,,,.ck. 255 at 43 a fox.---- j to";
     rm_punct_and_upper_case(buffer);
@@ -30,7 +26,12 @@ void remove_stop_words(void) {
 }
 
 void remove_digits(void) {
-            TEST_CHECK(1);
+    char buffer1[128] = "quick 255 43 fox j f";
+    char buffer2[128] = "quick 255 43 fox j";
+    rm_digits(buffer1);
+    rm_digits(buffer2);
+            TEST_CHECK(strcmp(buffer1, "quick   fox j f") == 0);
+            TEST_CHECK(strcmp(buffer2, "quick   fox j") == 0);
 }
 
 #ifndef ACUTEST_H
@@ -45,7 +46,6 @@ struct test_ {
 #endif
 
 TEST_LIST = {
-        //{"bag_of_words", bag_of_words},
         {"remove_punctuations_and_replace_lower_case_with_upper_case", remove_punctuations_and_replace_lower_case_with_upper_case},
         {"remove_stop_words",                                          remove_stop_words},
         {"remove_digits",                                              remove_digits},
