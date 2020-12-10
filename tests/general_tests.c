@@ -8,8 +8,6 @@
 #define TEST_ASSERT assert
 #endif
 
-#define N (sizeof(ids) / sizeof(ids[0]))
-
 void test(void) {
 
 }
