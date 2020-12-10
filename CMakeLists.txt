@@ -40,13 +40,21 @@ include_directories(.)
 #        src/hash.c
 #        )
 
-#main
+#ml tests
 add_executable(k23a_project
-        src/main.c
         src/lists.c
         src/hash.c
-        src/json_parser.c
-        src/spec_ids.c
-        src/spec_to_specs.c
         src/ml.c
+        tests/ml_tests.c
         )
+
+#main
+#add_executable(k23a_project
+#        src/main.c
+#        src/lists.c
+#        src/hash.c
+#        src/json_parser.c
+#        src/spec_ids.c
+#        src/spec_to_specs.c
+#        src/ml.c
+#        )
