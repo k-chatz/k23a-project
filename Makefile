@@ -39,6 +39,9 @@ part1: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o json_
 tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests)
 	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
 
+tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o )
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
 tests-bin/hash_tests: $(addprefix objs/, hash_tests.o hash.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
