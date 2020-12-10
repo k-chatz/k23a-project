@@ -1,12 +1,13 @@
-#include "../include/sgdr.h"
+#include "../include/logreg.h"
 
-LogReg *logreg_new(int weights_len) {
+LogReg *logreg_new(int weights_len, float learning_rate) {
     LogReg *out = malloc(sizeof(*out));
     out->weights_len = weights_len;
     out->weights = malloc(weights_len * sizeof(float));
     for (int i = 0; i < weights_len; i++)
         out->weights[i] = ((float)rand()) / RAND_MAX;
     out->bias = ((float)rand()) / RAND_MAX;
+    out->learning_rate = learning_rate;
     return out;
 }
 
@@ -28,14 +29,14 @@ float predict(LogReg *reg, float *input) {
 }
 
 float train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
-    float Ps = malloc(batch_sz * sizeof(float));
+    float *Ps = malloc(batch_sz * sizeof(float));
     for (int i = 0; i < batch_sz; i++) {
         Ps[i] = predict(reg, Xs + (reg->weights_len - 1));
     }
 
     /* calculate the Deltas */
-    float *Deltas = malloc(reg->weights_len + sizeof(float) + 1);
-    memset(Deltas, 0, reg->weights_len + sizeof(float));
+    float *Deltas = malloc(reg->weights_len * sizeof(float) + 1);
+    memset(Deltas, 0, reg->weights_len * sizeof(float) + 1);
     for (int i = 0; i < batch_sz; i++){
 	int j;
 	for(j = 0; j < reg->weights_len; j++) {

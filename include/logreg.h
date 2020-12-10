@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef
 struct {
@@ -10,7 +11,7 @@ struct {
     float learning_rate;
 } LogReg;
 
-LogReg *logreg_new(int weights_len);
+LogReg *logreg_new(int weights_len, float learning_rate);
 float sigmoid(float x);
 float sigmoid_grad(float x);
 float logloss(float p, bool y);
