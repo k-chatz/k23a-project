@@ -77,8 +77,9 @@ void destroyStrListNode(void *node) {
 
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
-    ll_free(spec->similar, &destroyStrListNode);
-    ll_free(spec->different, &destroyStrListNode);
+    ll_free(spec->similar, free);
+    ll_free(spec->different, free);
+    free(spec->id);
 }
 
 void sts_destroy(STS *sts) {
@@ -96,6 +97,7 @@ int sts_add(STS *sts, char *id) {
     temp.parent = temp.id;
     temp.similar_tail = temp.similar;
     temp.similar_len = 1;
+    temp.different = NULL;
     dict_put(sts->ht, id, &temp);
     return 0;
 }

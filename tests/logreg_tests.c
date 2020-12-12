@@ -1,5 +1,6 @@
 #include "../include/acutest.h"
 #include "../include/logreg.h"
+#include <time.h>
 
 
 void logreg_test(void) {
@@ -14,8 +15,8 @@ void logreg_test(void) {
     int batch_sz = 2;
     int batch_num = 2;
     /* overfit; just to see if it works */
-    LogReg *reg = logreg_new(2, 0.00005);
-    int epochs = 5000;
+    LogReg *reg = logreg_new(2, 0.0001);
+    int epochs = 30000;
     for(int i = 0; i < epochs; i++){
 	for(int j = 0; j < batch_num; j++) {
 	    int batch = rand() % 4;
@@ -25,10 +26,14 @@ void logreg_test(void) {
     }
 
     printf("\nrunning some predictions on our data:\n");
+    float *Ps = predict(reg, Xs, 5);
+
     for(int i = 0; i < 5; i++){
-	printf("prediction: %f, actual: %d\n", predict(reg, &Xs[i*2]), Ys[i]);	
+	printf("prediction: %f, actual: %d\n", Ps[i], Ys[i]);
     }
 
+    free(Ps);
+    logreg_free(reg);
 }
 
 TEST_LIST = {
