@@ -138,3 +138,25 @@ dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json) {
     }
     return bow_dict;
 }
+
+float* bow_vector(dictp bow_dict, JSON_ENTITY *json) {
+    StringList *json_keys = json_get_obj_keys(json);
+    int capacity = bow_dict->htab->buf_load;
+    float* bow_vector = malloc(capacity * sizeof(float));
+    memset(bow_vector, 0, capacity);
+    LLFOREACH(json_key, json_keys) {
+        JSON_ENTITY *cur_ent = json_get(json, json_key->data);
+        if (cur_ent->type == JSON_STRING) {
+            char *x = json_to_string(cur_ent);
+            char* token = NULL, *rest = NULL;
+            for (token = strtok_r(x, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                int *token_val;
+                token_val = dict_get(bow_dict, token);
+                if (* (int *) token_val > 0) {
+                    bow_vector[* (int *)token_val] += 1;
+                }
+            }
+        }
+    }
+    return bow_vector;
+}

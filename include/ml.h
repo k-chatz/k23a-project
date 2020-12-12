@@ -20,4 +20,6 @@ void ml_cleanup(char* input);
 
 dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json);
 
+float* bow_vector(dictp bow_dict, JSON_ENTITY *json);
+
 #endif
