@@ -105,12 +105,13 @@ int main(int argc, char *argv[]) {
         tokenize_json(bow_dict, *json);
     }
 
-    char *x = NULL;
-    while ((x = (char *) dict_iterate(bow_dict))) {
-        valp value = dict_get(bow_dict, x);
-        printf("%d\n", *(int *) value);
-    }
+//    char *x = NULL;
+//    while ((x = (char *) dict_iterate(bow_dict))) {
+//        valp value = dict_get(bow_dict, x);
+//        printf("%d\n", *(int *) value);
+//    }
 
+    printf("buf_load: [%lu]\n", bow_dict->htab->buf_load);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);

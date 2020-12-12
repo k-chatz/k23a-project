@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SET_KEY(X) X, NULL
+
 #define MAX_PROBES 32
 
 /*!
