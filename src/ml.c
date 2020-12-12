@@ -52,10 +52,7 @@ void rm_punct_and_upper_case(char *input) {
 }
 
 dictp stop_words() {
-    int num_put = 0;
-#define SET_KEY(X) X, NULL
     char *stop_word, comma;
-    int success = 0;
     FILE *fp = fopen("resources/unwanted-words.txt", "r");
     assert(fp != NULL);
     /* clang-format off */
@@ -71,11 +68,10 @@ dictp stop_words() {
             );
     /* clang-format on */
     /* @formatter:on */
-    while ((success = fscanf(fp, "%m[^,]%c", &stop_word, &comma)) > 0) {
+    while (fscanf(fp, "%m[^,]%c", &stop_word, &comma) > 0) {
         dict_put(sw, SET_KEY(stop_word));
         free(stop_word);
     }
-#undef SET_KEY
     return sw;
 }
 
