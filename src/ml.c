@@ -42,19 +42,14 @@ dictp bag_of_words(dictp bow_dict, char* buf){
 }
 
 void rm_punct_and_upper_case(char *input) {
-    char *old = input, *new = input;
-    while (*new) {
-        *old = tolower(*old);
-        if (ispunct((unsigned char) *old)) {
-            old++;
-            *new = *old;
-        } else {
-            *new = *old;
-            old++;
-            new++;
+    while (*input) {
+        *input = tolower(*input);
+        if (ispunct((unsigned char) *input)){
+            *input = ' ';
         }
+        input++;
     }
-    *new = '\0';
+    *input = '\0';
 }
 
 dictp stop_words() {

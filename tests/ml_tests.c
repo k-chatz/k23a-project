@@ -1,4 +1,4 @@
-//#include "../include/acutest.h"
+#include "../include/acutest.h"
 #include "../include/ml.h"
 
 #ifndef ACUTEST_H
@@ -9,10 +9,11 @@
 #define TEST_ASSERT assert
 #endif
 
-void remove_punctuations_and_replace_lower_case_with_upper_case(void) {
+void remove_punct_and_uppercase(void) {
     char buffer[128] = "tHe;-. a qui,,,.ck. 255 at 43 a fox.---- j to";
     rm_punct_and_upper_case(buffer);
-            TEST_CHECK(strcmp(buffer, "the a quick 255 at 43 a fox j to") == 0);
+    printf("%s\n",buffer);
+    TEST_CHECK(strcmp(buffer, "the    a qui    ck  255 at 43 a fox      j to") == 0);
 }
 
 
@@ -46,7 +47,7 @@ struct test_ {
 #endif
 
 TEST_LIST = {
-        {"remove_punctuations_and_replace_lower_case_with_upper_case", remove_punctuations_and_replace_lower_case_with_upper_case},
+        {"remove_punct_and_uppercase",                                 remove_punct_and_uppercase},
         {"remove_stop_words",                                          remove_stop_words},
         {"remove_digits",                                              remove_digits},
         {NULL, NULL}

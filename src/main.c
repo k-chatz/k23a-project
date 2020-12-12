@@ -97,22 +97,6 @@ int main(int argc, char *argv[]) {
     char * ptr = NULL; 
     StringList *json_keys;
 
-
-
-
-    dictp bow_dict = create_bow_dict();
-    while( (ptr = htab_iterate(json_ht))   ){
-        JSON_ENTITY ** json = (ptr + json_ht->key_sz);
-        tokenize_json(bow_dict, *json);
-    }
-
-
-
-
-
-
-
-
     read_csv(dataset_X, csv, "0");
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
