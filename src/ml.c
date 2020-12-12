@@ -70,7 +70,19 @@ dictp stop_words() {
 
 #define SET_KEY(X) X, NULL
     
-    FILE *fp = fopen("../resources/unwanted-words.txt", "r")
+    FILE *fp = fopen("resources/unwanted-words.txt", "r");
+    if (!fp) {
+        
+    }
+    char* stop_word, comma;    
+    int success = 0;
+    while (success = fscanf(fp, "%[^,]%c", stop_word, &comma)) {
+        
+        dict_put(sw, SET_KEY(stop_word));
+        if(success == 1){
+            break;
+        }
+    }
     
     // dict_putv_distinct(
     //         sw, &num_put,
