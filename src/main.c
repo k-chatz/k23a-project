@@ -55,90 +55,77 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
 
 
 int main(int argc, char *argv[]) {
-    // char *dir = NULL, *csv = NULL;
-    // STS *dataset_X = NULL;
-    // readOptions(argc, argv, &dir, &csv);
-    // dataset_X = get_spec_ids(dir);
-    // read_csv(dataset_X, csv, "1");
-    // //print result
-    // //print_sts(stdout, dataset_X);
-    // // print_sts_similar(stdout, dataset_X);
-    // int fd;
-    // char json_website[128], json_num[128], json_path[280], *contents, *rest_tok;
-    // int read_err = 0;
-    // contents = malloc(1 << 20);
-    // hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), dataset_X->ht->htab->buf_cap);
-    // ulong iter_state = 0;
-    // for (char *key = dict_iterate_r(dataset_X->ht, &iter_state);
-    //      key != NULL; key = dict_iterate_r(dataset_X->ht, &iter_state)) {
-    //     sscanf(key, "%[^/]//%[^/]", json_website, json_num);
-    //     snprintf(json_path, 280, "%s/%s/%s.json", dir, json_website, json_num);
-    //     fd = open(json_path, O_RDONLY);
-    //     read_err = read(fd, contents, 1 << 20);
-    //     if (read_err < 0) {
-    //         perror("read");
-    //     } else {
-    //         contents[read_err] = '\0';
-    //     }
-    //     StringList *tokens = json_tokenize_str(contents, &rest_tok);
-    //     if (rest_tok[0] != '\0') {
-    //         fprintf(stderr, "rest not null");
-    //         goto abort;
-    //     }
-    //     memset(contents, 0, 1 << 20);
-    //     StringList *rest_ent;
-    //     JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
-    //     htab_put(json_ht, key, ent  ) ;
-    //     // empty tokens list
-    //     abort:
-    //     ll_free(tokens, (llfree_f) json_free_StringList);
-    //     close(fd);
-    // }
-    // char * ptr = NULL;
-    // while( (ptr = htab_iterate(json_ht))   ){
-    //     JSON_ENTITY * json = (JSON_ENTITY *) (ptr + json_ht->key_sz);
-    //     json_print_value(json);
-    //     putchar('\n');
-    // }
-    // read_csv(dataset_X, csv, "0");
+    char *dir = NULL, *csv = NULL;
+    STS *dataset_X = NULL;
+    readOptions(argc, argv, &dir, &csv);
+    dataset_X = get_spec_ids(dir);
+    read_csv(dataset_X, csv, "1");
+    //print result
+    //print_sts(stdout, dataset_X);
+    // print_sts_similar(stdout, dataset_X);
+    int fd;
+    char json_website[128], json_num[128], json_path[280], *contents, *rest_tok;
+    int read_err = 0;
+    contents = malloc(1 << 20);
+    hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), dataset_X->ht->htab->buf_cap);
+    ulong iter_state = 0;
+    for (char *key = dict_iterate_r(dataset_X->ht, &iter_state);
+         key != NULL; key = dict_iterate_r(dataset_X->ht, &iter_state)) {
+        sscanf(key, "%[^/]//%[^/]", json_website, json_num);
+        snprintf(json_path, 280, "%s/%s/%s.json", dir, json_website, json_num);
+        fd = open(json_path, O_RDONLY);
+        read_err = read(fd, contents, 1 << 20);
+        if (read_err < 0) {
+            perror("read");
+        } else {
+            contents[read_err] = '\0';
+        }
+        StringList *tokens = json_tokenize_str(contents, &rest_tok);
+        if (rest_tok[0] != '\0') {
+            fprintf(stderr, "rest not null");
+            goto abort;
+        }
+        memset(contents, 0, 1 << 20);
+        StringList *rest_ent;
+        JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
+        htab_put(json_ht, key, &ent  ) ;
+        // empty tokens list
+        abort:
+        ll_free(tokens, (llfree_f) json_free_StringList);
+        close(fd);
+    }
+    char * ptr = NULL; 
+    StringList *json_keys;
+
+
+
+
+    dictp bow_dict = create_bow_dict();
+    while( (ptr = htab_iterate(json_ht))   ){
+        JSON_ENTITY ** json = (ptr + json_ht->key_sz);
+        tokenize_json(bow_dict, *json);
+    }
+
+
+
+
+
+
+
+
+    read_csv(dataset_X, csv, "0");
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
+
+    char* x = NULL;
     
-    char buf1[128] = "tHe;-. a qui,,,.ck. 255 at 43 a fox.---- j to";
+    while (x = dict_iterate(bow_dict)){
+        printf("%s\n", x);
+    }
 
-
-//    SET_KEY("the"),
-//            SET_KEY("to"),
-//            SET_KEY("as"),
-//            SET_KEY("a"),
-//            SET_KEY("at"),
-//            SET_KEY("mm"),
-
-
-    // char buf1[128] = ";-. qui,,,.ck. 25543fox.---- j- j";
-
-
-    char buf2[128];
-    rm_punct_and_upper_case(buf1);
-    printf("string without punctuation: %s\n", buf1);
-
-
-    rm_stop_words(buf1);
-    printf("string without stop words: %s\n", buf1);
-
-
-    rm_digits(buf1);
-    printf("string without digits: %s\n", buf1);
-    dictp bow_dict = bag_of_words(buf2);
-
-    // char * x = NULL;
-    // while(x = dict_iterate(bow_dict)){  
-    //     printf("[%s]\n",x);
-    // }
-
-    // sts_destroy(dataset_X);
-    // htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
-    // free(json_ht);
-    // free(contents);
+    sts_destroy(dataset_X);
+    htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
+    free(json_ht);
+    free(contents);
     return 0;
 }

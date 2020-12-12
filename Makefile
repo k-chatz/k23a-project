@@ -53,7 +53,7 @@ tests-bin/json_parser_tests: $(addprefix objs/, json_parser_tests.o json_parser.
 tests-bin/general_tests: $(addprefix objs/, general_tests.o json_parser.o hash.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-tests-bin/ml_tests: $(addprefix objs/, ml_tests.o ml.o hash.o lists.o)
+tests-bin/ml_tests: $(addprefix objs/, ml_tests.o json_parser.o ml.o hash.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################

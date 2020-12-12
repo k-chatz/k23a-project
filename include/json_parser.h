@@ -1,3 +1,6 @@
+#ifndef __JSON_PARSER_H__
+#define __JSON_PARSER_H__
+
 #include "hash.h"
 #include "lists.h"
 #include <stdarg.h>
@@ -209,3 +212,7 @@ JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
 @private
  */
 void json_free_StringList(StringList *list);
+
+
+
+#endif

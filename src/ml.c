@@ -3,8 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "../include/hash.h"
+#include "../include/json_parser.h"
 
-dictp bag_of_words(char* buf){
+dictp create_bow_dict(){
+
     /* clang-format off */
     /* @formatter:off */
     dictp bow_dict = 
@@ -18,6 +20,14 @@ dictp bag_of_words(char* buf){
     );
     /* clang-format on */
     /* @formatter:on */
+
+    return bow_dict;
+}
+
+dictp bag_of_words(dictp bow_dict, char* buf){
+    /* clang-format off */
+    /* @formatter:off */
+
     char* token, *rest = NULL;
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
         char *token_word;
@@ -114,4 +124,25 @@ void rm_digits(char *input){
         }
     }
     new = '\0';
+}
+
+void ml_cleanup(char* input){
+    rm_punct_and_upper_case(input);
+    rm_stop_words(input);
+    rm_digits(input);
+}
+
+dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json){
+
+    StringList *json_keys = json_get_obj_keys(json);
+    LLFOREACH(json_key, json_keys){
+        JSON_ENTITY * cur_ent = json_get(json, json_key->data); 
+        if (cur_ent->type == JSON_STRING){
+            char* x = json_to_string(cur_ent);    
+           // printf("before cleanup: [%s]\n", x);
+            ml_cleanup(x);
+            bag_of_words(bow_dict, x);
+        }
+    }
+    return bow_dict;
 }
