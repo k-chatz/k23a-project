@@ -110,7 +110,8 @@ int main(int argc, char *argv[]) {
     char* x = NULL;
     
     while (x = dict_iterate(bow_dict)){
-        printf("%s\n", x);
+        valp value = dict_get(bow_dict, x);
+        printf("%d\n", *(int*)value);
     }
 
     sts_destroy(dataset_X);

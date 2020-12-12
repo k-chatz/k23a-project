@@ -5,6 +5,8 @@
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 
+
+
 dictp create_bow_dict(){
 
     /* clang-format off */
@@ -25,16 +27,14 @@ dictp create_bow_dict(){
 }
 
 dictp bag_of_words(dictp bow_dict, char* buf){
-    /* clang-format off */
-    /* @formatter:off */
-
+    int position;
     char* token, *rest = NULL;
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
         char *token_word;
         token_word = dict_get(bow_dict, token);
+        position = bow_dict->htab->buf_load;
         if (token_word == NULL) {
-            char *word = strdup(token);
-            dict_put(bow_dict, word, word);
+            dict_put(bow_dict, token, &position);
         }
     }
 
@@ -69,16 +69,19 @@ dictp stop_words() {
     int num_put = 0;
 
 #define SET_KEY(X) X, NULL
-    dict_putv_distinct(
-            sw, &num_put,
-            SET_KEY("the"),
-            SET_KEY("to"),
-            SET_KEY("as"),
-            SET_KEY("a"),
-            SET_KEY("at"),
-            SET_KEY("mm"),
-            NULL
-    );
+    
+    FILE *fp = fopen("../resources/unwanted-words.txt", "r")
+    
+    // dict_putv_distinct(
+    //         sw, &num_put,
+    //         SET_KEY("the"),
+    //         SET_KEY("to"),
+    //         SET_KEY("as"),
+    //         SET_KEY("a"),
+    //         SET_KEY("at"),
+    //         SET_KEY("mm"),
+    //         NULL
+    // );
 #undef SET_KEY
 
     return sw;

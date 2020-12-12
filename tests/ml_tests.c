@@ -12,7 +12,6 @@
 void remove_punct_and_uppercase(void) {
     char buffer[128] = "tHe;-. a qui,,,.ck. 255 at 43 a fox.---- j to";
     rm_punct_and_upper_case(buffer);
-    printf("%s\n",buffer);
     TEST_CHECK(strcmp(buffer, "the    a qui    ck  255 at 43 a fox      j to") == 0);
 }
 
