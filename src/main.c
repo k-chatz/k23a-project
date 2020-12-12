@@ -101,6 +101,12 @@ int main(int argc, char *argv[]) {
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
 
+    dictp bow_dict = create_bow_dict();
+    while( (ptr = htab_iterate(json_ht))   ){
+        JSON_ENTITY ** json = (ptr + json_ht->key_sz);
+        tokenize_json(bow_dict, *json);
+    }
+
     char* x = NULL;
     
     while (x = dict_iterate(bow_dict)){
