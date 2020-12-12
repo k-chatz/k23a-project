@@ -24,7 +24,7 @@ bool eq_pred(void *node, va_list vargs) {
 
 StrList *create_node(char *id) {
     StrList *node = malloc(sizeof(StrList));
-    node->data = strdup(id);
+    node->data = id;
     node->next = NULL;
     return node;
 }
@@ -70,15 +70,16 @@ STS *sts_new() {
     return new;
 }
 
-void destroyStrListNode(void *node) {
-    free(((StrList *) node)->data);
-    free(node);
-}
+/* void destroyStrListNode(void *node) { */
+/*     free(((StrList *) node)->data); */
+/*     free(node); */
+/* } */
 
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
-    ll_free(spec->similar, &destroyStrListNode);
-    ll_free(spec->different, &destroyStrListNode);
+    free(spec->id);
+    ll_free(spec->similar, free);
+    ll_free(spec->different, free);
 }
 
 void sts_destroy(STS *sts) {
@@ -96,6 +97,7 @@ int sts_add(STS *sts, char *id) {
     temp.parent = temp.id;
     temp.similar_tail = temp.similar;
     temp.similar_len = 1;
+    temp.different = NULL;
     dict_put(sts->ht, id, &temp);
     return 0;
 }
@@ -263,48 +265,36 @@ void print_sts(FILE *file, STS *sts) {
 }
 
 void print_sts_similar(FILE *file, STS *sts) {
-    StrList *list = NULL;
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
         SpecEntry *sp, *root;
         sp = dict_get(sts->ht, key);
         root = findRoot(sts, sp);
-        if (!strcmp(root->id, sp->id)) {
+        if (root->id != sp->id) {
             continue;
         }
-        StrList *result = ll_search(list, &eq_pred, root->id);
-        if (result == NULL) {
-            for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
-                printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
-            }
-            printf("\n");
-            ll_push(&list, create_node(root->id));
-        }
-    }
-    ll_free(list, (llfree_f) destroyStrListNode);
 
+	for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
+	    printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
+	}
+	printf("\n");
+    }
 }
 
 void print_sts_diff(FILE *file, STS *sts) {
-    StrList *list = NULL;
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
         SpecEntry *sp, *root;
         sp = dict_get(sts->ht, key);
         root = findRoot(sts, sp);
-        if (!strcmp(root->id, sp->id)) {
+        if (root->id != sp->id) {
             continue;
         }
-        StrList *result = ll_search(list, &eq_pred, root->id);
-        if (result == NULL) {
-            for (StrList *diff = root->different; diff; diff = ll_nth(diff, 1)) {
-                printf("%s%s", diff == root->different ? "" : ", ", diff->data);
-            }
-            printf("\n");
-            ll_push(&list, create_node(root->id));
-        }
+	for (StrList *diff = root->different; diff; diff = ll_nth(diff, 1)) {
+	    printf("%s%s", diff == root->different ? "" : ", ", diff->data);
+	}
+	printf("\n");
     }
-    ll_free(list, (llfree_f) destroyStrListNode);
 }
 
 
