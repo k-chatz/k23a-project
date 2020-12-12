@@ -52,8 +52,6 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
     fclose(fp);
 }
 
-
-
 int main(int argc, char *argv[]) {
     char *dir = NULL, *csv = NULL;
     STS *dataset_X = NULL;
@@ -88,13 +86,13 @@ int main(int argc, char *argv[]) {
         memset(contents, 0, 1 << 20);
         StringList *rest_ent;
         JSON_ENTITY *ent = json_parse_value(tokens, &rest_ent);
-        htab_put(json_ht, key, &ent  ) ;
+        htab_put(json_ht, key, &ent);
         // empty tokens list
         abort:
         ll_free(tokens, (llfree_f) json_free_StringList);
         close(fd);
     }
-    char * ptr = NULL; 
+    char *ptr = NULL;
     StringList *json_keys;
 
     read_csv(dataset_X, csv, "0");
@@ -102,16 +100,15 @@ int main(int argc, char *argv[]) {
     // print_sts_diff(stdout, dataset_X);
 
     dictp bow_dict = create_bow_dict();
-    while( (ptr = htab_iterate(json_ht))   ){
-        JSON_ENTITY ** json = (ptr + json_ht->key_sz);
+    while ((ptr = htab_iterate(json_ht))) {
+        JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         tokenize_json(bow_dict, *json);
     }
 
-    char* x = NULL;
-    
-    while (x = dict_iterate(bow_dict)){
+    char *x = NULL;
+    while ((x = (char *) dict_iterate(bow_dict))) {
         valp value = dict_get(bow_dict, x);
-        printf("%d\n", *(int*)value);
+        printf("%d\n", *(int *) value);
     }
 
     sts_destroy(dataset_X);

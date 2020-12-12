@@ -6,8 +6,7 @@
 #include "../include/json_parser.h"
 
 
-
-dictp create_bow_dict(){
+dictp create_bow_dict() {
 
     /* clang-format off */
     /* @formatter:off */
@@ -26,10 +25,10 @@ dictp create_bow_dict(){
     return bow_dict;
 }
 
-dictp bag_of_words(dictp bow_dict, char* buf){
+dictp bag_of_words(dictp bow_dict, char *buf) {
     int position;
-    char* token, *rest = NULL;
-    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest))     {
+    char *token, *rest = NULL;
+    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         char *token_word;
         token_word = dict_get(bow_dict, token);
         position = bow_dict->htab->buf_load;
@@ -43,8 +42,8 @@ dictp bag_of_words(dictp bow_dict, char* buf){
 
 void rm_punct_and_upper_case(char *input) {
     while (*input) {
-        *input = tolower(*input);
-        if (ispunct((unsigned char) *input)){
+        *input = (char) tolower(*input);
+        if (ispunct((unsigned char) *input)) {
             *input = ' ';
         }
         input++;
@@ -67,35 +66,15 @@ dictp stop_words() {
     /* clang-format on */
     /* @formatter:on */
     int num_put = 0;
-
 #define SET_KEY(X) X, NULL
-    
     FILE *fp = fopen("resources/unwanted-words.txt", "r");
-    if (!fp) {
-        
-    }
-    char* stop_word, comma;    
+    char *stop_word, comma;
     int success = 0;
-    while (success = fscanf(fp, "%[^,]%c", stop_word, &comma)) {
-        
+    while ((success = fscanf(fp, "%m[^,]%c", &stop_word, &comma)) > 0) {
         dict_put(sw, SET_KEY(stop_word));
-        if(success == 1){
-            break;
-        }
+        free(stop_word);
     }
-    
-    // dict_putv_distinct(
-    //         sw, &num_put,
-    //         SET_KEY("the"),
-    //         SET_KEY("to"),
-    //         SET_KEY("as"),
-    //         SET_KEY("a"),
-    //         SET_KEY("at"),
-    //         SET_KEY("mm"),
-    //         NULL
-    // );
 #undef SET_KEY
-
     return sw;
 }
 
@@ -112,7 +91,7 @@ void rm_stop_words(char *input) {
         if (token_val == NULL) {
             strcat(input, token);
             strcat(input, " ");
-            offset += strlen(token) + 1;
+            offset += (int) strlen(token) + 1;
         }
     }
     input[offset - 1] = '\0';
@@ -131,23 +110,22 @@ void rm_digits(char *input) {
             new++;
         }
     }
-    new = '\0';
+    *new = '\0';
 }
 
-void ml_cleanup(char* input){
+void ml_cleanup(char *input) {
     rm_punct_and_upper_case(input);
     rm_stop_words(input);
     rm_digits(input);
 }
 
-dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json){
-
+dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json) {
     StringList *json_keys = json_get_obj_keys(json);
-    LLFOREACH(json_key, json_keys){
-        JSON_ENTITY * cur_ent = json_get(json, json_key->data); 
-        if (cur_ent->type == JSON_STRING){
-            char* x = json_to_string(cur_ent);    
-           // printf("before cleanup: [%s]\n", x);
+    LLFOREACH(json_key, json_keys) {
+        JSON_ENTITY *cur_ent = json_get(json, json_key->data);
+        if (cur_ent->type == JSON_STRING) {
+            char *x = json_to_string(cur_ent);
+            // printf("before cleanup: [%s]\n", x);
             ml_cleanup(x);
             bag_of_words(bow_dict, x);
         }
