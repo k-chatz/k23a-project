@@ -52,6 +52,12 @@ void rm_punct_and_upper_case(char *input) {
 }
 
 dictp stop_words() {
+    int num_put = 0;
+#define SET_KEY(X) X, NULL
+    char *stop_word, comma;
+    int success = 0;
+    FILE *fp = fopen("resources/unwanted-words.txt", "r");
+    assert(fp != NULL);
     /* clang-format off */
     /* @formatter:off */
     dictp sw =
@@ -65,11 +71,6 @@ dictp stop_words() {
             );
     /* clang-format on */
     /* @formatter:on */
-    int num_put = 0;
-#define SET_KEY(X) X, NULL
-    FILE *fp = fopen("resources/unwanted-words.txt", "r");
-    char *stop_word, comma;
-    int success = 0;
     while ((success = fscanf(fp, "%m[^,]%c", &stop_word, &comma)) > 0) {
         dict_put(sw, SET_KEY(stop_word));
         free(stop_word);
@@ -78,13 +79,17 @@ dictp stop_words() {
     return sw;
 }
 
-void rm_stop_words(char *input) {
+bool rm_stop_words(char *input) {
+    assert(input != NULL);
     int offset = 0;
     char *temp = strdup(input), *token, *rest = NULL;
     char *t = temp;
     strcpy(t, input);
     input[0] = '\0';
     dictp stopwords = stop_words();
+    if (stopwords == NULL) {
+        return false;
+    }
     for (token = strtok_r(t, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         char *token_val;
         token_val = dict_get(stopwords, token);
@@ -96,6 +101,7 @@ void rm_stop_words(char *input) {
     }
     input[offset - 1] = '\0';
     free(temp);
+    return true;
 }
 
 void rm_digits(char *input) {

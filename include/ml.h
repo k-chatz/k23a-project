@@ -12,7 +12,7 @@ void rm_punct_and_upper_case(char *input);
 
 dictp stop_words();
 
-void rm_stop_words(char *input);
+bool rm_stop_words(char *input);
 
 void rm_digits(char *input);
 
