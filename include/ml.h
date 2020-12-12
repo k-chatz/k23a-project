@@ -6,7 +6,7 @@
 
 dictp create_bow_dict();
 
-dictp bag_of_words(char* buf);
+dictp bag_of_words(char *buf);
 
 void rm_punct_and_upper_case(char *input);
 
