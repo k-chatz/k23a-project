@@ -8,6 +8,7 @@
 
 struct ml {
     dictp bow_dict;
+    dictp stop_words;
     const char *sw_file;
 };
 
@@ -29,6 +30,31 @@ dictp create_bow_dict() {
     return bow_dict;
 }
 
+dictp ml_stop_words(ML ml) {
+    char *stop_word, comma;
+    assert(ml != NULL);
+    FILE *fp = fopen(ml->sw_file, "r"); 
+    assert(fp != NULL);
+    /* clang-format off */
+    /* @formatter:off */
+    dictp sw = dict_config(
+        dict_new2(32, 0),
+        DICT_CONF_HASH_FUNC, djb2_str,
+        DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+        DICT_CONF_CMP, (ht_cmp_func) strncmp,
+        DICT_CONF_KEY_SZ_F, str_sz,
+        DICT_CONF_DONE
+    );
+    /* clang-format on */
+    /* @formatter:on */
+    while (fscanf(fp, "%m[^,]%c", &stop_word, &comma) > 0) {
+        dict_put(sw, SET_KEY(stop_word));
+        free(stop_word);
+    }
+    fclose(fp);
+    return sw;
+}
+
 /***Public functions***/
 
 bool ml_create(ML *ml, const char *sw_file) {
@@ -38,6 +64,7 @@ bool ml_create(ML *ml, const char *sw_file) {
     if ((*ml) != NULL) {
         (*ml)->sw_file = sw_file;
         (*ml)->bow_dict = create_bow_dict();
+        (*ml)->stop_words = ml_stop_words(*ml); 
         return true;
     }
     return false;
@@ -73,29 +100,6 @@ void ml_rm_punct_and_upper_case(ML ml, char *input) {
     *input = '\0';
 }
 
-dictp ml_stop_words(ML ml) {
-    char *stop_word, comma;
-    FILE *fp = fopen("/home/msi/projects/CLionProjects/k23a-project/resources/unwanted-words.txt", "r");
-    assert(fp != NULL);
-    /* clang-format off */
-    /* @formatter:off */
-    dictp sw =
-            dict_config(
-                    dict_new2(32, 0),
-                    DICT_CONF_HASH_FUNC, djb2_str,
-                    DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
-                    DICT_CONF_CMP, (ht_cmp_func) strncmp,
-                    DICT_CONF_KEY_SZ_F, str_sz,
-                    DICT_CONF_DONE
-            );
-    /* clang-format on */
-    /* @formatter:on */
-    while (fscanf(fp, "%m[^,]%c", &stop_word, &comma) > 0) {
-        dict_put(sw, SET_KEY(stop_word));
-        free(stop_word);
-    }
-    return sw;
-}
 
 bool ml_rm_stop_words(ML ml, char *input) {
     assert(input != NULL);
@@ -104,13 +108,12 @@ bool ml_rm_stop_words(ML ml, char *input) {
     char *t = temp;
     strcpy(t, input);
     input[0] = '\0';
-    dictp stopwords = ml_stop_words(ml);
-    if (stopwords == NULL) {
+    if (ml->stop_words == NULL) {
         return false;
     }
     for (token = strtok_r(t, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         char *token_val;
-        token_val = dict_get(stopwords, token);
+        token_val = dict_get(ml->stop_words, token);
         if (token_val == NULL) {
             strcat(input, token);
             strcat(input, " ");

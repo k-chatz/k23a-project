@@ -14,8 +14,6 @@ dictp ml_bag_of_words(ML ml, char *buf);
 
 void ml_rm_punct_and_upper_case(ML ml, char *input);
 
-dictp ml_stop_words(ML ml);
-
 bool ml_rm_stop_words(ML ml, char *input);
 
 void ml_rm_digits(ML ml, char *input);

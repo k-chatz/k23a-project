@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
 
     ML ml = NULL;
-    ml_create(&ml, "test");
+    ml_create(&ml, "resources/unwanted-words.txt");
 
     while ((ptr = htab_iterate(json_ht))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
