@@ -1,3 +1,4 @@
+#include "../include/tokenizer.h"
 #include "hash.h"
 #include "lists.h"
 #include <stdarg.h>
@@ -188,7 +189,7 @@ The resulting JSON_ENTITY, if not NULL, should be freed with json_entity_free.
 consumed, NULL
 @returns the JSON_ENTITY built by reading the tokens
  */
-JSON_ENTITY *json_parse_value(StringList *tokens, StringList **rest);
+JSON_ENTITY *json_parse_value(tokenizer_t *tok);
 
 /*!
 @brief Prints a json value
@@ -202,6 +203,11 @@ void json_print_value(JSON_ENTITY *jsonEntity);
 @param[in] tokens : the list of tokens
  */
 JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
+
+
+JSON_ENTITY *json_parse_file(char *path);
+JSON_ENTITY *json_parse_string(char *str);
+
 
 /*! @} */
 
