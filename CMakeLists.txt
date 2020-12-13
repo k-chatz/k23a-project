@@ -40,4 +40,5 @@ add_executable(k23a_project
         src/json_parser.c
         src/spec_ids.c
         src/spec_to_specs.c
+        src/tokenizer.c
         )
