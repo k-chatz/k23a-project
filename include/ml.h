@@ -4,22 +4,26 @@
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 
-dictp create_bow_dict();
+typedef struct ml *ML;
 
-dictp bag_of_words(char *buf);
+bool ml_create(ML *ht, const char *sw_file);
 
-void rm_punct_and_upper_case(char *input);
+ulong ml_get_bow_size(ML ml);
 
-dictp stop_words();
+dictp ml_bag_of_words(ML ml, char *buf);
 
-bool rm_stop_words(char *input);
+void ml_rm_punct_and_upper_case(ML ml, char *input);
 
-void rm_digits(char *input);
+dictp ml_stop_words(ML ml);
 
-void ml_cleanup(char* input);
+bool ml_rm_stop_words(ML ml, char *input);
 
-dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json);
+void ml_rm_digits(ML ml, char *input);
 
-float* bow_vector(dictp bow_dict, JSON_ENTITY *json);
+void ml_cleanup(ML ml, char *input);
+
+dictp ml_tokenize_json(ML ml, JSON_ENTITY *json);
+
+float *ml_bow_vector(ML ml, JSON_ENTITY *json);
 
 #endif

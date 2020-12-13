@@ -4,43 +4,65 @@
 #include <ctype.h>
 #include "../include/hash.h"
 #include "../include/json_parser.h"
+#include "../include/ml.h"
 
+struct ml {
+    dictp bow_dict;
+    const char *sw_file;
+};
+
+/***Private functions***/
 
 dictp create_bow_dict() {
-
     /* clang-format off */
     /* @formatter:off */
-    dictp bow_dict =
-            dict_config(
-                    dict_new2(32, sizeof(char *)),
-                    DICT_CONF_HASH_FUNC, djb2_str,
-                    DICT_CONF_KEY_CPY, strncpy,
-                    DICT_CONF_CMP, strncmp,
-                    DICT_CONF_KEY_SZ_F, str_sz,
-                    DICT_CONF_DONE
-            );
+    dictp bow_dict = dict_config(
+            dict_new2(32, sizeof(char *)),
+            DICT_CONF_HASH_FUNC, djb2_str,
+            DICT_CONF_KEY_CPY, strncpy,
+            DICT_CONF_CMP, strncmp,
+            DICT_CONF_KEY_SZ_F, str_sz,
+            DICT_CONF_DONE
+    );
     /* clang-format on */
     /* @formatter:on */
-
     return bow_dict;
 }
 
-dictp bag_of_words(dictp bow_dict, char *buf) {
+/***Public functions***/
+
+bool ml_create(ML *ml, const char *sw_file) {
+    assert(*ml == NULL);
+    assert(sw_file != NULL);
+    *ml = (ML) malloc(sizeof(struct ml));
+    if ((*ml) != NULL) {
+        (*ml)->sw_file = sw_file;
+        (*ml)->bow_dict = create_bow_dict();
+        return true;
+    }
+    return false;
+}
+
+ulong ml_get_bow_size(ML ml){
+    return ml->bow_dict->htab->buf_load;
+}
+
+dictp ml_bag_of_words(ML ml, char *buf) {
     int position;
     char *token, *rest = NULL;
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         char *token_word;
-        token_word = dict_get(bow_dict, token);
-        position = bow_dict->htab->buf_load;
+        token_word = dict_get(ml->bow_dict, token);
+        position = ml->bow_dict->htab->buf_load;
         if (token_word == NULL) {
-            dict_put(bow_dict, token, &position);
+            dict_put(ml->bow_dict, token, &position);
         }
     }
 
-    return bow_dict;
+    return ml->bow_dict;
 }
 
-void rm_punct_and_upper_case(char *input) {
+void ml_rm_punct_and_upper_case(ML ml, char *input) {
     while (*input) {
         *input = (char) tolower(*input);
         if (ispunct((unsigned char) *input)) {
@@ -51,9 +73,9 @@ void rm_punct_and_upper_case(char *input) {
     *input = '\0';
 }
 
-dictp stop_words() {
+dictp ml_stop_words(ML ml) {
     char *stop_word, comma;
-    FILE *fp = fopen("resources/unwanted-words.txt", "r");
+    FILE *fp = fopen("/home/msi/projects/CLionProjects/k23a-project/resources/unwanted-words.txt", "r");
     assert(fp != NULL);
     /* clang-format off */
     /* @formatter:off */
@@ -75,14 +97,14 @@ dictp stop_words() {
     return sw;
 }
 
-bool rm_stop_words(char *input) {
+bool ml_rm_stop_words(ML ml, char *input) {
     assert(input != NULL);
     int offset = 0;
     char *temp = strdup(input), *token, *rest = NULL;
     char *t = temp;
     strcpy(t, input);
     input[0] = '\0';
-    dictp stopwords = stop_words();
+    dictp stopwords = ml_stop_words(ml);
     if (stopwords == NULL) {
         return false;
     }
@@ -100,7 +122,7 @@ bool rm_stop_words(char *input) {
     return true;
 }
 
-void rm_digits(char *input) {
+void ml_rm_digits(ML ml, char *input) {
     char *old = input, *new = input;
     while (*new) {
         if (isdigit((unsigned char) *old)) {
@@ -115,41 +137,41 @@ void rm_digits(char *input) {
     *new = '\0';
 }
 
-void ml_cleanup(char *input) {
-    rm_punct_and_upper_case(input);
-    rm_stop_words(input);
-    rm_digits(input);
+void ml_cleanup(ML ml, char *input) {
+    ml_rm_punct_and_upper_case(ml, input);
+    ml_rm_stop_words(ml, input);
+    ml_rm_digits(ml, input);
 }
 
-dictp tokenize_json(dictp bow_dict, JSON_ENTITY *json) {
+dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     StringList *json_keys = json_get_obj_keys(json);
     LLFOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
             // printf("before cleanup: [%s]\n", x);
-            ml_cleanup(x);
-            bag_of_words(bow_dict, x);
+            ml_cleanup(ml, x);
+            ml_bag_of_words(ml, x);
         }
     }
-    return bow_dict;
+    return ml->bow_dict;
 }
 
-float* bow_vector(dictp bow_dict, JSON_ENTITY *json) {
+float *ml_bow_vector(ML ml, JSON_ENTITY *json) {
     StringList *json_keys = json_get_obj_keys(json);
-    int capacity = bow_dict->htab->buf_load;
-    float* bow_vector = malloc(capacity * sizeof(float));
+    int capacity = ml->bow_dict->htab->buf_load;
+    float *bow_vector = malloc(capacity * sizeof(float));
     memset(bow_vector, 0, capacity);
     LLFOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
-            char* token = NULL, *rest = NULL;
+            char *token = NULL, *rest = NULL;
             for (token = strtok_r(x, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
                 int *token_val;
-                token_val = dict_get(bow_dict, token);
-                if (* (int *) token_val > 0) {
-                    bow_vector[* (int *)token_val] += 1;
+                token_val = dict_get(ml->bow_dict, token);
+                if (*(int *) token_val > 0) {
+                    bow_vector[*(int *) token_val] += 1;
                 }
             }
         }

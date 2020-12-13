@@ -99,10 +99,13 @@ int main(int argc, char *argv[]) {
     // printf("\n\n\n\n");
     // print_sts_diff(stdout, dataset_X);
 
-    dictp bow_dict = create_bow_dict();
+
+    ML ml = NULL;
+    ml_create(&ml, "test");
+
     while ((ptr = htab_iterate(json_ht))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
-        tokenize_json(bow_dict, *json);
+        ml_tokenize_json(ml, *json);
     }
 
 //    char *x = NULL;
@@ -111,7 +114,7 @@ int main(int argc, char *argv[]) {
 //        printf("%d\n", *(int *) value);
 //    }
 
-    printf("buf_load: [%lu]\n", bow_dict->htab->buf_load);
+    printf("buf_load: [%lu]\n", ml_get_bow_size(ml));
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
