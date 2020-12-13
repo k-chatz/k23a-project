@@ -107,14 +107,22 @@ int main(int argc, char *argv[]) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
     }
+    ptr = NULL;
+    float* vector = NULL;
 
-//    char *x = NULL;
-//    while ((x = (char *) dict_iterate(bow_dict))) {
-//        valp value = dict_get(bow_dict, x);
-//        printf("%d\n", *(int *) value);
-//    }
+    // ulong state = 0;
+    // while((ptr = htab_iterate_r(json_ht, &state))){
+    //     JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz);
+    //     vector = ml_bow_vector(ml, *json);
+    //     printf("[");
+    //     for (int i = 0; i <  ml_get_bow_size(ml); i++){
+    //         printf("%f ", vector[i]);
+    //     }
+    //     printf("]\n");
+    // }
 
-    printf("buf_load: [%lu]\n", ml_get_bow_size(ml));
+    print_bow_dict(ml);
+
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
