@@ -24,7 +24,7 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-part1: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o tokenizer.o json_parser.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o tokenizer.o json_parser.o )
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################
@@ -35,7 +35,7 @@ part1: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o token
 #                                                #
 ##################################################
 
-tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests tokenizer_tests)
+tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests)
 	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
 
 tests-bin/hash_tests: $(addprefix objs/, hash_tests.o hash.o)
@@ -47,10 +47,7 @@ tests-bin/spec_to_specs_tests: $(addprefix objs/, spec_to_specs_tests.o spec_to_
 tests-bin/lists_tests: $(addprefix objs/, lists_tests.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-tests-bin/json_parser_tests: $(addprefix objs/, tokenizer.o json_parser_tests.o json_parser.o hash.o lists.o)
-	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
-
-tests-bin/tokenizer_tests: $(addprefix objs/, tokenizer.o tokenizer_tests.o)
+tests-bin/json_parser_tests: $(addprefix objs/, json_parser_tests.o json_parser.o hash.o lists.o tokenizer.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 

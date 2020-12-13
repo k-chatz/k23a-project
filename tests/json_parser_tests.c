@@ -118,12 +118,12 @@ struct test_ {
 #define TEST_LIST const struct test_ test_list_[]
 #endif
 
-TEST_LIST = {{"parse_number"		,        parse_number},
-             {"parse_bool"		,          parse_bool},
-             {"parse_array"		,         parse_array},
-             {"parse_obj"		,           parse_obj},
-             {"parse_obj_complex"	,   parse_obj_complex},
-             {NULL			, NULL}};
+TEST_LIST = {{"parse_number",      parse_number},
+             {"parse_bool",        parse_bool},
+             {"parse_array",       parse_array},
+             {"parse_obj",         parse_obj},
+             {"parse_obj_complex", parse_obj_complex},
+             {NULL, NULL}};
 
 #ifndef ACUTEST_H
 

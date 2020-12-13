@@ -39,31 +39,57 @@ void tokenize_number(void) {
         bool valid;
     } str_valid;
 
-    str_valid digits[] = {{"0", true},
-                          {"000", true},
-                          {"123", true},
-                          {"500", true},
+    str_valid digits[] = {{"0",       true},
+                          {"000",     true},
+                          {"123",     true},
+                          {"500",     true},
                           {"1238904", true}};
 
     str_valid ints[] = {
-        {"0", true},      {"1%1$s", true},  {"2%1$s", true},  {"3%1$s", true},
-        {"4%1$s", true},  {"5%1$s", true},  {"6%1$s", true},  {"7%1$s", true},
-        {"8%1$s", true},  {"9%1$s", true},  {"-0", true},     {"-1%1$s", true},
-        {"-2%1$s", true}, {"-3%1$s", true}, {"-4%1$s", true}, {"-5%1$s", true},
-        {"-6%1$s", true}, {"-7%1$s", true}, {"-8%1$s", true}, {"-9%1$s", true},
-        {"01", false},    {"-01", false},   {"--5", false}};
+            {"0",      true},
+            {"1%1$s",  true},
+            {"2%1$s",  true},
+            {"3%1$s",  true},
+            {"4%1$s",  true},
+            {"5%1$s",  true},
+            {"6%1$s",  true},
+            {"7%1$s",  true},
+            {"8%1$s",  true},
+            {"9%1$s",  true},
+            {"-0",     true},
+            {"-1%1$s", true},
+            {"-2%1$s", true},
+            {"-3%1$s", true},
+            {"-4%1$s", true},
+            {"-5%1$s", true},
+            {"-6%1$s", true},
+            {"-7%1$s", true},
+            {"-8%1$s", true},
+            {"-9%1$s", true},
+            {"01",     false},
+            {"-01",    false},
+            {"--5",    false}};
 
-    str_valid frac[] = {{"", true},
+    str_valid frac[] = {{"",      true},
                         {".%2$s", true},
-                        {".", false},
-                        {".5.1", false},
-                        {"..", false}};
+                        {".",     false},
+                        {".5.1",  false},
+                        {"..",    false}};
 
     str_valid exp[] = {
-        {"", true},      {"E%3$s", true},  {"E+%3$s", true}, {"E-%3$s", true},
-        {"e%3$s", true}, {"e+%3$s", true}, {"e-%3$s", true}, {"e", false},
-        {"e+", false},   {"e-", false},    {"E", false},     {"E+", false},
-        {"E-", false},
+            {"",       true},
+            {"E%3$s",  true},
+            {"E+%3$s", true},
+            {"E-%3$s", true},
+            {"e%3$s",  true},
+            {"e+%3$s", true},
+            {"e-%3$s", true},
+            {"e",      false},
+            {"e+",     false},
+            {"e-",     false},
+            {"E",      false},
+            {"E+",     false},
+            {"E-",     false},
     };
 
     char buf1[50], buf2[50];
@@ -75,7 +101,7 @@ void tokenize_number(void) {
             for (int k = 0; k < ARR_LEN(exp); k++) {
                 str_valid exp_part = exp[k];
                 expected_success =
-                    integer_part.valid && frac_part.valid && exp_part.valid;
+                        integer_part.valid && frac_part.valid && exp_part.valid;
                 strcpy(buf1, integer_part.str);
                 strcat(buf1, frac_part.str);
                 strcat(buf1, exp_part.str);
@@ -106,13 +132,13 @@ void tokenize_string(void) {
 
 void tokenize_big_string(void) {
     char *bigstr =
-        "\"Used: An item that has been used previously. The item may have some "
-        "signs of cosmetic wear, but is fully\noperational and functions as "
-        "intended. This item may be a floor model or store return that has "
-        "been used. See the seller\\u00e2\\u0080\\u0099s listing for full "
-        "details and description of any imperfections.\nSee all condition "
-        "definitions- opens in a new window or tab\n... Read moreabout the "
-        "condition\"";
+            "\"Used: An item that has been used previously. The item may have some "
+            "signs of cosmetic wear, but is fully\noperational and functions as "
+            "intended. This item may be a floor model or store return that has "
+            "been used. See the seller\\u00e2\\u0080\\u0099s listing for full "
+            "details and description of any imperfections.\nSee all condition "
+            "definitions- opens in a new window or tab\n... Read moreabout the "
+            "condition\"";
 
     TEST_CHECK(tokenize_word(bigstr));
 }
@@ -129,7 +155,7 @@ void tokenize_multiword(void) {
     char *in_str = "5e2true   \t\n\n false";
     tokenizer_t *tokenizer = json_tokenizer_from_string(in_str);
     for (int i = 0; i < ARR_LEN(in_toks); i++) {
-	char *out_tok = tokenizer_next(tokenizer);
+        char *out_tok = tokenizer_next(tokenizer);
         TEST_CHECK(strcmp(in_toks[i], out_tok) == 0);
     }
 
@@ -139,18 +165,18 @@ void tokenize_multiword(void) {
     tokenizer_free(tokenizer);
 }
 
-TEST_LIST = {{"tokenize_true", tokenize_true},
-             {"tokenize_false", tokenize_false},
-             {"tokenize_null", tokenize_null},
-             {"tokenize_lbrace", tokenize_lbrace},
-             {"tokenize_rbrace", tokenize_rbrace},
-             {"tokenize_colon", tokenize_colon},
-             {"tokenize_lbracket", tokenize_lbracket},
-             {"tokenize_rbracket", tokenize_rbracket},
-             {"tokenize_comma", tokenize_comma},
-             {"tokenize_number", tokenize_number},
-             {"tokenize_string", tokenize_string},
+TEST_LIST = {{"tokenize_true",       tokenize_true},
+             {"tokenize_false",      tokenize_false},
+             {"tokenize_null",       tokenize_null},
+             {"tokenize_lbrace",     tokenize_lbrace},
+             {"tokenize_rbrace",     tokenize_rbrace},
+             {"tokenize_colon",      tokenize_colon},
+             {"tokenize_lbracket",   tokenize_lbracket},
+             {"tokenize_rbracket",   tokenize_rbracket},
+             {"tokenize_comma",      tokenize_comma},
+             {"tokenize_number",     tokenize_number},
+             {"tokenize_string",     tokenize_string},
              {"tokenize_big_string", tokenize_big_string},
-	     {"tokenize_whitespace", tokenize_whitespace},
-	     {"tokenize_multiword", tokenize_multiword},
+             {"tokenize_whitespace", tokenize_whitespace},
+             {"tokenize_multiword",  tokenize_multiword},
              {NULL, NULL}};

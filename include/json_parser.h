@@ -1,8 +1,11 @@
-#include "../include/tokenizer.h"
+#ifndef __JSON_PARSER_H__
+#define __JSON_PARSER_H__
+
 #include "hash.h"
 #include "lists.h"
 #include <stdarg.h>
 #include <stdlib.h>
+#include "../include/tokenizer.h"
 
 typedef LISTOF(char*) StringList;
 
@@ -206,6 +209,7 @@ JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
 
 
 JSON_ENTITY *json_parse_file(char *path);
+
 JSON_ENTITY *json_parse_string(char *str);
 
 
@@ -215,3 +219,5 @@ JSON_ENTITY *json_parse_string(char *str);
 @private
  */
 void json_free_StringList(StringList *list);
+
+#endif
