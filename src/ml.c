@@ -15,6 +15,7 @@ struct ml {
 typedef struct word {
     int position;
     int count;
+    float idf;
 } Word;
 
 /***Private functions***/
@@ -60,7 +61,7 @@ dictp ml_stop_words(ML ml) {
     return sw;
 }
 
-void tf(ML ml, float *bow_vector, int wc) {
+void ml_tf(ML ml, float *bow_vector, int wc) {
     if (wc != 0) {
         int capacity = ml_get_bow_size(ml);
         for (int i = 0; i < capacity; i++) {
@@ -69,8 +70,13 @@ void tf(ML ml, float *bow_vector, int wc) {
     }
 }
 
-void idf(ML ml) {
-
+void ml_idf(ML ml) {
+    char *x = NULL;
+    ulong state = 0;
+    while ((x = (char *) dict_iterate_r(ml->bow_dict, &state))) {
+        Word *w = (Word *) (x + ml->bow_dict->htab->key_sz);
+        printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", x, w->count, w->position, w->idf);
+    }
 }
 
 /***Public functions***/
@@ -101,7 +107,7 @@ dictp ml_bag_of_words(ML ml, char *input) {
             if (token_len <= 3 || token_len > 7) {
                 continue;
             }
-            Word w = {ml_get_bow_size(ml), 0};
+            Word w = {ml_get_bow_size(ml), 0, 0};
             dict_put(ml->bow_dict, token, &w);
         }
     }
@@ -186,6 +192,9 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
                 }
                 bow_vector[w->position] += 1.0;
                 (*wc)++;
+                if (bow_vector[w->position] == 1) {
+                    w->count++;
+                }
             }
         }
     }
@@ -193,8 +202,9 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
 }
 
 void ml_tfidf(ML ml, float *bow_vector, int wc) {
-    tf(ml, bow_vector, wc);
-    idf(ml);
+    ml_tf(ml, bow_vector, wc);
+    ml_idf(ml);
+    //TODO: Calculate bow_vector
 }
 
 void print_bow_dict(ML ml) {
