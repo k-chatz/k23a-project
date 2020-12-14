@@ -22,10 +22,12 @@ void ml_cleanup(ML ml, char *input);
 
 dictp ml_tokenize_json(ML ml, JSON_ENTITY *json);
 
-float *ml_bow_vector(ML ml, JSON_ENTITY *json);
+float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc);
 
-void tfidf(ML ml);
+void ml_tfidf(ML ml, float* bow_vector);
 
 void print_bow_dict(ML ml);
+
+void print_vector(ML ml, float* vector);
 
 #endif

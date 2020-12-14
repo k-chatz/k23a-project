@@ -363,10 +363,12 @@ void json_print_value(JSON_ENTITY *jsonEntity) {
             }
             printf("}");
         }
+
             break;
         default:
             printf("<JSON_INVALID@%p>", jsonEntity);
     }
+    fflush(stdout);
 }
 
 void json_free_StringList(StringList *list) {

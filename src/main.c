@@ -90,19 +90,13 @@ int main(int argc, char *argv[]) {
     ptr = NULL;
     float* vector = NULL;
     ulong state = 0;
+    int wc, capacity;
     while((ptr = htab_iterate_r(json_ht, &state))){
-        JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz);
-
-        vector = ml_bow_vector(ml, *json);
-        
-        printf("[");
-        for (int i = 0; i <  ml_get_bow_size(ml); i++){
-            printf("%f ", vector[i]);
-        }
-
-        printf("]\n");
+        JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz); 
+        vector = ml_bow_vector(ml, *json, &wc);
+        // ml_tfidf(ml);
+        print_vector(ml, vector);
     }
-    print_bow_dict(ml);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
