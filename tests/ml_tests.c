@@ -21,9 +21,9 @@ void remove_stop_words(void) {
     //char buffer2[128] = "the a quick 255 at 43 a fox j at";
     // rm_stop_words(buffer1);
     // rm_stop_words(buffer2);
-            // TEST_CHECK(strcmp(buffer1, "quick 255 43 fox j f") == 0);
-            // TEST_CHECK(strcmp(buffer2, "quick 255 43 fox j") == 0);
-            //TEST_CHECK(1);
+    // TEST_CHECK(strcmp(buffer1, "quick 255 43 fox j f") == 0);
+    // TEST_CHECK(strcmp(buffer2, "quick 255 43 fox j") == 0);
+    //TEST_CHECK(1);
 }
 
 void remove_digits(void) {
@@ -31,8 +31,8 @@ void remove_digits(void) {
     //char buffer2[128] = "quick 255 43 fox j";
     //rm_digits(buffer1);
     //rm_digits(buffer2);
-            //TEST_CHECK(strcmp(buffer1, "quick   fox j f") == 0);
-            //TEST_CHECK(strcmp(buffer2, "quick   fox j") == 0);
+    //TEST_CHECK(strcmp(buffer1, "quick   fox j f") == 0);
+    //TEST_CHECK(strcmp(buffer2, "quick   fox j") == 0);
 }
 
 #ifndef ACUTEST_H

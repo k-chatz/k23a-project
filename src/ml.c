@@ -23,12 +23,12 @@ dictp create_bow_dict() {
     /* clang-format off */
     /* @formatter:off */
     dictp bow_dict = dict_config(
-        dict_new2(32, sizeof(char *)),
-        DICT_CONF_HASH_FUNC, djb2_str,
-        DICT_CONF_KEY_CPY, strncpy,
-        DICT_CONF_CMP, strncmp,
-        DICT_CONF_KEY_SZ_F, str_sz,
-        DICT_CONF_DONE
+            dict_new2(32, sizeof(char *)),
+            DICT_CONF_HASH_FUNC, djb2_str,
+            DICT_CONF_KEY_CPY, strncpy,
+            DICT_CONF_CMP, strncmp,
+            DICT_CONF_KEY_SZ_F, str_sz,
+            DICT_CONF_DONE
     );
     /* clang-format on */
     /* @formatter:on */
@@ -43,12 +43,12 @@ dictp ml_stop_words(ML ml) {
     /* clang-format off */
     /* @formatter:off */
     dictp sw = dict_config(
-        dict_new2(32, 0),
-        DICT_CONF_HASH_FUNC, djb2_str,
-        DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
-        DICT_CONF_CMP, (ht_cmp_func) strncmp,
-        DICT_CONF_KEY_SZ_F, str_sz,
-        DICT_CONF_DONE
+            dict_new2(32, 0),
+            DICT_CONF_HASH_FUNC, djb2_str,
+            DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+            DICT_CONF_CMP, (ht_cmp_func) strncmp,
+            DICT_CONF_KEY_SZ_F, str_sz,
+            DICT_CONF_DONE
     );
     /* clang-format on */
     /* @formatter:on */
@@ -60,10 +60,10 @@ dictp ml_stop_words(ML ml) {
     return sw;
 }
 
-void tf(ML ml, float* bow_vector, int wc) {
-    if (wc != 0){
+void tf(ML ml, float *bow_vector, int wc) {
+    if (wc != 0) {
         int capacity = ml_get_bow_size(ml);
-        for (int i = 0; i < capacity; i++){
+        for (int i = 0; i < capacity; i++) {
             bow_vector[i] = bow_vector[i] * 1 / wc;
         }
     }
@@ -88,21 +88,21 @@ bool ml_create(ML *ml, const char *sw_file) {
     return false;
 }
 
-ulong ml_get_bow_size(ML ml){
+ulong ml_get_bow_size(ML ml) {
     return ml->bow_dict->htab->buf_load;
 }
 
 dictp ml_bag_of_words(ML ml, char *input) {
     int position;
     char *token, *rest = NULL;
-    char * buf = strdup(input);
+    char *buf = strdup(input);
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         char *token_word;
         token_word = dict_get(ml->bow_dict, token);
         position = ml->bow_dict->htab->buf_load;
         if (token_word == NULL) {
             int token_len = strlen(token);
-            if (token_len <= 3 || token_len > 7){
+            if (token_len <= 3 || token_len > 7) {
                 continue;
             }
             dict_put(ml->bow_dict, token, &position);
@@ -177,62 +177,44 @@ float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc) {
     float *bow_vector = malloc(capacity * sizeof(float));
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
-
-
     LLFOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *x = json_to_string(cur_ent);
-
-        // json_print_value(cur_ent);
-        // for(int i = 0 ; i< 38; i++ ) {
-        //     printf("[%d]", x[i]);
-        // }
-        // printf("\n");
-
-
+            char *value = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
-            for (token = strtok_r(x, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                token_val = (int *)dict_get(ml->bow_dict, token);
-                
-                // printf("ml_bow_vector::: token from vectorizer: %s, \n", token);
-                // printf("ml_bow_vector:::token_val = %d\n",  token_val!=NULL ? *token_val : -1);
-                
-                if (token_val == NULL){
+            for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                token_val = (int *) dict_get(ml->bow_dict, token);
+                if (token_val == NULL) {
                     continue;
                 }
                 bow_vector[*token_val] += 1.0;
                 (*wc)++;
             }
         }
-
-
     }
-
-
     return bow_vector;
 }
 
-void ml_tfidf(ML ml, float* bow_vector, int wc) {
+void ml_tfidf(ML ml, float *bow_vector, int wc) {
     tf(ml, bow_vector, wc);
+    idf(ml);
 }
 
-void print_bow_dict(ML ml){
+void print_bow_dict(ML ml) {
     char *x = NULL;
     while ((x = (char *) dict_iterate(ml->bow_dict))) {
         printf("%s\n", x);
     }
 }
 
-void print_vector(ML ml, float* vector){
+void print_vector(ML ml, float *vector) {
     printf("[");
-        for (int i = 0; i <  ml_get_bow_size(ml); i++){
-            if(vector[i]){
-             printf("%.3f, ", vector[i]);
-            }
-            else {
-             printf("-, ");
-            }
+    for (int i = 0; i < ml_get_bow_size(ml); i++) {
+        if (vector[i]) {
+            printf("%.3f, ", vector[i]);
+        } else {
+            printf("-, ");
         }
-        printf("]\n");
+    }
+    printf("]\n");
 }

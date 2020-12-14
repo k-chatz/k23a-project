@@ -1,8 +1,5 @@
 #include <stdio.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <ctype.h>
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
@@ -76,6 +73,7 @@ int main(int argc, char *argv[]) {
         JSON_ENTITY *ent = json_parse_file(json_path);
         htab_put(json_ht, key, &ent);
     }
+
     /* read_csv(dataset_X, csv, "0"); */
     read_csv(dataset_X, csv, "0");
 
@@ -88,18 +86,17 @@ int main(int argc, char *argv[]) {
         ml_tokenize_json(ml, *json);
     }
 
-
-
     ptr = NULL;
-    float* vector = NULL;
+    float *vector = NULL;
     ulong state = 0;
     int wc, capacity;
-    while((ptr = htab_iterate_r(json_ht, &state))){
-        JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz); 
+    while ((ptr = htab_iterate_r(json_ht, &state))) {
+        JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         vector = ml_bow_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
-        print_vector(ml, vector);
+        //print_vector(ml, vector);
     }
+
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
