@@ -89,12 +89,12 @@ int main(int argc, char *argv[]) {
     ptr = NULL;
     float *vector = NULL;
     ulong state = 0;
-    int wc, capacity;
+    int wc;
     while ((ptr = htab_iterate_r(json_ht, &state))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         vector = ml_bow_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
-        //print_vector(ml, vector);
+        print_vector(ml, vector);
     }
 
     sts_destroy(dataset_X);

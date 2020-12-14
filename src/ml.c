@@ -23,7 +23,7 @@ dictp create_bow_dict() {
     /* clang-format off */
     /* @formatter:off */
     dictp bow_dict = dict_config(
-            dict_new2(32, sizeof(char *)),
+            dict_new2(10, sizeof(Word)),
             DICT_CONF_HASH_FUNC, djb2_str,
             DICT_CONF_KEY_CPY, strncpy,
             DICT_CONF_CMP, strncmp,
@@ -93,19 +93,16 @@ ulong ml_get_bow_size(ML ml) {
 }
 
 dictp ml_bag_of_words(ML ml, char *input) {
-    int position;
     char *token, *rest = NULL;
     char *buf = strdup(input);
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        char *token_word;
-        token_word = dict_get(ml->bow_dict, token);
-        position = ml->bow_dict->htab->buf_load;
-        if (token_word == NULL) {
-            int token_len = strlen(token);
+        if (dict_get(ml->bow_dict, token) == NULL) {
+            size_t token_len = strlen(token);
             if (token_len <= 3 || token_len > 7) {
                 continue;
             }
-            dict_put(ml->bow_dict, token, &position);
+            Word w = {ml_get_bow_size(ml), 0};
+            dict_put(ml->bow_dict, token, &w);
         }
     }
     free(buf);
@@ -183,11 +180,11 @@ float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc) {
             char *value = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
             for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                token_val = (int *) dict_get(ml->bow_dict, token);
-                if (token_val == NULL) {
+                Word *w = (Word *) dict_get(ml->bow_dict, token);
+                if (w == NULL) {
                     continue;
                 }
-                bow_vector[*token_val] += 1.0;
+                bow_vector[w->position] += 1.0;
                 (*wc)++;
             }
         }
