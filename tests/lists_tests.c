@@ -6,8 +6,10 @@
 #include "../include/acutest.h"
 
 #ifndef ACUTEST_H
+#include <assert.h>
 
 #define TEST_CHECK assert
+#define TEST_ASSERT assert
 #endif
 
 #include "../include/lists.h"

@@ -2,11 +2,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
 #include "../include/spec_ids.h"
 #include "../include/json_parser.h"
+#include "../include/ml.h"
 
 void readOptions(int argc, char **argv, char **dir, char **csv) {
     int i;
@@ -51,7 +53,8 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
 }
 
 int main(int argc, char *argv[]) {
-    char *dir = NULL, *csv = NULL;
+    char *dir = NULL, *csv = NULL, json_website[128], json_num[128], json_path[280], *ptr = NULL;
+    ML ml = NULL;
     STS *dataset_X = NULL;
     readOptions(argc, argv, &dir, &csv);
     dataset_X = get_spec_ids(dir);
@@ -59,9 +62,8 @@ int main(int argc, char *argv[]) {
 
     //print result
     //print_sts(stdout, dataset_X);
-    print_sts_similar(stdout, dataset_X);
+    //print_sts_similar(stdout, dataset_X);
 
-    char json_website[128], json_num[128], json_path[280];
     hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), dataset_X->ht->htab->buf_cap);
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(dataset_X->ht, &iter_state);
@@ -71,13 +73,30 @@ int main(int argc, char *argv[]) {
         JSON_ENTITY *ent = json_parse_file(json_path);
         htab_put(json_ht, key, &ent);
     }
-
     /* read_csv(dataset_X, csv, "0"); */
+    read_csv(dataset_X, csv, "0");
 
-    printf("\n\n\n\n");
-
+    //printf("\n\n\n\n");
+    //print_sts_diff(stdout, dataset_X);
+    ml_create(&ml, "/home/msi/CLionProjects/k23a-project/resources/unwanted-words.txt");
     /* print_sts_diff(stdout, dataset_X); */
-
+    while ((ptr = htab_iterate(json_ht))) {
+        JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
+        ml_tokenize_json(ml, *json);
+    }
+    ptr = NULL;
+    //float* vector = NULL;
+    // ulong state = 0;
+    // while((ptr = htab_iterate_r(json_ht, &state))){
+    //     JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz);
+    //     vector = ml_bow_vector(ml, *json);
+    //     printf("[");
+    //     for (int i = 0; i <  ml_get_bow_size(ml); i++){
+    //         printf("%f ", vector[i]);
+    //     }
+    //     printf("]\n");
+    // }
+    print_bow_dict(ml);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
