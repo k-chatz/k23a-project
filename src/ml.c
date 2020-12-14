@@ -168,7 +168,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     return ml->bow_dict;
 }
 
-float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc) {
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
     StringList *json_keys = json_get_obj_keys(json);
     int capacity = ml_get_bow_size(ml), *token_val = NULL;
     float *bow_vector = malloc(capacity * sizeof(float));

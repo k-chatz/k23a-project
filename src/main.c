@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     int wc;
     while ((ptr = htab_iterate_r(json_ht, &state))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
-        vector = ml_bow_vector(ml, *json, &wc);
+        vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
         print_vector(ml, vector);
     }
