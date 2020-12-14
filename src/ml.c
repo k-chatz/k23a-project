@@ -33,7 +33,7 @@ dictp create_bow_dict() {
 dictp ml_stop_words(ML ml) {
     char *stop_word, comma;
     assert(ml != NULL);
-    FILE *fp = fopen(ml->sw_file, "r"); 
+    FILE *fp = fopen(ml->sw_file, "r");
     assert(fp != NULL);
     /* clang-format off */
     /* @formatter:off */
@@ -55,6 +55,14 @@ dictp ml_stop_words(ML ml) {
     return sw;
 }
 
+void tf(ML ml) {
+
+}
+
+void idf(ML ml) {
+
+}
+
 /***Public functions***/
 
 bool ml_create(ML *ml, const char *sw_file) {
@@ -64,7 +72,7 @@ bool ml_create(ML *ml, const char *sw_file) {
     if ((*ml) != NULL) {
         (*ml)->sw_file = sw_file;
         (*ml)->bow_dict = create_bow_dict();
-        (*ml)->stop_words = ml_stop_words(*ml); 
+        (*ml)->stop_words = ml_stop_words(*ml);
         return true;
     }
     return false;
@@ -123,7 +131,7 @@ bool ml_rm_stop_words(ML ml, char *input) {
             strcat(input, " ");
             offset += (int) strlen(token) + 1;
         }
-        
+
     }
     input[offset - 1] = '\0';
     free(temp);
@@ -180,6 +188,10 @@ float *ml_bow_vector(ML ml, JSON_ENTITY *json) {
         }
     }
     return bow_vector;
+}
+
+void tfidf(ML ml) {
+    tf(ml);
 }
 
 void print_bow_dict(ML ml){
