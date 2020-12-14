@@ -12,6 +12,11 @@ struct ml {
     const char *sw_file;
 };
 
+typedef struct word {
+    int position;
+    int count;
+} Word;
+
 /***Private functions***/
 
 dictp create_bow_dict() {
