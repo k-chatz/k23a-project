@@ -10,7 +10,7 @@
 #include "../include/json_parser.h"
 #include "../include/ml.h"
 
-void readOptions(int argc, char **argv, char **dir, char **csv) {
+void readOptions(int argc, char **argv, char **dir, char **csv, char **sw) {
     int i;
     char *opt, *optVal;
     for (i = 1; i < argc; ++i) {
@@ -23,6 +23,10 @@ void readOptions(int argc, char **argv, char **dir, char **csv) {
         } else if (strcmp(opt, "-csv") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 *csv = optVal;
+            }
+        } else if (strcmp(opt, "-sw") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                *sw = optVal;
             }
         }
     }
@@ -52,10 +56,10 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
 }
 
 int main(int argc, char *argv[]) {
-    char *dir = NULL, *csv = NULL, json_website[128], json_num[128], json_path[280], *ptr = NULL;
+    char *dir = NULL, *csv = NULL, *sw = NULL, json_website[128], json_num[128], json_path[280], *ptr = NULL;
     ML ml = NULL;
     STS *dataset_X = NULL;
-    readOptions(argc, argv, &dir, &csv);
+    readOptions(argc, argv, &dir, &csv, &sw);
     dataset_X = get_spec_ids(dir);
     read_csv(dataset_X, csv, "1");
 
@@ -77,7 +81,7 @@ int main(int argc, char *argv[]) {
 
     //printf("\n\n\n\n");
     //print_sts_diff(stdout, dataset_X);
-    ml_create(&ml, "resources/unwanted-words.txt");
+    ml_create(&ml, sw);
     /* print_sts_diff(stdout, dataset_X); */
     while ((ptr = htab_iterate(json_ht))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
