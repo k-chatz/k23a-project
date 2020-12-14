@@ -24,7 +24,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json);
 
 float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc);
 
-void ml_tfidf(ML ml, float* bow_vector);
+void ml_tfidf(ML ml, float* bow_vector, int wc);
 
 void print_bow_dict(ML ml);
 

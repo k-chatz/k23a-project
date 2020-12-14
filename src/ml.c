@@ -55,10 +55,12 @@ dictp ml_stop_words(ML ml) {
     return sw;
 }
 
-void tf(ML ml, float* bow_vector) {
-    int capacity = ml_get_bow_size(ml);
-    for (int i = 0; i < capacity; i++){
-        bow_vector[i] *= 1/3;
+void tf(ML ml, float* bow_vector, int wc) {
+    if (wc != 0){
+        int capacity = ml_get_bow_size(ml);
+        for (int i = 0; i < capacity; i++){
+            bow_vector[i] = bow_vector[i] * 1 / wc;
+        }
     }
 }
 
@@ -195,7 +197,7 @@ float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc) {
                     continue;
                 }
                 bow_vector[*token_val] += 1.0;
-
+                (*wc)++;
             }
         }
 
@@ -206,11 +208,8 @@ float *ml_bow_vector(ML ml, JSON_ENTITY *json, int *wc) {
     return bow_vector;
 }
 
-
-
-
-void ml_tfidf(ML ml, float* bow_vector) {
-    tf(ml, bow_vector);
+void ml_tfidf(ML ml, float* bow_vector, int wc) {
+    tf(ml, bow_vector, wc);
 }
 
 void print_bow_dict(ML ml){
@@ -224,7 +223,7 @@ void print_vector(ML ml, float* vector){
     printf("[");
         for (int i = 0; i <  ml_get_bow_size(ml); i++){
             if(vector[i]){
-             printf("%.1f, ", vector[i]);
+             printf("%.3f, ", vector[i]);
             }
             else {
              printf("-, ");

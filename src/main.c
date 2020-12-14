@@ -40,7 +40,6 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
     uint merges = 0, diffs = 0;
     fseek(fp, 33, SEEK_SET);
     while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
-
         if (!strcmp(label, flag) && strcmp(left_spec_id, right_spec_id) != 0) {
             if (!strncmp(flag, "1", 1)) {
                 merges += sts_merge(dataset_X, left_spec_id, right_spec_id) >= 0;
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]) {
     while((ptr = htab_iterate_r(json_ht, &state))){
         JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz); 
         vector = ml_bow_vector(ml, *json, &wc);
-        // ml_tfidf(ml);
+        ml_tfidf(ml, vector, wc);
         print_vector(ml, vector);
     }
     sts_destroy(dataset_X);
