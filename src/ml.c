@@ -162,20 +162,20 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
 
 float *ml_bow_vector(ML ml, JSON_ENTITY *json) {
     StringList *json_keys = json_get_obj_keys(json);
-    int capacity = ml->bow_dict->htab->buf_load;
+    int capacity = ml->bow_dict->htab->buf_load, *token_val = NULL;
     float *bow_vector = malloc(capacity * sizeof(float));
-    memset(bow_vector, 0.0, capacity);
+    memset(bow_vector, 0, capacity * sizeof(float));
     LLFOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
             for (token = strtok_r(x, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                int *token_val;
-                token_val = dict_get(ml->bow_dict, token);
-                if (*(int *) token_val >= 0) {
-                    bow_vector[*(int *) token_val] += 1.0;
+                token_val = (int *)dict_get(ml->bow_dict, token);
+                if (token_val == NULL){
+                    continue;
                 }
+                bow_vector[*token_val] += 1.0;
             }
         }
     }

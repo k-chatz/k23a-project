@@ -78,24 +78,30 @@ int main(int argc, char *argv[]) {
 
     //printf("\n\n\n\n");
     //print_sts_diff(stdout, dataset_X);
-    ml_create(&ml, "/home/msi/CLionProjects/k23a-project/resources/unwanted-words.txt");
+    ml_create(&ml, "resources/unwanted-words.txt");
     /* print_sts_diff(stdout, dataset_X); */
     while ((ptr = htab_iterate(json_ht))) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
     }
+
+
+
     ptr = NULL;
-    //float* vector = NULL;
-    // ulong state = 0;
-    // while((ptr = htab_iterate_r(json_ht, &state))){
-    //     JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz);
-    //     vector = ml_bow_vector(ml, *json);
-    //     printf("[");
-    //     for (int i = 0; i <  ml_get_bow_size(ml); i++){
-    //         printf("%f ", vector[i]);
-    //     }
-    //     printf("]\n");
-    // }
+    float* vector = NULL;
+    ulong state = 0;
+    while((ptr = htab_iterate_r(json_ht, &state))){
+        JSON_ENTITY **json = (JSON_ENTITY **)(ptr + json_ht->key_sz);
+
+        vector = ml_bow_vector(ml, *json);
+        
+        printf("[");
+        for (int i = 0; i <  ml_get_bow_size(ml); i++){
+            printf("%f ", vector[i]);
+        }
+
+        printf("]\n");
+    }
     print_bow_dict(ml);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
