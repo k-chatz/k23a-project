@@ -6,7 +6,7 @@
 
 typedef struct ml *ML;
 
-bool ml_create(ML *ht, const char *sw_file);
+bool ml_create(ML *ht, const char *sw_file, int load);
 
 ulong ml_get_bow_size(ML ml);
 

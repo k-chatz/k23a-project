@@ -2,14 +2,19 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
+
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 #include "../include/ml.h"
+#include "../include/hset.h"
 
 struct ml {
     dictp bow_dict;
     dictp stop_words;
+    setp json_set;
     const char *sw_file;
+    int json_ht_load;
 };
 
 typedef struct word {
@@ -19,6 +24,9 @@ typedef struct word {
 } Word;
 
 /***Private functions***/
+setp create_json_set() {
+    setp json_set = set_new(10);
+}
 
 dictp create_bow_dict() {
     /* clang-format off */
@@ -75,20 +83,23 @@ void ml_idf(ML ml) {
     ulong state = 0;
     while ((x = (char *) dict_iterate_r(ml->bow_dict, &state))) {
         Word *w = (Word *) (x + ml->bow_dict->htab->key_sz);
+        w->idf = log(ml->json_ht_load/w->count);
         printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", x, w->count, w->position, w->idf);
     }
 }
 
 /***Public functions***/
 
-bool ml_create(ML *ml, const char *sw_file) {
+bool ml_create(ML *ml, const char *sw_file, int load) {
     assert(*ml == NULL);
     assert(sw_file != NULL);
     *ml = (ML) malloc(sizeof(struct ml));
     if ((*ml) != NULL) {
         (*ml)->sw_file = sw_file;
         (*ml)->bow_dict = create_bow_dict();
+        (*ml)->json_set = create_json_set();
         (*ml)->stop_words = ml_stop_words(*ml);
+        (*ml)->json_ht_load = load;
         return true;
     }
     return false;
@@ -102,13 +113,12 @@ dictp ml_bag_of_words(ML ml, char *input) {
     char *token, *rest = NULL;
     char *buf = strdup(input);
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        if (dict_get(ml->bow_dict, token) == NULL) {
+        if (set_in(ml->json_set, token) == NULL) {
             size_t token_len = strlen(token);
             if (token_len <= 3 || token_len > 7) {
                 continue;
             }
-            Word w = {ml_get_bow_size(ml), 0, 0};
-            dict_put(ml->bow_dict, token, &w);
+            set_put(ml->json_set, token);
         }
     }
     free(buf);
@@ -171,6 +181,27 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
             ml_bag_of_words(ml, x);
         }
     }
+    //check if contents of json set exist in bow_dict
+    // if one does, count++,
+    // else put it and count++
+    /*Iterate set*/
+    keyp x = NULL;
+    Word *word = NULL;
+    while (x = set_iterate(ml->json_set)){
+        word = (Word *) dict_get(ml->bow_dict, (char *)x);
+        /* does not exist in dict */
+        if (word == NULL){
+            Word w = {ml_get_bow_size(ml), 1, 0};
+
+            dict_put(ml->bow_dict, x, &w);
+        /*It exists, just up the count*/
+        } else {
+            word->count++;
+        }
+        //now, we gotta erase everything in json_set to use it for the next json
+        /*erase x from set*/
+        dict_del(ml->json_set, x);
+    }
     return ml->bow_dict;
 }
 
@@ -192,9 +223,9 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
                 }
                 bow_vector[w->position] += 1.0;
                 (*wc)++;
-                if (bow_vector[w->position] == 1) {
-                    w->count++;
-                }
+                // if (bow_vector[w->position] == 1) {
+                //     w->count++;
+                // }
             }
         }
     }
@@ -202,10 +233,14 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
 }
 
 void ml_tfidf(ML ml, float *bow_vector, int wc) {
+    // ml_idf(ml);
     ml_tf(ml, bow_vector, wc);
-    ml_idf(ml);
+    
     //TODO: Calculate bow_vector
-}
+    // kathe stoixeio tou pinaka tha to 
+    // pollaplasiazeis me to idf toy
+    // bow_vector[i] = bow_vector[i] * w->idf;
+  }
 
 void print_bow_dict(ML ml) {
     char *x = NULL;

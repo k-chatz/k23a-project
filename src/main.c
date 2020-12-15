@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     read_csv(dataset_X, csv, "0");
     //printf("\n\n\n\n");
     //print_sts_diff(stdout, dataset_X);
-    ml_create(&ml, sw);
+    ml_create(&ml, sw, json_ht->buf_load);
     /* print_sts_diff(stdout, dataset_X); */
     ulong state = 0;
     while ((ptr = htab_iterate_r(json_ht, &state))) {
@@ -90,8 +90,11 @@ int main(int argc, char *argv[]) {
         JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
         vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
-        //print_vector(ml, vector);
+        // print_vector(ml, vector);
     }
+    // print_bow_dict(ml);
+    printf("bow_dict load: %d\n", ml_get_bow_size(ml));
+    printf("json_ht load: %d\n", json_ht->buf_load);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);

@@ -4,8 +4,8 @@ vpath	 %.h       include
 vpath	 %_tests   tests-bin
 
 CC	= gcc
-CFLAGS	= -g3 -Wall
-LFLAGS	=
+CFLAGS	= -g3 -Wall 
+LFLAGS	= -lm
 
 
 .PHONY: tests all clean githooks docs phony
