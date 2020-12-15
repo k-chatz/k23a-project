@@ -233,7 +233,7 @@ dictp dict_config_va(dictp d, va_list vargs_) {
     return d;
 }
 
-dictp dict_config(dictp d, ...){
+dictp dict_config(dictp d, ...) {
     va_list vargs;
     va_start(vargs, d);
     dict_config_va(d, vargs);

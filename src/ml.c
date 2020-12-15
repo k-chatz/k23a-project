@@ -25,7 +25,7 @@ typedef struct word {
 
 /***Private functions***/
 setp create_json_set() {
-    setp json_set = set_new(10);
+    return set_new(10);
 }
 
 dictp create_bow_dict() {
@@ -73,7 +73,7 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
     if (wc != 0) {
         int capacity = ml_get_bow_size(ml);
         for (int i = 0; i < capacity; i++) {
-            bow_vector[i] = bow_vector[i] * 1 / wc;
+            bow_vector[i] = bow_vector[i] * 1 / (float) wc;
         }
     }
 }
@@ -83,7 +83,7 @@ void ml_idf(ML ml) {
     ulong state = 0;
     while ((x = (char *) dict_iterate_r(ml->bow_dict, &state))) {
         Word *w = (Word *) (x + ml->bow_dict->htab->key_sz);
-        w->idf = log(ml->json_ht_load/w->count);
+        w->idf = (float) log(ml->json_ht_load / w->count);
         printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", x, w->count, w->position, w->idf);
     }
 }
@@ -113,7 +113,7 @@ dictp ml_bag_of_words(ML ml, char *input) {
     char *token, *rest = NULL;
     char *buf = strdup(input);
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        if (set_in(ml->json_set, token) == NULL) {
+        if (!set_in(ml->json_set, token)) {
             size_t token_len = strlen(token);
             if (token_len <= 3 || token_len > 7) {
                 continue;
@@ -187,14 +187,14 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     /*Iterate set*/
     keyp x = NULL;
     Word *word = NULL;
-    while (x = set_iterate(ml->json_set)){
-        word = (Word *) dict_get(ml->bow_dict, (char *)x);
+    while ((x = set_iterate(ml->json_set))) {
+        word = (Word *) dict_get(ml->bow_dict, (char *) x);
         /* does not exist in dict */
-        if (word == NULL){
+        if (word == NULL) {
             Word w = {ml_get_bow_size(ml), 1, 0};
 
             dict_put(ml->bow_dict, x, &w);
-        /*It exists, just up the count*/
+            /*It exists, just up the count*/
         } else {
             word->count++;
         }
@@ -207,7 +207,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
 
 float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
     StringList *json_keys = json_get_obj_keys(json);
-    int capacity = ml_get_bow_size(ml), *token_val = NULL;
+    int capacity = ml_get_bow_size(ml);
     float *bow_vector = malloc(capacity * sizeof(float));
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
@@ -235,12 +235,11 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
 void ml_tfidf(ML ml, float *bow_vector, int wc) {
     // ml_idf(ml);
     ml_tf(ml, bow_vector, wc);
-    
     //TODO: Calculate bow_vector
     // kathe stoixeio tou pinaka tha to 
     // pollaplasiazeis me to idf toy
     // bow_vector[i] = bow_vector[i] * w->idf;
-  }
+}
 
 void print_bow_dict(ML ml) {
     char *x = NULL;

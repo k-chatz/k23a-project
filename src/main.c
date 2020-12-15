@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
         // print_vector(ml, vector);
     }
     // print_bow_dict(ml);
-    printf("bow_dict load: %d\n", ml_get_bow_size(ml));
-    printf("json_ht load: %d\n", json_ht->buf_load);
+    printf("bow_dict load: %ld\n", ml_get_bow_size(ml));
+    printf("json_ht load: %ld\n", json_ht->buf_load);
     sts_destroy(dataset_X);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
