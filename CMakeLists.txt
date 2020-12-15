@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.17)
 project(k23a_project C)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
 set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
@@ -49,6 +51,7 @@ include_directories(.)
 #        )
 
 #main
+
 add_executable(k23a_project
         src/main.c
         src/lists.c
@@ -59,3 +62,5 @@ add_executable(k23a_project
         src/ml.c
         src/tokenizer.c
         )
+
+target_link_libraries(k23a_project m)
