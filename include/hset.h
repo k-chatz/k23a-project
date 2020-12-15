@@ -11,7 +11,9 @@ static inline setp set_new(size_t key_sz) {
 
 static inline setp set_put(setp set, keyp key){
     int val = 0;
-    return dict_put(set, key, &val);
+    if(dict_get(set, key) == NULL)
+	dict_put(set, key, &val);
+    return set;
 }
 
 static inline bool set_in(setp set, keyp memb){
