@@ -42,9 +42,8 @@ void free_json_ht_ent(JSON_ENTITY **val) {
     json_entity_free(*val);
 }
 
-void read_csv(STS *dataset_X, char *csv, char *flag) {
-
-    FILE *fp = fopen(csv, "r");
+void read_labelled_dataset_csv(STS *dataset_X, char *sigmod_labelled_dataset, char *flag) {
+    FILE *fp = fopen(sigmod_labelled_dataset, "r");
     char left_spec_id[50], right_spec_id[50], label[50];
     //skip first row fseek
     uint merges = 0, diffs = 0;
@@ -113,6 +112,9 @@ int main(int argc, char *argv[]) {
     read_options(argc, argv, &options);
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_folder);
+
+    /* Read labelled_dataset_path file*/
+    read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
         JSON_ENTITY *ent = json_parse_file(json_path);
         htab_put(json_ht, key, &ent);
     }
