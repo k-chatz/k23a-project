@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #define TEST_CHECK assert
+#define TEST_ASSERT assert
 #endif
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
@@ -49,7 +50,7 @@ void parse_obj(void) {
     StringList *keys = json_get_obj_keys(ent);
     TEST_CHECK(ll_len(keys) == 3); /* length should be 3 */
     bool removed = false;
-    LLFOREACH(key, keys) {
+    LL_FOREACH(key, keys) {
         for (int i = 0; i < ARR_LEN(expected_keys); i++) {
             if (strcmp(key->data, expected_keys[i]) == 0) {
                 expected_keys[i] = NULL;

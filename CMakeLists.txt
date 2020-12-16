@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.17)
 project(k23a_project C)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
 set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
@@ -24,6 +26,14 @@ include_directories(.)
 #        src/lists.c
 #        )
 
+#hash tests
+#add_executable(k23a_project
+#        tests/hash_tests.c
+#        src/lists.c
+#        src/json_parser.c
+#        src/hash.c
+#        )
+
 #spec_to_specs_tests
 #add_executable(k23a_project
 #        tests/spec_to_specs_tests.c
@@ -32,13 +42,26 @@ include_directories(.)
 #        src/hash.c
 #        )
 
+#ml tests
+#add_executable(k23a_project
+#        src/lists.c
+#        src/hash.c
+#        src/ml.c
+#        src/json_parser.c
+#        src/tokenizer.c
+#        tests/ml_tests.c
+#        )
+
 #main
+
 add_executable(k23a_project
         src/main.c
         src/lists.c
         src/hash.c
         src/json_parser.c
-        src/spec_ids.c
         src/spec_to_specs.c
+        src/ml.c
         src/tokenizer.c
         )
+
+target_link_libraries(k23a_project m)
