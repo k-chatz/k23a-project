@@ -249,8 +249,8 @@ void print_sts(FILE *file, STS *sts) {
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
-            LLFOREACH(A, sp->similar) {
-                LLFOREACH(B, (StrList *) A->next) {
+            LL_FOREACH(A, sp->similar) {
+                LL_FOREACH(B, (StrList *) A->next) {
                     fprintf(file, "%s, %s\n", A->data, B->data);
                 }
             }

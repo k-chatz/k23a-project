@@ -357,7 +357,7 @@ void json_print_value(JSON_ENTITY *jsonEntity) {
         case JSON_OBJ: {
             StringList *keys = json_get_obj_keys(jsonEntity);
             printf("{");
-            LLFOREACH(key, keys) {
+            LL_FOREACH(key, keys) {
                 printf("%s : ", key->data);
                 json_print_value(json_get(jsonEntity, key->data));
             }

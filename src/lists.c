@@ -212,7 +212,7 @@ void *ll_map(void *INs, mapfunc_t map_func, ...) {
         ll_push(&OUTs, new);
         OUT_tail = new;
     }
-    LLFOREACH(IN, NEXT(INs)) {
+    LL_FOREACH(IN, NEXT(INs)) {
         /* do rest */
         va_start(args, map_func);
         void *new = map_func(IN, args);

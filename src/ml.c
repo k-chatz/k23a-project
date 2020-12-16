@@ -178,7 +178,7 @@ dictp ml_bag_of_words(ML ml, char *input) {
 
 dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     StringList *json_keys = json_get_obj_keys(json);
-    LLFOREACH(json_key, json_keys) {
+    LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
@@ -216,7 +216,7 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
     float *bow_vector = malloc(capacity * sizeof(float));
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
-    LLFOREACH(json_key, json_keys) {
+    LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *value = json_to_string(cur_ent);
