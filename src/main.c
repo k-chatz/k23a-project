@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
@@ -52,22 +55,55 @@ void read_csv(STS *dataset_X, char *csv, char *flag) {
     fclose(fp);
 }
 
+STS *init_sts_dataset_X(char *path) {
+    struct dirent **name_list = NULL, **internals_name_list = NULL;
+    int n, internals;
+    char new_path[512], spec_name[1024];
+    STS *sts = sts_new();
+
+    /* scan external dataset_folder*/
+    n = scandir(path, &name_list, NULL, alphasort);
+    if (n == -1) {
+        perror("scandir");
+        exit(EXIT_FAILURE);
+    }
+    while (n--) {
+        if (!strcmp(name_list[n]->d_name, ".") || !strcmp(name_list[n]->d_name, "..")) {
+            free(name_list[n]);
+            continue;
+        }
+        snprintf(new_path, 512, "%s/%s", path, name_list[n]->d_name);
+        /* for each site collect specs*/
+        internals = scandir(new_path, &internals_name_list, NULL, alphasort);
+        if (internals == -1) {
+            perror("scandir");
+            exit(EXIT_FAILURE);
+        }
+        while (internals--) {
+            if (!strcmp(internals_name_list[internals]->d_name, ".") ||
+                !strcmp(internals_name_list[internals]->d_name, "..")) {
+                free(internals_name_list[internals]);
+                continue;
+            }
+            internals_name_list[internals]->d_name[strlen(internals_name_list[internals]->d_name) - 5] = '\0';
+            snprintf(spec_name, 1024, "%s//%s", name_list[n]->d_name, internals_name_list[internals]->d_name);
+            // printf("file name: %s\n", spec_name);
+            sts_add(sts, spec_name);
+            free(internals_name_list[internals]);
+        }
+        free(internals_name_list);
+        free(name_list[n]);
+    }
+
+    free(name_list);
+    return sts;
+}
+
 int main(int argc, char *argv[]) {
-    char *dir = NULL, *csv = NULL, *sw = NULL, json_website[128], json_num[128], json_path[280], *ptr = NULL;
+    STS *X = NULL;
     ML ml = NULL;
-    STS *dataset_X = NULL;
-    readOptions(argc, argv, &dir, &csv, &sw);
-    dataset_X = get_spec_ids(dir);
-    read_csv(dataset_X, csv, "1");
-    //print result
-    //print_sts(stdout, dataset_X);
-    //print_sts_similar(stdout, dataset_X);
-    hashp json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), dataset_X->ht->htab->buf_cap);
-    ulong iter_state = 0;
-    for (char *key = dict_iterate_r(dataset_X->ht, &iter_state);
-         key != NULL; key = dict_iterate_r(dataset_X->ht, &iter_state)) {
-        sscanf(key, "%[^/]//%[^/]", json_website, json_num);
-        snprintf(json_path, 280, "%s/%s/%s.json", dir, json_website, json_num);
+    /* Initialize an STS dataset X*/
+    X = init_sts_dataset_X(options.dataset_folder);
         JSON_ENTITY *ent = json_parse_file(json_path);
         htab_put(json_ht, key, &ent);
     }

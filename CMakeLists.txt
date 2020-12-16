@@ -57,7 +57,6 @@ add_executable(k23a_project
         src/lists.c
         src/hash.c
         src/json_parser.c
-        src/spec_ids.c
         src/spec_to_specs.c
         src/ml.c
         src/tokenizer.c
