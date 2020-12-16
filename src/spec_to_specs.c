@@ -29,7 +29,6 @@ StrList *create_node(char *id) {
     return node;
 }
 
-
 void print_spec(void *spec) {
     printf("spec_id = %s\n", ((SpecEntry *) spec)->id);
 }
@@ -69,11 +68,6 @@ STS *sts_new() {
 #endif
     return new;
 }
-
-/* void destroyStrListNode(void *node) { */
-/*     free(((StrList *) node)->data); */
-/*     free(node); */
-/* } */
 
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
@@ -255,8 +249,8 @@ void print_sts(FILE *file, STS *sts) {
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
-            LLFOREACH(A, sp->similar) {
-                LLFOREACH(B, (StrList *) A->next) {
+            LL_FOREACH(A, sp->similar) {
+                LL_FOREACH(B, (StrList *) A->next) {
                     fprintf(file, "%s, %s\n", A->data, B->data);
                 }
             }

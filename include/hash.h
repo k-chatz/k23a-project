@@ -14,6 +14,12 @@
 
 #define MAX_PROBES 32
 
+#define HT_FOREACH_ENTRY(ENTRY, HT, START)      \
+    while((ENTRY = htab_iterate_r(HT, START)))
+
+#define DICT_FOREACH_ENTRY(ENTRY, HT, START)    \
+    while((ENTRY = dict_iterate_r(HT, START)))
+
 /*!
 @defgroup htab htab_t
 @brief open addressed hashtables with random probing
@@ -280,6 +286,8 @@ Accepts an ordered list of arguments of the form dict_conf_key, dict_conf_val,
 @returns the dict
  */
 dictp dict_config(dictp d, ...);
+
+dictp dict_config_va(dictp d, va_list vargs);
 
 /*!
 @brief sets the hashing function for dict
