@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
     HT_FOREACH_ENTRY(entry, json_ht, &iterate_state) {
+        json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
         // print_vector(ml, vector);

@@ -119,13 +119,17 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
     }
 }
 
-void ml_idf(ML ml) {
-    char *x = NULL;
-    ulong state = 0;
-    while ((x = (char *) dict_iterate_r(ml->bow_dict, &state))) {
-        Word *w = (Word *) (x + ml->bow_dict->htab->key_sz);
+void ml_idf(ML ml, float *bow_vector) {
+    char *entry = NULL;
+    ulong iterate_state = 0;
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state) {
+        Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
-        printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", x, w->count, w->position, w->idf);
+        //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
+        //for (int i = 0; i < ml_get_bow_size(ml); i++) {
+            //bow_vector[i] = bow_vector[i] * w->idf;
+            bow_vector[w->position] = bow_vector[w->position] * w->idf;
+        //}
     }
 }
 
@@ -234,12 +238,12 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
 }
 
 void ml_tfidf(ML ml, float *bow_vector, int wc) {
-    // ml_idf(ml);
     ml_tf(ml, bow_vector, wc);
+    ml_idf(ml, bow_vector);
     //TODO: Calculate bow_vector
-
     // kathe stoixeio tou pinaka tha to pollaplasiazeis me to idf toy
     // bow_vector[i] = bow_vector[i] * w->idf;
+    print_vector(ml, bow_vector);
 }
 
 void print_bow_dict(ML ml) {
@@ -253,9 +257,9 @@ void print_vector(ML ml, float *vector) {
     printf("[");
     for (int i = 0; i < ml_get_bow_size(ml); i++) {
         if (vector[i]) {
-            printf("%.3f, ", vector[i]);
+            printf("%.3f ", vector[i]);
         } else {
-            printf("-, ");
+            printf("----- ");
         }
     }
     printf("]\n");
