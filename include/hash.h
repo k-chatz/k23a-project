@@ -14,6 +14,12 @@
 
 #define MAX_PROBES 32
 
+#define HT_FOREACH_ENTRY(ENTRY, HT, START)      \
+    while((ENTRY = htab_iterate_r(HT, START)))
+
+#define DICT_FOREACH_ENTRY(ENTRY, HT, START)    \
+    while((ENTRY = dict_iterate_r(HT, START)))
+
 /*!
 @defgroup htab htab_t
 @brief open addressed hashtables with random probing
