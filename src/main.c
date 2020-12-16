@@ -6,7 +6,6 @@
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
-#include "../include/spec_ids.h"
 #include "../include/json_parser.h"
 #include "../include/ml.h"
 
@@ -105,45 +104,83 @@ STS *init_sts_dataset_X(char *path) {
 }
 
 int main(int argc, char *argv[]) {
+    char json_website[128], json_num[128], json_path[280], *entry = NULL;
+    float *vector = NULL;
+    int wc = 0;
     Options options = {NULL, NULL, NULL};
+    ulong iterate_state = 0;
     STS *X = NULL;
+    hashp json_ht = NULL;
     ML ml = NULL;
+    JSON_ENTITY **json = NULL;
+
     /* Parse arguments*/
     read_options(argc, argv, &options);
+
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_folder);
 
     /* Read labelled_dataset_path file*/
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
+
+    /* print result*/
+    //print_sts(stdout, X);
+    //print_sts_similar(stdout, X);
+
+    /* Create json hashtable*/
+    json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), X->ht->htab->buf_cap);
+
+    /* Iterate in dataset X in order to get the path for each  json file*/
+    iterate_state = 0;
+    DICT_FOREACH_ENTRY(entry, X->ht, &iterate_state) {
+        /* Constructing the key for this JSON_ENTITY entry*/
+        sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
+
+        /* Constructing the path*/
+        snprintf(json_path, 280, "%s/%s/%s.json", options.dataset_folder, json_website, json_num);
+
+        /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
         JSON_ENTITY *ent = json_parse_file(json_path);
-        htab_put(json_ht, key, &ent);
+
+        /* Putting this JSON_ENTITY in 'json_ht' hashtable*/
+        htab_put(json_ht, entry, &ent);
     }
-    /* read_csv(dataset_X, csv, "0"); */
-    read_csv(dataset_X, csv, "0");
-    //printf("\n\n\n\n");
-    //print_sts_diff(stdout, dataset_X);
-    ml_create(&ml, sw, json_ht->buf_load);
-    /* print_sts_diff(stdout, dataset_X); */
-    ulong state = 0;
-    while ((ptr = htab_iterate_r(json_ht, &state))) {
-        JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
+
+    /* Read labelled dataset csv*/
+    read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
+
+    /* Print different STS*/
+    //print_sts_diff(stdout, X);
+
+    ml_create(&ml, options.stop_words_path, json_ht->buf_load);
+    /* print_sst_diff(stdout, X); */
+
+    /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
+    iterate_state = 0;
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state) {
+        json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
     }
-    ptr = NULL;
-    float *vector = NULL;
-    state = 0;
-    int wc;
-    while ((ptr = htab_iterate_r(json_ht, &state))) {
-        JSON_ENTITY **json = (JSON_ENTITY **) (ptr + json_ht->key_sz);
+
+    /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
+    iterate_state = 0;
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state) {
         vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
         // print_vector(ml, vector);
     }
+
     // print_bow_dict(ml);
     printf("bow_dict load: %ld\n", ml_get_bow_size(ml));
     printf("json_ht load: %ld\n", json_ht->buf_load);
-    sts_destroy(dataset_X);
+
+    /* Destroy STS dataset X*/
+    sts_destroy(X);
+
+    /* Destroy */
+    //htab_free_entries(json_ht, (void (*)(void *)) json_entity_free);
     htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
     free(json_ht);
+
     return 0;
 }
