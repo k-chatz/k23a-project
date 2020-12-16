@@ -47,6 +47,8 @@ include_directories(.)
 #        src/lists.c
 #        src/hash.c
 #        src/ml.c
+#        src/json_parser.c
+#        src/tokenizer.c
 #        tests/ml_tests.c
 #        )
 

@@ -24,7 +24,7 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-project: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o tokenizer.o json_parser.o ml.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################
@@ -50,7 +50,7 @@ tests-bin/lists_tests: $(addprefix objs/, lists_tests.o lists.o)
 tests-bin/json_parser_tests: $(addprefix objs/, json_parser_tests.o json_parser.o hash.o lists.o tokenizer.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-tests-bin/general_tests: $(addprefix objs/, general_tests.o lists.o spec_to_specs.o spec_ids.o hash.o tokenizer.o json_parser.o ml.o)
+tests-bin/general_tests: $(addprefix objs/, general_tests.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/ml_tests: $(addprefix objs/, ml_tests.o json_parser.o ml.o tokenizer.o hash.o lists.o)
