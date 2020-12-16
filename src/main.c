@@ -10,7 +10,13 @@
 #include "../include/json_parser.h"
 #include "../include/ml.h"
 
-void readOptions(int argc, char **argv, char **dir, char **csv, char **sw) {
+typedef struct options {
+    char *dataset_folder;
+    char *labelled_dataset_path;
+    char *stop_words_path;
+} Options;
+
+void read_options(int argc, char **argv, Options *o) {
     int i;
     char *opt, *optVal;
     for (i = 1; i < argc; ++i) {
@@ -18,15 +24,15 @@ void readOptions(int argc, char **argv, char **dir, char **csv, char **sw) {
         optVal = argv[i + 1];
         if (strcmp(opt, "-dir") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                *dir = optVal;
+                o->dataset_folder = optVal;
             }
         } else if (strcmp(opt, "-csv") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                *csv = optVal;
+                o->labelled_dataset_path = optVal;
             }
         } else if (strcmp(opt, "-sw") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                *sw = optVal;
+                o->stop_words_path = optVal;
             }
         }
     }
@@ -100,8 +106,11 @@ STS *init_sts_dataset_X(char *path) {
 }
 
 int main(int argc, char *argv[]) {
+    Options options = {NULL, NULL, NULL};
     STS *X = NULL;
     ML ml = NULL;
+    /* Parse arguments*/
+    read_options(argc, argv, &options);
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_folder);
         JSON_ENTITY *ent = json_parse_file(json_path);
