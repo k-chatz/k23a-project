@@ -45,8 +45,9 @@ static inline void buf_set_char(tokenizer_t *tok, int i, char c) {
 
 
 static char buf_get_char(tokenizer_t *tok, int i) __attribute__ ((hot));
+
 static inline char buf_get_char(tokenizer_t *tok, int i) {
-    if (tok->buf[i] == '\0'  && !tok->feof) {
+    if (tok->buf[i] == '\0' && !tok->feof) {
         int c = fgetc(tok->f);
         if (c == EOF) {
             tok->feof = true;
@@ -75,13 +76,21 @@ static inline char buf_get_char(tokenizer_t *tok, int i) {
     }
 
 MATCH_TOKEN(is_true, "true");
+
 MATCH_TOKEN(is_false, "false");
+
 MATCH_TOKEN(is_null, "null");
+
 MATCH_TOKEN(is_lbrace, "{");
+
 MATCH_TOKEN(is_rbrace, "}");
+
 MATCH_TOKEN(is_comma, ",");
+
 MATCH_TOKEN(is_colon, ":");
+
 MATCH_TOKEN(is_lbracket, "[");
+
 MATCH_TOKEN(is_rbracket, "]");
 
 static bool is_number(tokenizer_t *tokenizer) {
@@ -142,22 +151,22 @@ static bool is_string(tokenizer_t *tokenizer) {
             if (buf_get_char(tokenizer, curr) == '\\') {
                 /* escape */
                 switch (buf_get_char(tokenizer, curr + 1)) {
-                case 'u':
-                    buf_get_char(tokenizer, curr + 2);
-                    buf_get_char(tokenizer, curr + 3);
-                    buf_get_char(tokenizer, curr + 4);
-                    buf_get_char(tokenizer, curr + 5);
-                    curr += 4;
-                case '"':
-                case '\\':
-                case '/':
-                case 'b':
-                case 'f':
-                case 'n':
-                case 'r':
-                case 't':
-                    curr += 2;
-                    break;
+                    case 'u':
+                        buf_get_char(tokenizer, curr + 2);
+                        buf_get_char(tokenizer, curr + 3);
+                        buf_get_char(tokenizer, curr + 4);
+                        buf_get_char(tokenizer, curr + 5);
+                        curr += 4;
+                    case '"':
+                    case '\\':
+                    case '/':
+                    case 'b':
+                    case 'f':
+                    case 'n':
+                    case 'r':
+                    case 't':
+                        curr += 2;
+                        break;
                 }
             } else {
                 curr++;

@@ -6,8 +6,10 @@
 #include "../include/acutest.h"
 
 #ifndef ACUTEST_H
+#include <assert.h>
 
 #define TEST_CHECK assert
+#define TEST_ASSERT assert
 #endif
 
 #include "../include/lists.h"
@@ -268,7 +270,7 @@ void map_test(void) {
     list *As = make_list(10);
     list *Bs = ll_map(As, inc1);
     list *B = Bs;
-    LLFOREACH(A, As) {
+    LL_FOREACH(A, As) {
         TEST_CHECK(A->data + 1 == B->data);
         B = ll_nth(B, 1);
     }

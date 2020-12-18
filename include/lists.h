@@ -45,12 +45,12 @@ read as "for each VAR in LIST"
 
 list *Ls = function_that_produces_list(...);
 
-LLFOREACH(L, Ls){
+LL_FOREACH(L, Ls){
     action(L);
 }
 \endcode
  */
-#define LLFOREACH(VAR, LIST)                                                   \
+#define LL_FOREACH(VAR, LIST)                                                   \
     for (typeof(LIST) VAR = LIST; VAR; VAR = ll_nth(VAR, 1))
 
 /* type: mapfunc_t */

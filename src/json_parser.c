@@ -1,8 +1,8 @@
-#include "../include/json_parser.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "../include/json_parser.h"
 
 /*! @private */
 typedef struct {
@@ -232,55 +232,54 @@ static JSON_ENTITY *json_parse_object(tokenizer_t *tok) {
         /* clang-format on */
 
         StringList *keys = NULL;
-	char *token = tokenizer_next(tok);
+        char *token = tokenizer_next(tok);
         while (token[0] != '}') {
-          char *key = strdup(token);
-          StringList *keys_node = malloc(sizeof(StringList));
-          keys_node->data = key;
-          ll_push(&keys, keys_node);
-          assert(tokenizer_next(tok)[0] == ':');
-          JSON_ENTITY *value = json_parse_value(tok);
-          dict_put(kvs, key, &value);
+            char *key = strdup(token);
+            StringList *keys_node = malloc(sizeof(StringList));
+            keys_node->data = key;
+            ll_push(&keys, keys_node);
+            assert(tokenizer_next(tok)[0] == ':');
+            JSON_ENTITY *value = json_parse_value(tok);
+            dict_put(kvs, key, &value);
 
-	  token = tokenizer_next(tok);
-          assert((token[0] == ',' || token[0] == '}'));
-	  if(token[0] == ',')
-	      token = tokenizer_next(tok);
+            token = tokenizer_next(tok);
+            assert((token[0] == ',' || token[0] == '}'));
+            if (token[0] == ',')
+                token = tokenizer_next(tok);
         }
         JSON_ENTITY *obj = json_new_obj((hashp) kvs, keys);
-	return obj;
+        return obj;
     }
     return NULL;
 }
 
 JSON_ENTITY *json_parse_array(tokenizer_t *tok) {
     if (strcmp(tok->buf, "[") == 0) {
-	int arr_len = 0;
-	int arr_cap = 16;
-	JSON_ENTITY **arr_cont = malloc(sizeof(JSON_ENTITY *) * arr_cap);
-	
+        int arr_len = 0, arr_cap = 16;
+        JSON_ENTITY **arr_cont = malloc(sizeof(JSON_ENTITY *) * arr_cap);
+
         JSON_ENTITY *curr_ent = json_parse_value(tok);
         if (curr_ent) {
-	    arr_cont[arr_len++] = curr_ent;
+            arr_cont[arr_len++] = curr_ent;
         }
         while (strcmp(tokenizer_next(tok), ",") == 0) {
             curr_ent = json_parse_value(tok);
             if (curr_ent) {
-		if(arr_len + 1 > arr_cap) {
-		    arr_cap = arr_cap << 2;
-		    arr_cont = realloc(arr_cont, arr_cap * sizeof(JSON_ENTITY*));
-		}
-		arr_cont[arr_len++] = curr_ent;
+                if (arr_len + 1 > arr_cap) {
+                    arr_cap = arr_cap << 2;
+                    arr_cont = realloc(arr_cont, arr_cap * sizeof(JSON_ENTITY *));
+                }
+                arr_cont[arr_len++] = curr_ent;
             }
         }
-	arr_cont = realloc(arr_cont, arr_len * sizeof(JSON_ENTITY*));
-	JSON_ENTITY *arr = json_new_arr(arr_cont, arr_len);
-	
+        arr_cont = realloc(arr_cont, arr_len * sizeof(JSON_ENTITY *));
+        JSON_ENTITY *arr = json_new_arr(arr_cont, arr_len);
+
         if (strcmp(tok->buf, "]") == 0) {
             /* we are done */
             return arr;
         }
-	json_entity_free(arr);
+        json_entity_free(arr);
     }
     return NULL;
 }
@@ -358,16 +357,18 @@ void json_print_value(JSON_ENTITY *jsonEntity) {
         case JSON_OBJ: {
             StringList *keys = json_get_obj_keys(jsonEntity);
             printf("{");
-            LLFOREACH(key, keys) {
+            LL_FOREACH(key, keys) {
                 printf("%s : ", key->data);
                 json_print_value(json_get(jsonEntity, key->data));
             }
             printf("}");
         }
+
             break;
         default:
             printf("<JSON_INVALID@%p>", jsonEntity);
     }
+    fflush(stdout);
 }
 
 void json_free_StringList(StringList *list) {

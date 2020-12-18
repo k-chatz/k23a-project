@@ -1,8 +1,11 @@
-#include "../include/tokenizer.h"
+#ifndef __JSON_PARSER_H__
+#define __JSON_PARSER_H__
+
 #include "hash.h"
 #include "lists.h"
 #include <stdarg.h>
 #include <stdlib.h>
+#include "../include/tokenizer.h"
 
 typedef LISTOF(char*) StringList;
 
@@ -130,15 +133,6 @@ bool json_to_bool(JSON_ENTITY *jsonEntity);
 
 /*!
 @relates JSON_ENTITY
-@brief Converts a json string to JSON_ENTITY
-
-@param[in] json : A json string
-@returns the parsed JSON_ENTITY
- */
-JSON_ENTITY *json_to_entity(char *json);
-
-/*!
-@relates JSON_ENTITY
 @brief Get the length of a JSON_ARRAY
 
 @param[in] jsonEntity : A JSON_ENTITY with type JSON_ARRAY
@@ -204,10 +198,9 @@ void json_print_value(JSON_ENTITY *jsonEntity);
  */
 JSON_ENTITY *json_parse_from_tokens(StringList *tokens);
 
-
 JSON_ENTITY *json_parse_file(char *path);
-JSON_ENTITY *json_parse_string(char *str);
 
+JSON_ENTITY *json_parse_string(char *str);
 
 /*! @} */
 
@@ -215,3 +208,5 @@ JSON_ENTITY *json_parse_string(char *str);
 @private
  */
 void json_free_StringList(StringList *list);
+
+#endif
