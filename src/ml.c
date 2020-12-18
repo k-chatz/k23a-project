@@ -250,21 +250,13 @@ void ml_idf_remove(ML ml){
     char *entry = NULL;
     ulong iterate_state = 0;
     DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
-        
-        
-        
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
-
-      
-
         w->idf = (float) log(ml->json_ht_load / w->count);
         if (w->idf > 10) {
             dict_del(ml->bow_dict, entry);
             continue;
         }
-
         w->position = i;
-
     }
 }
 

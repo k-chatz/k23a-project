@@ -3,11 +3,16 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
 #include "../include/json_parser.h"
 #include "../include/ml.h"
+#include "../include/logreg.h"
+
+#define epochs 40
+#define batch_size 100
 
 typedef struct options {
     char *dataset_folder;
@@ -104,7 +109,7 @@ STS *init_sts_dataset_X(char *path) {
 }
 
 int main(int argc, char *argv[]) {
-    char json_website[128], json_num[128], json_path[280], *entry = NULL;
+    char json_website[128], json_num[128], json_path[280], *entry = NULL, **json_train_keys = NULL;
     float *vector = NULL;
     int wc = 0;
     Options options = {NULL, NULL, NULL};
@@ -160,23 +165,70 @@ int main(int argc, char *argv[]) {
     ml_create(&ml, options.stop_words_path, json_ht->buf_load);
     /* print_sst_diff(stdout, X); */
 
+    
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-    unsigned int end = (json_ht->buf_load / 2) % 2 ? json_ht->buf_load / 2 - 1 : json_ht->buf_load / 2;
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, end) {
+    unsigned int train_set_size = (json_ht->buf_load / 2) % 2 ? json_ht->buf_load / 2 - 1 : json_ht->buf_load / 2;
+    json_train_keys = malloc(train_set_size * sizeof(char*));
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
+        json_train_keys[i] = entry;
         json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
     }
 
     ml_idf_remove(ml);
 
+    int rand_pos1 = 0, rand_pos2;
+    JSON_ENTITY **json1 = NULL, **json2 = NULL;
+    float *vector1, *vector2; 
+    float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float)); 
+    LogReg * clf = logreg_new(ml_get_bow_size(ml), 0.001);
+    int *y = malloc(batch_size * sizeof(int));
+    SpecEntry *spec1, *spec2;
+
+
+
+    int test_set_size = train_set_size + (ml_get_bow_size(ml) - train_set_size) / 2;
+    char** json_test_keys = malloc(test_set_size * sizeof(char*));
+    HT_FOREACH_ENTRY(entry, json_ht, &train_set_size, test_set_size) {
+        json_test_keys[i] = entry;
+    }
+    
+    for (int e = 0; e < epochs; e++){
+        for (int j = 0; j < train_set_size / batch_size; j++){
+            for (int i = 0; i < batch_size; i++){
+                rand_pos1 = rand() % train_set_size;
+                json1 = (JSON_ENTITY **)htab_get(json_ht, json_train_keys[rand_pos1]);
+                vector1 = ml_bow_json_vector(ml, *json1, &wc);
+                ml_tfidf(ml, vector1, wc);
+                spec1 = sts_get(X, json_train_keys[rand_pos1]);
+
+                rand_pos2 = rand() % batch_size;
+                json2 = (JSON_ENTITY **)htab_get(json_ht, json_train_keys[rand_pos2]);
+                vector2 = ml_bow_json_vector(ml, *json2, &wc);
+                ml_tfidf(ml, vector2, wc);
+                spec2 = sts_get(X, json_train_keys[rand_pos2]);
+
+                for (int c = 0; c < ml_get_bow_size(ml); c++){
+                    result_vec[i * ml_get_bow_size(ml) + c] = abs(vector1[i] - vector2[i]); 
+                }
+                y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+            }
+            train(clf, result_vec, y, batch_size);
+        }
+    }
+
+
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, end) {
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
         json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
-        print_vector(ml, vector);
+        // print_vector(ml, vector);
+
+
+
     }
 
     // print_bow_dict(ml);
