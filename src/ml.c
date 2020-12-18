@@ -122,13 +122,15 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
 void ml_idf(ML ml, float *bow_vector) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state) {
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
         //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
         //for (int i = 0; i < ml_get_bow_size(ml); i++) {
             //bow_vector[i] = bow_vector[i] * w->idf;
+            printf("before: %f\n",bow_vector[w->position]);
             bow_vector[w->position] = bow_vector[w->position] * w->idf;
+            printf("after: %f\n",bow_vector[w->position]);
         //}
     }
 }
