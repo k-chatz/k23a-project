@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-    int end = (json_ht->buf_load/2) % 2 ? json_ht->buf_load/2 - 1  : json_ht->buf_load/2;
+    unsigned int end = (json_ht->buf_load / 2) % 2 ? json_ht->buf_load / 2 - 1 : json_ht->buf_load / 2;
     HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, end) {
         json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
