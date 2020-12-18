@@ -20,6 +20,12 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc);
 
 void ml_tfidf(ML ml, float *bow_vector, int wc);
 
+void ml_idf_remove(ML ml);
+
+void set_removed_words_num(ML ml, int c);
+
+int get_removed_words_num(ML ml);
+
 void print_bow_dict(ML ml);
 
 void print_vector(ML ml, float *vector);

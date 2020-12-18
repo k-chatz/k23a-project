@@ -132,7 +132,12 @@ int main(int argc, char *argv[]) {
 
     /* Iterate in dataset X in order to get the path for each  json file*/
     iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, X->ht, &iterate_state) {
+    // for ( int i = 0, entry = dict_iterate_r(X->ht, &iterate_state) ; entry!=NULL && i < 5 ; i++, entry = dict_iterate_r(X->ht, &iterate_state)) {
+    // for (  int i = 0; (entry = dict_iterate_r(X->ht, &iterate_state)) && i < X->ht->htab->buf_load ; i++) {
+    // for(int i = 0 ; i< 10; i++) {
+    // while((entry = dict_iterate_r(X->ht, &iterate_state))){
+    DICT_FOREACH_ENTRY(entry, X->ht, &iterate_state, X->ht->htab->buf_load) {
+
         /* Constructing the key for this JSON_ENTITY entry*/
         sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
 
@@ -157,22 +162,25 @@ int main(int argc, char *argv[]) {
 
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state) {
+    int end = (json_ht->buf_load/2) % 2 ? json_ht->buf_load/2 - 1  : json_ht->buf_load/2;
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, end) {
         json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         ml_tokenize_json(ml, *json);
     }
 
+    ml_idf_remove(ml);
+
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state) {
+    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, end) {
         json = (JSON_ENTITY **) (entry + json_ht->key_sz);
         vector = ml_bow_json_vector(ml, *json, &wc);
         ml_tfidf(ml, vector, wc);
-        // print_vector(ml, vector);
+        print_vector(ml, vector);
     }
 
     // print_bow_dict(ml);
-    printf("bow_dict load: %ld\n", ml_get_bow_size(ml));
+    // printf("bow_dict load: %ld\n", ml_get_bow_size(ml));
     printf("json_ht load: %ld\n", json_ht->buf_load);
 
     /* Destroy STS dataset X*/
@@ -185,3 +193,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

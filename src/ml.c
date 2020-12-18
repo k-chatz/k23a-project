@@ -15,6 +15,7 @@ struct ml {
     setp json_set;
     const char *sw_file;
     int json_ht_load;
+    int removed_words_num;
 };
 
 typedef struct word {
@@ -122,9 +123,9 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
 void ml_idf(ML ml, float *bow_vector) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state) {
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
-        w->idf = (float) log(ml->json_ht_load / w->count);
+        // w->idf = (float) log(ml->json_ht_load / w->count);
         //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
         //for (int i = 0; i < ml_get_bow_size(ml); i++) {
             //bow_vector[i] = bow_vector[i] * w->idf;
@@ -132,6 +133,8 @@ void ml_idf(ML ml, float *bow_vector) {
         //}
     }
 }
+
+
 
 /***Public functions***/
 
@@ -145,6 +148,7 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
         (*ml)->json_set = ml_create_json_set();
         (*ml)->stop_words = ml_stop_words(*ml);
         (*ml)->json_ht_load = load;
+        (*ml)->removed_words_num = 0;
         return true;
     }
     return false;
@@ -190,13 +194,13 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     // if one does, count++,
     // else put it and count++
     /*Iterate set*/
-    keyp x = NULL;
+    char *x = NULL;
     Word *word = NULL;
     while ((x = set_iterate(ml->json_set))) {
-        word = (Word *) dict_get(ml->bow_dict, (char *) x);
+        word = (Word *) dict_get(ml->bow_dict, x);
         /* does not exist in dict */
         if (word == NULL) {
-            Word w = {ml_get_bow_size(ml), 1, 0};
+            Word w = {0, 1, 0};
 
             dict_put(ml->bow_dict, x, &w);
             /*It exists, just up the count*/
@@ -240,10 +244,36 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
 void ml_tfidf(ML ml, float *bow_vector, int wc) {
     ml_tf(ml, bow_vector, wc);
     ml_idf(ml, bow_vector);
-    //TODO: Calculate bow_vector
-    // kathe stoixeio tou pinaka tha to pollaplasiazeis me to idf toy
-    // bow_vector[i] = bow_vector[i] * w->idf;
-    print_vector(ml, bow_vector);
+}
+
+void ml_idf_remove(ML ml){
+    char *entry = NULL;
+    ulong iterate_state = 0;
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
+        
+        
+        
+        Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
+
+      
+
+        w->idf = (float) log(ml->json_ht_load / w->count);
+        if (w->idf > 10) {
+            dict_del(ml->bow_dict, entry);
+            continue;
+        }
+
+        w->position = i;
+
+    }
+}
+
+void set_removed_words_num(ML ml, int c){
+    ml->removed_words_num = c;    
+}
+
+int get_removed_words_num(ML ml){
+    return ml->removed_words_num;
 }
 
 void print_bow_dict(ML ml) {
