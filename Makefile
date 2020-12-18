@@ -5,7 +5,8 @@ vpath	 %_tests   tests-bin
 
 CC	= gcc
 CFLAGS	= -g3 -Wall
-LFLAGS	=
+CFLAGS_OPT = -O3 -ftree-vectorize -msse2 -ftree-vectorizer-verbose=1 -ffast-math
+LFLAGS	= -lm
 
 
 .PHONY: tests all clean githooks docs phony
@@ -35,8 +36,13 @@ part1: $(addprefix objs/, main.o lists.o spec_to_specs.o spec_ids.o hash.o token
 #                                                #
 ##################################################
 
-tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests tokenizer_tests)
-	for test in tests-bin/*; do if [ -x $$test ]; then ./$$test || exit 1; fi done
+
+tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests \
+	logreg_tests)
+	for test in tests-bin/*; do if [ -x $$test ]; then printf "\n\nrunning $$test...\n"; ./$$test || exit 1; fi done
+
+tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o )
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/hash_tests: $(addprefix objs/, hash_tests.o hash.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
