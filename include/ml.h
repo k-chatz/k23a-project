@@ -16,7 +16,7 @@ void ml_str_cleanup(ML ml, char *input);
 
 dictp ml_tokenize_json(ML ml, JSON_ENTITY *json);
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc);
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc);
 
 void ml_tfidf(ML ml, float *bow_vector, int wc);
 

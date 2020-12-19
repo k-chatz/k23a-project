@@ -210,10 +210,9 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     return ml->bow_dict;
 }
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc) {
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) {
     StringList *json_keys = json_get_obj_keys(json);
     int capacity = ml_get_bow_size(ml);
-    float *bow_vector = malloc(capacity * sizeof(float));
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
     LL_FOREACH(json_key, json_keys) {
