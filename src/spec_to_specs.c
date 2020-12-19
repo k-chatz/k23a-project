@@ -92,6 +92,7 @@ int sts_add(STS *sts, char *id) {
     temp.similar_tail = temp.similar;
     temp.similar_len = 1;
     temp.different = NULL;
+    temp.different_len = 0;
     dict_put(sts->ht, id, &temp);
     return 0;
 }

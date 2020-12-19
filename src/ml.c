@@ -123,13 +123,13 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
 void ml_idf(ML ml, float *bow_vector) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         // w->idf = (float) log(ml->json_ht_load / w->count);
         //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
         //for (int i = 0; i < ml_get_bow_size(ml); i++) {
-            //bow_vector[i] = bow_vector[i] * w->idf;
-            bow_vector[w->position] = bow_vector[w->position] * w->idf;
+        //bow_vector[i] = bow_vector[i] * w->idf;
+        bow_vector[w->position] = bow_vector[w->position] * w->idf;
         //}
     }
 }
@@ -145,7 +145,19 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
     if ((*ml) != NULL) {
         (*ml)->sw_file = sw_file;
         (*ml)->bow_dict = ml_create_bow_dict();
+        dict_config((*ml)->bow_dict,
+                    DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                    DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                    DICT_CONF_HASH_FUNC, djb2_str,
+                    DICT_CONF_KEY_SZ_F, str_sz,
+                    DICT_CONF_DONE);
         (*ml)->json_set = ml_create_json_set();
+        dict_config((*ml)->json_set,
+                    DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                    DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                    DICT_CONF_HASH_FUNC, djb2_str,
+                    DICT_CONF_KEY_SZ_F, str_sz,
+                    DICT_CONF_DONE);
         (*ml)->stop_words = ml_stop_words(*ml);
         (*ml)->json_ht_load = load;
         (*ml)->removed_words_num = 0;
@@ -241,10 +253,10 @@ void ml_tfidf(ML ml, float *bow_vector, int wc) {
     ml_idf(ml, bow_vector);
 }
 
-void ml_idf_remove(ML ml){
+void ml_idf_remove(ML ml) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state,  ml->bow_dict->htab->buf_load) {
+    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
         if (w->idf > 10) {
@@ -255,11 +267,11 @@ void ml_idf_remove(ML ml){
     }
 }
 
-void set_removed_words_num(ML ml, int c){
-    ml->removed_words_num = c;    
+void set_removed_words_num(ML ml, int c) {
+    ml->removed_words_num = c;
 }
 
-int get_removed_words_num(ML ml){
+int get_removed_words_num(ML ml) {
     return ml->removed_words_num;
 }
 

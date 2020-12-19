@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     int *y = malloc(batch_size * sizeof(int));
     SpecEntry *spec1, *spec2;
 
-    ulong test_set_size = train_set_size + (ml_get_bow_size(ml) - train_set_size) / 2;
+    ulong test_set_size = train_set_size + (json_ht->buf_load - train_set_size) / 2;
 
     char **json_test_keys = malloc((size_t) (test_set_size * sizeof(char *)));
 
