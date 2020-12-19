@@ -190,10 +190,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
             ml_bag_of_words(ml, x);
         }
     }
-    //check if contents of json set exist in bow_dict
-    // if one does, count++,
-    // else put it and count++
-    /*Iterate set*/
+    /* Iterate set */
     char *x = NULL;
     Word *word = NULL;
     while ((x = set_iterate(ml->json_set))) {
@@ -203,12 +200,11 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
             Word w = {0, 1, 0};
 
             dict_put(ml->bow_dict, x, &w);
-            /*It exists, just up the count*/
+            /* It exists, just up the count */
         } else {
             word->count++;
         }
-        //now, we gotta erase everything in json_set to use it for the next json
-        /*erase x from set*/
+        /* erase x from set */
         dict_del(ml->json_set, x);
     }
     return ml->bow_dict;

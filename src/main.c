@@ -108,6 +108,8 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
+
+
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL, **json_train_keys = NULL;
     float *vector = NULL;
@@ -219,20 +221,18 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
-    iterate_state = 0;
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
-        json = (JSON_ENTITY **) (entry + json_ht->key_sz);
-        vector = ml_bow_json_vector(ml, *json, &wc);
-        ml_tfidf(ml, vector, wc);
-        // print_vector(ml, vector);
+    // /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
+    // iterate_state = 0;
+    // HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
+    //     json = (JSON_ENTITY **) (entry + json_ht->key_sz);
+    //     vector = ml_bow_json_vector(ml, *json, &wc);
+    //     ml_tfidf(ml, vector, wc);
+    //     // print_vector(ml, vector);
 
 
 
-    }
-
-    // print_bow_dict(ml);
-    // printf("bow_dict load: %ld\n", ml_get_bow_size(ml));
+    // }
+    
     printf("json_ht load: %ld\n", json_ht->buf_load);
 
     /* Destroy STS dataset X*/
