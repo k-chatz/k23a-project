@@ -9,7 +9,7 @@ struct unique_rand {
     int min;
     int max;
     int *values;
-    int index;
+    int length;
 };
 
 /***Private functions***/
@@ -28,31 +28,29 @@ void ur_create(UniqueRand *ur, int min, int max) {
     *ur = (UniqueRand) malloc(sizeof(struct unique_rand));
     (*ur)->min = min;
     (*ur)->max = max;
-    (*ur)->index = max - min + 1;
-    (*ur)->values = malloc((*ur)->index * sizeof(int));
-    for (int i = 0; i < (*ur)->index; i++) {
+    (*ur)->length = max - min + 1;
+    (*ur)->values = malloc((*ur)->length * sizeof(int));
+    for (int i = 0; i < (*ur)->length; i++) {
         (*ur)->values[i] = i + min;
     }
 }
 
 void ur_reset(UniqueRand ur) {
-    for (int i = 0; i < (ur->max - ur->min + 1); i++) {
+    ur->length = (ur->max - ur->min + 1);
+    for (int i = 0; i < ur->length; i++) {
         ur->values[i] = ur->min + i;
     }
 }
 
 int ur_get(UniqueRand ur) {
-    int number = -1;
-    int x = 0;
-    if (ur->index > 0) {
-        x = rand() % ur->index;
-        number = (int) ur->values[x];
-        swap(&ur->values[x], &ur->values[--ur->index]);
+    int i = 0;
+    if (ur->length > 0) {
+        i = rand() % ur->length;
+        swap(&ur->values[i], &ur->values[--ur->length]);
+        return (int) ur->values[i];
     } else {
-        printf("Error:\nCan't generate more random numbers in function");
-        ur_reset(ur);
+        return ur->min - 1;
     }
-    return number;
 }
 
 void ur_destroy(UniqueRand *ur) {
