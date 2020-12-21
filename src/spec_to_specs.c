@@ -93,6 +93,7 @@ int sts_add(STS *sts, char *id) {
     temp.similar_len = 1;
     temp.different = NULL;
     temp.different_len = 0;
+    temp.printed = false;
     dict_put(sts->ht, id, &temp);
     return 0;
 }
@@ -241,7 +242,7 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts) {
+void print_sts(FILE *file, STS *sts, int *counter) {
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
@@ -253,11 +254,43 @@ void print_sts(FILE *file, STS *sts) {
             LL_FOREACH(A, sp->similar) {
                 LL_FOREACH(B, (StrList *) A->next) {
                     fprintf(file, "%s, %s\n", A->data, B->data);
+                    (*counter)++;
                 }
             }
         }
     }
 }
+
+
+void print_sts_diffff(FILE *file, STS *sts, int *counter) {
+    ulong iter_state = 0;
+    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
+         key = dict_iterate_r(sts->ht, &iter_state)) {
+        /* get the spec */
+        SpecEntry *sp = dict_get(sts->ht, key), *temp;
+        /* is sp a representative? */
+        if (sp == findRoot(sts, sp)) {
+            /* sp is a set representative */
+
+            LL_FOREACH(A, sp->different){
+                temp = dict_get(sts->ht, A->data);
+                if (temp->printed){
+                    LL_FOREACH(A_sim, (StrList *) A->next){
+                        LL_FOREACH(B, temp->similar){
+                            fprintf(file, "%s, %s\n", A_sim->data, B->data);
+                            (*counter)++;
+                        }
+                    }
+                }
+            }
+            sp->printed = true;
+        }
+
+
+    }
+}
+
+
 
 void print_sts_similar(FILE *file, STS *sts) {
     ulong iter_state = 0;

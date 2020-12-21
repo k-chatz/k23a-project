@@ -120,18 +120,15 @@ int main(int argc, char *argv[]) {
     hashp json_ht = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-
+    int counter = 0;
     /* Parse arguments*/
     read_options(argc, argv, &options);
 
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_folder);
 
-    /* Read labelled_dataset_path file*/
-    read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
-
     /* print result*/
-    //print_sts(stdout, X);
+    print_sts(stdout, X, &counter);
     //print_sts_similar(stdout, X);
 
     /* Create json hashtable*/
@@ -158,14 +155,25 @@ int main(int argc, char *argv[]) {
         htab_put(json_ht, entry, &ent);
     }
 
+    /* Read labelled_dataset_path file*/
+    read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
+ 
     /* Read labelled dataset csv*/
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
     /* Print different STS*/
     //print_sts_diff(stdout, X);
 
+    print_sts_diffff(stdout, X, &counter);
+
+    printf("counter: %d\n", counter);
+    putchar('\n');
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Training
+
+
+
     ml_create(&ml, options.stop_words_path, json_ht->buf_load);
-    /* print_sst_diff(stdout, X); */
 
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
