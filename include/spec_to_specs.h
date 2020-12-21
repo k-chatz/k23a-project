@@ -43,6 +43,8 @@ struct SpecEntry_s {
     StrList *similar, *similar_tail, *different, *different_tail;
     /*! @brief Length of similar */
     ulong similar_len, different_len;
+
+    bool printed;
 };
 
 SpecEntry *findRoot(STS *sts, SpecEntry *spec);
@@ -128,9 +130,14 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts);
+void print_sts(FILE *file, STS *sts, int *counter);
+
+void print_sts_diffff(FILE *file, STS *sts, int *counter);
+
 
 void print_sts_similar(FILE *file, STS *sts);
+
+
 
 void print_sts_diff(FILE *file, STS *sts);
 
