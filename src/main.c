@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
 
-    LogReg *clf = logreg_new(ml_get_bow_size(ml), 0.001);
+    LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
     int *y = malloc(batch_size * sizeof(int));
     SpecEntry *spec1, *spec2;
 
