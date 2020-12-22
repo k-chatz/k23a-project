@@ -112,7 +112,7 @@ STS *init_sts_dataset_X(char *path) {
 
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL, **json_train_keys = NULL;
-    int wc = 0, rand_pos1 = 0, rand_pos2 = 0, counter = 0;
+    int wc = 0, rand_pos1 = 0, rand_pos2 = 0;
     Options options = {NULL, NULL, NULL};
     UniqueRand ur = NULL;
     ulong iterate_state = 0;
@@ -120,25 +120,15 @@ int main(int argc, char *argv[]) {
     hashp json_ht = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
+    int counter = 0;
 
-    dictp matches = dict_new2(256, sizeof(Match));
-    dict_config(matches,
-                DICT_CONF_CMP, (ht_cmp_func) strncmp,
-                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
-                DICT_CONF_HASH_FUNC, djb2_str,
-                DICT_CONF_KEY_SZ_F, str_sz,
-                DICT_CONF_DONE
-    );
+    Match * matches_array = malloc(MATCHES_BATCH_SIZE * sizeof(Match));
 
     /* Parse arguments*/
     read_options(argc, argv, &options);
 
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_folder);
-
-    /* print result*/
-    print_sts(stdout, X, matches, &counter);
-    //print_sts_similar(stdout, X);
 
     /* Create json hashtable*/
     json_ht = htab_new(djb2_str, 128, sizeof(JSON_ENTITY *), X->ht->htab->buf_cap);
@@ -170,15 +160,17 @@ int main(int argc, char *argv[]) {
     /* Read labelled dataset csv*/
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
+    /* print result*/
+    print_sts(stdout, X, matches_array, &counter);
+    //print_sts_similar(stdout, X);
+
     /* Print different STS*/
     //print_sts_diff(stdout, X);
 
-    print_sts_differences(stdout, X, matches, &counter);
+    print_sts_differences(stdout, X, matches_array, &counter);
 
     printf("counter: %d\n", counter);
-
     putchar('\n');
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Training
     ml_create(&ml, options.stop_words_path, json_ht->buf_load);

@@ -14,6 +14,8 @@
 #define HT_CAP 128
 #define HT_BSZ 256
 
+#define MATCHES_BATCH_SIZE 10000
+
 typedef struct SpecEntry_s SpecEntry;
 
 typedef LISTOF(char *) StrList;
@@ -136,9 +138,9 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts, dictp matches, int *counter);
+void print_sts(FILE *file, STS *sts, Match *matches, int *counter);
 
-void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter);
+void print_sts_differences(FILE *file, STS *sts, Match *matches, int *counter);
 
 
 void print_sts_similar(FILE *file, STS *sts);

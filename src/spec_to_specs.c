@@ -242,9 +242,8 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts, dictp matches, int *counter) {
+void print_sts(FILE *file, STS *sts, Match *matches, int *counter) {
     ulong iter_state = 0;
-    char match_key[256];
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
         /* get the spec */
@@ -254,11 +253,13 @@ void print_sts(FILE *file, STS *sts, dictp matches, int *counter) {
             /* sp is a set representative */
             LL_FOREACH(A, sp->similar) {
                 LL_FOREACH(B, (StrList *) A->next) {
-                    /*Print data*/
+                    if (*counter >= MATCHES_BATCH_SIZE) {
+                        matches = realloc(matches, (*counter + 1) * sizeof(Match));
+                    }
                     fprintf(file, "%s, %s\n", A->data, B->data);
-                    Match match = {A->data, B->data, 1};
-                    snprintf(match_key, 256, "%s-%s", match.spec1, match.spec2);
-                    dict_put(matches, match_key, &match);
+                    matches[*counter].spec1 = A->data;
+                    matches[*counter].spec2 = B->data;
+                    matches[*counter].relation = 1;
                     (*counter)++;
                 }
             }
@@ -267,9 +268,8 @@ void print_sts(FILE *file, STS *sts, dictp matches, int *counter) {
 }
 
 
-void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter) {
+void print_sts_differences(FILE *file, STS *sts, Match *matches, int *counter) {
     ulong iter_state = 0;
-    char match_key[256];
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
         /* get the spec */
@@ -282,10 +282,13 @@ void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter) {
                 if (temp->printed) {
                     LL_FOREACH(A_sim, (StrList *) A->next) {
                         LL_FOREACH(B, temp->similar) {
+                            if (*counter >= MATCHES_BATCH_SIZE) {
+                                matches = realloc(matches, (*counter + 1) * sizeof(Match));
+                            }
                             fprintf(file, "%s, %s\n", A_sim->data, B->data);
-                            Match match = {A_sim->data, B->data, 0};
-                            snprintf(match_key, 256, "%s-%s", match.spec1, match.spec2);
-                            dict_put(matches, match_key, &match);
+                            matches[*counter].spec1 = A_sim->data;
+                            matches[*counter].spec2 = B->data;
+                            matches[*counter].relation = 0;
                             (*counter)++;
                         }
                     }
@@ -295,7 +298,6 @@ void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter) {
         }
     }
 }
-
 
 void print_sts_similar(FILE *file, STS *sts) {
     ulong iter_state = 0;
