@@ -12,6 +12,7 @@
 #include "../include/ml.h"
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
+#include "../include/hset.h"
 
 #define epochs 40
 #define batch_size 100
@@ -111,7 +112,7 @@ STS *init_sts_dataset_X(char *path) {
 }
 
 int main(int argc, char *argv[]) {
-    char json_website[128], json_num[128], json_path[280], *entry = NULL, **json_train_keys = NULL;
+    char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int wc = 0, rand_pos1 = 0, rand_pos2 = 0, counter = 0, chunks = 0;
     Options options = {NULL, NULL, NULL};
     UniqueRand ur = NULL;
@@ -179,117 +180,158 @@ int main(int argc, char *argv[]) {
     iterate_state = 0;
 
     int train_set_size =
-            (json_ht->buf_load / 2) % 2 ? (int) (json_ht->buf_load / 2 - 1) : (int) (json_ht->buf_load / 2);
+            (counter / 2) % 2 ? (int) (counter / 2 - 1) : (int) (counter / 2);
+ 
+    UniqueRand ur_train_set = NULL;
+    ur_create(&ur_train_set, 0, train_set_size);
+    int x = 0;
+    setp json_train_keys = set_new(128);
 
-    json_train_keys = malloc((size_t) (train_set_size * sizeof(char *)));
+    dict_config(json_train_keys,
+        DICT_CONF_CMP, (ht_cmp_func) strncmp,
+        DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+        DICT_CONF_HASH_FUNC, djb2_str,
+        DICT_CONF_KEY_SZ_F, str_sz,
+        DICT_CONF_DONE
+    );
 
-    HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
-        json_train_keys[i] = entry;
-        json = (JSON_ENTITY **) (entry + json_ht->key_sz);
+    while((x = ur_get(ur_train_set)) > 0){
+        matches[x].type = TRAIN;
+        if (!set_in(json_train_keys, matches[x].spec1)){
+            set_put(json_train_keys, matches[x].spec1);
+        }
+        if (!set_in(json_train_keys, matches[x].spec2)){
+            set_put(json_train_keys, matches[x].spec2);
+        }
+    }
+    ulong i = 0;
+    for (keyp k = set_iterate_r(json_train_keys, &i); k != NULL; k = set_iterate_r(json_train_keys, &i)) {
+        // printf("%s\n", (char*)k);
+        json = (JSON_ENTITY **) htab_get(json_ht, k);
         ml_tokenize_json(ml, *json);
     }
 
     ml_idf_remove(ml);
 
-    JSON_ENTITY **json1 = NULL, **json2 = NULL;
-
-    float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
-
-    LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
-    int *y = malloc(batch_size * sizeof(int));
-    SpecEntry *spec1, *spec2;
-
-    ulong test_set_size = train_set_size + (json_ht->buf_load - train_set_size) / 2;
-
-    char **json_test_keys = malloc((size_t) (test_set_size * sizeof(char *)));
-
-    HT_FOREACH_ENTRY(entry, json_ht, (ulong *) &train_set_size, test_set_size) {
-        json_test_keys[i] = entry;
-    }
-    ulong capacity = ml_get_bow_size(ml);
-    float *bow_vector1 = malloc(capacity * sizeof(float));
-    float *bow_vector2 = malloc(capacity * sizeof(float));
-
-    /* Create a unique random object for ranges between 0 and train_set_size */
-    ur_create(&ur, 0, train_set_size - 1);
+    putchar('\n');
 
 
-    ///////////////////////////////////////////// Just a test for unique random values
-    int num = 0;
-    int i = 0;
-    while (num >= 0) {
-        num = ur_get(ur);
-        printf("i:%d:::: %d\n", i, num);
-        i++;
-    }
-    //////////////////////////////////////////////
 
 
-    for (int e = 0; e < epochs; e++) {
 
-        for (int j = 0; j < train_set_size / batch_size; j++) {
-            for (int i = 0; i < batch_size; i++) {
-
-                /* vector 1 */
-                rand_pos1 = ur_get(ur);
-                if (rand_pos1 >= 0) {
-                    json1 = (JSON_ENTITY **) htab_get(json_ht, json_train_keys[rand_pos1]);
-                    ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
-                    ml_tfidf(ml, bow_vector1, wc);
-                    spec1 = sts_get(X, json_train_keys[rand_pos1]);
-                } else {
-                    fprintf(stderr, "ERROR!\n");
-                }
-
-                /* vector 2 */
-                rand_pos2 = ur_get(ur);
-                if (rand_pos2 >= 0) {
-                    json2 = (JSON_ENTITY **) htab_get(json_ht, json_train_keys[rand_pos2]);
-                    ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
-                    ml_tfidf(ml, bow_vector2, wc);
-                    spec2 = sts_get(X, json_train_keys[rand_pos2]);
-                } else {
-                    fprintf(stderr, "ERROR!\n");
-                }
-
-                for (int c = 0; c < ml_get_bow_size(ml); c++) {
-                    result_vec[i * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
-                }
-
-                y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-            }
-            train(clf, result_vec, y, batch_size);
-        }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        ur_print(ur);
-        ur_reset(ur);
-        ur_print(ur);
-    }
 
-    free(bow_vector1);
-    free(bow_vector2);
 
-    // /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
-    // iterate_state = 0;
+
     // HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
+    //     json_train_keys[i] = entry;
     //     json = (JSON_ENTITY **) (entry + json_ht->key_sz);
-    //     vector = ml_bow_json_vector(ml, *json, &wc);
-    //     ml_tfidf(ml, vector, wc);
-    //     // print_vector(ml, vector);
+    //     ml_tokenize_json(ml, *json);
     // }
 
-    printf("json_ht load: %ld\n", json_ht->buf_load);
+    // ml_idf_remove(ml);
 
-    ur_destroy(&ur);
+    // JSON_ENTITY **json1 = NULL, **json2 = NULL;
 
-    /* Destroy STS dataset X*/
-    sts_destroy(X);
+    // float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
 
-    /* Destroy */
-    //htab_free_entries(json_ht, (void (*)(void *)) json_entity_free);
-    htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
-    free(json_ht);
+    // LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
+    // int *y = malloc(batch_size * sizeof(int));
+    // SpecEntry *spec1, *spec2;
+
+    // ulong test_set_size = train_set_size + (json_ht->buf_load - train_set_size) / 2;
+
+    // char **json_test_keys = malloc((size_t) (test_set_size * sizeof(char *)));
+
+    // HT_FOREACH_ENTRY(entry, json_ht, (ulong *) &train_set_size, test_set_size) {
+    //     json_test_keys[i] = entry;
+    // }
+    // ulong capacity = ml_get_bow_size(ml);
+    // float *bow_vector1 = malloc(capacity * sizeof(float));
+    // float *bow_vector2 = malloc(capacity * sizeof(float));
+
+    // /* Create a unique random object for ranges between 0 and train_set_size */
+    // ur_create(&ur, 0, train_set_size - 1);
+
+
+    // ///////////////////////////////////////////// Just a test for unique random values
+    // int num = 0;
+    // int i = 0;
+    // while (num >= 0) {
+    //     num = ur_get(ur);
+    //     printf("i:%d:::: %d\n", i, num);
+    //     i++;
+    // }
+    // //////////////////////////////////////////////
+
+
+    // for (int e = 0; e < epochs; e++) {
+
+    //     for (int j = 0; j < train_set_size / batch_size; j++) {
+    //         for (int i = 0; i < batch_size; i++) {
+
+    //             /* vector 1 */
+    //             rand_pos1 = ur_get(ur);
+    //             if (rand_pos1 >= 0) {
+    //                 json1 = (JSON_ENTITY **) htab_get(json_ht, json_train_keys[rand_pos1]);
+    //                 ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
+    //                 ml_tfidf(ml, bow_vector1, wc);
+    //                 spec1 = sts_get(X, json_train_keys[rand_pos1]);
+    //             } else {
+    //                 fprintf(stderr, "ERROR!\n");
+    //             }
+
+    //             /* vector 2 */
+    //             rand_pos2 = ur_get(ur);
+    //             if (rand_pos2 >= 0) {
+    //                 json2 = (JSON_ENTITY **) htab_get(json_ht, json_train_keys[rand_pos2]);
+    //                 ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
+    //                 ml_tfidf(ml, bow_vector2, wc);
+    //                 spec2 = sts_get(X, json_train_keys[rand_pos2]);
+    //             } else {
+    //                 fprintf(stderr, "ERROR!\n");
+    //             }
+
+    //             for (int c = 0; c < ml_get_bow_size(ml); c++) {
+    //                 result_vec[i * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
+    //             }
+
+    //             y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+    //         }
+    //         train(clf, result_vec, y, batch_size);
+    //     }
+
+
+    //     ur_print(ur);
+    //     ur_reset(ur);
+    //     ur_print(ur);
+    // }
+
+    // free(bow_vector1);
+    // free(bow_vector2);
+
+    // // /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
+    // // iterate_state = 0;
+    // // HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
+    // //     json = (JSON_ENTITY **) (entry + json_ht->key_sz);
+    // //     vector = ml_bow_json_vector(ml, *json, &wc);
+    // //     ml_tfidf(ml, vector, wc);
+    // //     // print_vector(ml, vector);
+    // // }
+
+    // printf("json_ht load: %ld\n", json_ht->buf_load);
+
+    // ur_destroy(&ur);
+
+    // /* Destroy STS dataset X*/
+    // sts_destroy(X);
+
+    // /* Destroy */
+    // //htab_free_entries(json_ht, (void (*)(void *)) json_entity_free);
+    // htab_free_entries(json_ht, (void (*)(void *)) free_json_ht_ent);
+    // free(json_ht);
 
     return 0;
 }

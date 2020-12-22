@@ -30,10 +30,18 @@ typedef struct {
     dictp ht;
 } STS;
 
+typedef enum {
+    TRAIN,
+    TEST,
+    VALIDATION
+} match_type;
+
+
 typedef struct match {
     char *spec1;
     char *spec2;
     int relation;
+    match_type type;
 } *Match;
 
 /*!

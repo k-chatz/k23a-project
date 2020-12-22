@@ -24,6 +24,7 @@ void static inline swap(int *r1, int *r2) {
 
 void ur_create(UniqueRand *ur, int min, int max) {
     assert(max > min);
+    assert(*ur == NULL);
     srand(time(0));
     *ur = (UniqueRand) malloc(sizeof(struct unique_rand));
     (*ur)->min = min;
