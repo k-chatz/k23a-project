@@ -28,6 +28,12 @@ typedef struct {
     dictp ht;
 } STS;
 
+typedef struct match {
+    char *spec1;
+    char *spec2;
+    int relation;
+} Match;
+
 /*!
   @brief STS hashtable entry.
  */
@@ -130,9 +136,9 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts, int *counter);
+void print_sts(FILE *file, STS *sts, dictp matches, int *counter);
 
-void print_sts_diffff(FILE *file, STS *sts, int *counter);
+void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter);
 
 
 void print_sts_similar(FILE *file, STS *sts);

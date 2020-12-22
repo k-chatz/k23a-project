@@ -112,7 +112,7 @@ STS *init_sts_dataset_X(char *path) {
 
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL, **json_train_keys = NULL;
-    int wc = 0, rand_pos1 = 0, rand_pos2 = 0;
+    int wc = 0, rand_pos1 = 0, rand_pos2 = 0, counter = 0;
     Options options = {NULL, NULL, NULL};
     UniqueRand ur = NULL;
     ulong iterate_state = 0;
@@ -120,7 +120,16 @@ int main(int argc, char *argv[]) {
     hashp json_ht = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-    int counter = 0;
+
+    dictp matches = dict_new2(256, sizeof(Match));
+    dict_config(matches,
+                DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE
+    );
+
     /* Parse arguments*/
     read_options(argc, argv, &options);
 
@@ -128,7 +137,7 @@ int main(int argc, char *argv[]) {
     X = init_sts_dataset_X(options.dataset_folder);
 
     /* print result*/
-    print_sts(stdout, X, &counter);
+    print_sts(stdout, X, matches, &counter);
     //print_sts_similar(stdout, X);
 
     /* Create json hashtable*/
@@ -157,27 +166,25 @@ int main(int argc, char *argv[]) {
 
     /* Read labelled_dataset_path file*/
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
- 
+
     /* Read labelled dataset csv*/
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
     /* Print different STS*/
     //print_sts_diff(stdout, X);
 
-    print_sts_diffff(stdout, X, &counter);
+    print_sts_differences(stdout, X, matches, &counter);
 
     printf("counter: %d\n", counter);
+
     putchar('\n');
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Training
-
-
-
     ml_create(&ml, options.stop_words_path, json_ht->buf_load);
 
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
     iterate_state = 0;
-
 
     int train_set_size =
             (json_ht->buf_load / 2) % 2 ? (int) (json_ht->buf_load / 2 - 1) : (int) (json_ht->buf_load / 2);
@@ -193,7 +200,6 @@ int main(int argc, char *argv[]) {
     ml_idf_remove(ml);
 
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
-
 
     float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
 

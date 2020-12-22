@@ -242,8 +242,9 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts, int *counter) {
+void print_sts(FILE *file, STS *sts, dictp matches, int *counter) {
     ulong iter_state = 0;
+    char match_key[256];
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
         /* get the spec */
@@ -253,7 +254,11 @@ void print_sts(FILE *file, STS *sts, int *counter) {
             /* sp is a set representative */
             LL_FOREACH(A, sp->similar) {
                 LL_FOREACH(B, (StrList *) A->next) {
+                    /*Print data*/
                     fprintf(file, "%s, %s\n", A->data, B->data);
+                    Match match = {A->data, B->data, 1};
+                    snprintf(match_key, 256, "%s-%s", match.spec1, match.spec2);
+                    dict_put(matches, match_key, &match);
                     (*counter)++;
                 }
             }
@@ -262,8 +267,9 @@ void print_sts(FILE *file, STS *sts, int *counter) {
 }
 
 
-void print_sts_diffff(FILE *file, STS *sts, int *counter) {
+void print_sts_differences(FILE *file, STS *sts, dictp matches, int *counter) {
     ulong iter_state = 0;
+    char match_key[256];
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
         /* get the spec */
@@ -271,13 +277,15 @@ void print_sts_diffff(FILE *file, STS *sts, int *counter) {
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
-
-            LL_FOREACH(A, sp->different){
+            LL_FOREACH(A, sp->different) {
                 temp = dict_get(sts->ht, A->data);
-                if (temp->printed){
-                    LL_FOREACH(A_sim, (StrList *) A->next){
-                        LL_FOREACH(B, temp->similar){
+                if (temp->printed) {
+                    LL_FOREACH(A_sim, (StrList *) A->next) {
+                        LL_FOREACH(B, temp->similar) {
                             fprintf(file, "%s, %s\n", A_sim->data, B->data);
+                            Match match = {A_sim->data, B->data, 0};
+                            snprintf(match_key, 256, "%s-%s", match.spec1, match.spec2);
+                            dict_put(matches, match_key, &match);
                             (*counter)++;
                         }
                     }
@@ -285,11 +293,8 @@ void print_sts_diffff(FILE *file, STS *sts, int *counter) {
             }
             sp->printed = true;
         }
-
-
     }
 }
-
 
 
 void print_sts_similar(FILE *file, STS *sts) {
