@@ -242,7 +242,7 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts, Match *matches, int *counter) {
+void print_sts(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
@@ -253,13 +253,14 @@ void print_sts(FILE *file, STS *sts, Match *matches, int *counter) {
             /* sp is a set representative */
             LL_FOREACH(A, sp->similar) {
                 LL_FOREACH(B, (StrList *) A->next) {
-                    if (*counter >= MATCHES_BATCH_SIZE) {
-                        matches = realloc(matches, (*counter + 1) * sizeof(Match));
+                    if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
+                        (*chunks)++;
+                        *matches = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
                     }
                     fprintf(file, "%s, %s\n", A->data, B->data);
-                    matches[*counter].spec1 = A->data;
-                    matches[*counter].spec2 = B->data;
-                    matches[*counter].relation = 1;
+                    (*matches)[*counter].spec1 = A->data;
+                    (*matches)[*counter].spec2 = B->data;
+                    (*matches)[*counter].relation = 1;
                     (*counter)++;
                 }
             }
@@ -268,7 +269,7 @@ void print_sts(FILE *file, STS *sts, Match *matches, int *counter) {
 }
 
 
-void print_sts_differences(FILE *file, STS *sts, Match *matches, int *counter) {
+void print_sts_differences(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
@@ -276,19 +277,21 @@ void print_sts_differences(FILE *file, STS *sts, Match *matches, int *counter) {
         SpecEntry *sp = dict_get(sts->ht, key), *temp;
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
+
             /* sp is a set representative */
             LL_FOREACH(A, sp->different) {
                 temp = dict_get(sts->ht, A->data);
                 if (temp->printed) {
                     LL_FOREACH(A_sim, (StrList *) A->next) {
                         LL_FOREACH(B, temp->similar) {
-                            if (*counter >= MATCHES_BATCH_SIZE) {
-                                matches = realloc(matches, (*counter + 1) * sizeof(Match));
+                            if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
+                                (*chunks)++;
+                                (*matches) = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
                             }
                             fprintf(file, "%s, %s\n", A_sim->data, B->data);
-                            matches[*counter].spec1 = A_sim->data;
-                            matches[*counter].spec2 = B->data;
-                            matches[*counter].relation = 0;
+                            (*matches)[*counter].spec1 = A_sim->data;
+                            (*matches)[*counter].spec2 = B->data;
+                            (*matches)[*counter].relation = 0;
                             (*counter)++;
                         }
                     }

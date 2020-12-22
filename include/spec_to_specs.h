@@ -14,7 +14,7 @@
 #define HT_CAP 128
 #define HT_BSZ 256
 
-#define MATCHES_BATCH_SIZE 10000
+#define MATCHES_CHUNK_SIZE 1000
 
 typedef struct SpecEntry_s SpecEntry;
 
@@ -34,7 +34,7 @@ typedef struct match {
     char *spec1;
     char *spec2;
     int relation;
-} Match;
+} *Match;
 
 /*!
   @brief STS hashtable entry.
@@ -138,13 +138,12 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts, Match *matches, int *counter);
+void print_sts(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
 
-void print_sts_differences(FILE *file, STS *sts, Match *matches, int *counter);
+void print_sts_differences(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
 
 
 void print_sts_similar(FILE *file, STS *sts);
-
 
 
 void print_sts_diff(FILE *file, STS *sts);
