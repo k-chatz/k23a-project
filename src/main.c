@@ -16,9 +16,10 @@
 #define batch_size 100
 
 typedef struct options {
-    char *dataset_folder;
+    char *dataset_dir;
     char *labelled_dataset_path;
     char *stop_words_path;
+    char *user_dataset_path;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -29,7 +30,7 @@ void read_options(int argc, char **argv, Options *o) {
         optVal = argv[i + 1];
         if (strcmp(opt, "-dir") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                o->dataset_folder = optVal;
+                o->dataset_dir = optVal;
             }
         } else if (strcmp(opt, "-csv") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
@@ -38,6 +39,11 @@ void read_options(int argc, char **argv, Options *o) {
         } else if (strcmp(opt, "-sw") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->stop_words_path = optVal;
+            }
+        }
+        else if (strcmp(opt, "-ds") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                o->user_dataset_path = optVal;
             }
         }
     }
@@ -71,7 +77,7 @@ STS *init_sts_dataset_X(char *path) {
     char new_path[512], spec_name[1024];
     STS *sts = sts_new();
 
-    /* scan external dataset_folder*/
+    /* scan external dataset_dir*/
     n = scandir(path, &name_list, NULL, alphasort);
     if (n == -1) {
         perror("scandir");
@@ -112,7 +118,7 @@ STS *init_sts_dataset_X(char *path) {
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int wc = 0, rand_pos1 = 0, rand_pos2 = 0, dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0, x = 0;
-    Options options = {NULL, NULL, NULL};
+    Options options = {NULL, NULL, NULL, NULL};
     UniqueRand ur = NULL;
     UniqueRand ur_dataset = NULL;
     ulong i_state = 0;
@@ -128,7 +134,7 @@ int main(int argc, char *argv[]) {
     read_options(argc, argv, &options);
 
     /* Initialize an STS dataset X*/
-    X = init_sts_dataset_X(options.dataset_folder);
+    X = init_sts_dataset_X(options.dataset_dir);
 
     /* Create json hashtable*/
     json_dict = dict_new3(128, sizeof(JSON_ENTITY *), X->ht->htab->buf_cap);
@@ -150,7 +156,7 @@ int main(int argc, char *argv[]) {
         sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
 
         /* Constructing the path*/
-        snprintf(json_path, 280, "%s/%s/%s.json", options.dataset_folder, json_website, json_num);
+        snprintf(json_path, 280, "%s/%s/%s.json", options.dataset_dir, json_website, json_num);
 
         /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
         JSON_ENTITY *ent = json_parse_file(json_path);
@@ -348,6 +354,9 @@ int main(int argc, char *argv[]) {
     //TODO: predict validation set, ypologismos score (px F1)
     //TODO: Predict to montelo tou user, ypologismos score
 
+    // Predict
+
+    // read user dataset file
 //////////////////////////////////////////////////////////////////////////////////////////////////
     free(loss);
     free(clf_cp);
