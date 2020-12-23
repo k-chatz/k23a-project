@@ -181,9 +181,11 @@ int main(int argc, char *argv[]) {
 
     int train_set_size =
             (counter / 2) % 2 ? (int) (counter / 2 - 1) : (int) (counter / 2);
- 
-    UniqueRand ur_train_set = NULL;
-    ur_create(&ur_train_set, 0, train_set_size);
+    
+    int test_set_size = train_set_size + (counter - train_set_size) / 2;
+
+    UniqueRand ur_dataset = NULL;
+    ur_create(&ur_dataset, 0, counter - 1);
     int x = 0;
     setp json_train_keys = set_new(128);
 
@@ -194,8 +196,13 @@ int main(int argc, char *argv[]) {
         DICT_CONF_KEY_SZ_F, str_sz,
         DICT_CONF_DONE
     );
+    Match temp;
 
-    while((x = ur_get(ur_train_set)) > 0){
+    Match *sorted_matches = malloc( counter * sizeof(Match));
+    // Split the dataset to TRAIN, TEST & VALIDATION sets
+    for (int i = 0; i < train_set_size; i++){
+        x = ur_get(ur_dataset);
+        // Collect randomly half of the dataset for the training
         matches[x].type = TRAIN;
         if (!set_in(json_train_keys, matches[x].spec1)){
             set_put(json_train_keys, matches[x].spec1);
@@ -203,7 +210,37 @@ int main(int argc, char *argv[]) {
         if (!set_in(json_train_keys, matches[x].spec2)){
             set_put(json_train_keys, matches[x].spec2);
         }
+         sorted_matches[i] = &matches[x];
     }
+    // Collect randomly the test set
+    for (int i = train_set_size; i < test_set_size; i++){
+        x = ur_get(ur_dataset);
+        matches[x].type = TEST;
+        sorted_matches[i] = &matches[x];
+    }
+    // Collect whats left to be the validation set
+    for (int i = test_set_size; i < counter; i++){
+        x = ur_get(ur_dataset);
+        matches[x].type = VALIDATION;
+        sorted_matches[i] = &matches[x];
+    }
+
+
+    // for (int i = 0; i < counter; i++){
+    //     if(sorted_matches[i]->type == TRAIN)
+    //         printf("i: %d, type: TRAIN\n", i);
+    //     else if (sorted_matches[i]->type == TEST){
+    //         printf("i: %d, type: TEST\n", i);
+    //     }
+    //     else if (sorted_matches[i]->type == VALIDATION){
+    //         printf("i: %d, type: VALIDATION\n", i);
+    //     }
+    //     else{
+    //          printf("i: %d, NAT!\n", i);
+    //     }
+    // }
+
+
     ulong i = 0;
     for (keyp k = set_iterate_r(json_train_keys, &i); k != NULL; k = set_iterate_r(json_train_keys, &i)) {
         // printf("%s\n", (char*)k);
@@ -215,15 +252,11 @@ int main(int argc, char *argv[]) {
 
     putchar('\n');
 
-
-
-
+    float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
+    LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
+    int *y = malloc(batch_size * sizeof(int));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 
     // HT_FOREACH_ENTRY(entry, json_ht, &iterate_state, train_set_size) {
     //     json_train_keys[i] = entry;

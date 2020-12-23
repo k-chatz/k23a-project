@@ -25,7 +25,6 @@ void static inline swap(int *r1, int *r2) {
 void ur_create(UniqueRand *ur, int min, int max) {
     assert(max > min);
     assert(*ur == NULL);
-    srand(time(0));
     *ur = (UniqueRand) malloc(sizeof(struct unique_rand));
     (*ur)->min = min;
     (*ur)->max = max;
@@ -46,9 +45,11 @@ void ur_reset(UniqueRand ur) {
 int ur_get(UniqueRand ur) {
     int i = 0;
     if (ur->length > 0) {
+        srand(time(0));
         i = rand() % ur->length;
-        swap(&ur->values[i], &ur->values[--ur->length]);
-        return (int) ur->values[i];
+        --ur->length;
+        swap(&ur->values[i], &ur->values[ur->length]);
+        return (int) ur->values[ur->length];
     } else {
         return ur->min - 1;
     }
