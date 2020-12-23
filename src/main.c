@@ -282,9 +282,23 @@ int main(int argc, char *argv[]) {
                 y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
             }
         }
+
+        // TODO: predict test set
+        // Mazevoume ta apotelesmata se ena pinaka
+        // trexw to logloss y_test kai y_pred
+        // krataw meso h megisto 
+        // krataw se kathe epoch ena antigrafo tou montelou 
+        // an dw oti tis epomenes 5 fores anevainei to loss
+        // kanw break kai gynaw sto antigrafo.
+
+
     }
 
     putchar('\n');
+
+    //TODO: predict validation set, ypologismos score (px F1)
+
+    //TODO: Predict to montelo tou user, ypologismos score
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
