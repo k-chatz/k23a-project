@@ -254,6 +254,37 @@ int main(int argc, char *argv[]) {
     float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
     int *y = malloc(batch_size * sizeof(int));
+    UniqueRand ur_mini_batch = NULL;
+    ur_create(&ur_mini_batch, 0, train_set_size - 1);
+    JSON_ENTITY **json1 = NULL, **json2 = NULL;
+    float *bow_vector1 = malloc(ml_get_bow_size(ml) * sizeof(float));
+    float *bow_vector2 = malloc(ml_get_bow_size(ml) * sizeof(float));
+    SpecEntry *spec1, *spec2;
+    for (int e = 0; e < epochs; e++) {
+        for (int j = 0; j < train_set_size / batch_size; j++) {
+            for (int i = 0; i < batch_size; i++) {
+                x = ur_get(ur_mini_batch);
+               
+                json1 = (JSON_ENTITY **) htab_get(json_ht, sorted_matches[x]->spec1);
+                ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
+                ml_tfidf(ml, bow_vector1, wc);
+                spec1 = sts_get(X, sorted_matches[x]->spec1);
+
+                json1 = (JSON_ENTITY **) htab_get(json_ht, sorted_matches[x]->spec2);
+                ml_bow_json_vector(ml, *json1, bow_vector2, &wc);
+                ml_tfidf(ml, bow_vector2, wc);
+                spec2 = sts_get(X, sorted_matches[x]->spec2);
+
+                for (int c = 0; c < ml_get_bow_size(ml); c++) {
+                    result_vec[i * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
+                }
+
+                y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+            }
+        }
+    }
+
+    putchar('\n');
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
