@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     Options options = {NULL, NULL, NULL};
     UniqueRand ur = NULL;
     UniqueRand ur_dataset = NULL;
-    ulong iterate_state = 0;
+    ulong i_state = 0;
     setp json_train_keys = NULL;
     STS *X = NULL;
     dictp json_dict = NULL;
@@ -141,10 +141,10 @@ int main(int argc, char *argv[]) {
     );
 
     /* Iterate in dataset X in order to get the path for each  json file*/
-    iterate_state = 0;
+    i_state = 0;
 
     /* Create json hash table using dataset X */
-    DICT_FOREACH_ENTRY(entry, X->ht, &iterate_state, X->ht->htab->buf_load) {
+    DICT_FOREACH_ENTRY(entry, X->ht, &i_state, X->ht->htab->buf_load) {
 
         /* Constructing the key for this JSON_ENTITY entry*/
         sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     ml_create(&ml, options.stop_words_path, json_dict->htab->buf_load);
 
     /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it */
-    iterate_state = 0;
+    i_state = 0;
 
     train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
 
@@ -231,22 +231,20 @@ int main(int argc, char *argv[]) {
         sorted_matches[i] = &matches[x];
     }
 
-    for (int i = train_set_size; i < test_set_size; i++){
-        if(sorted_matches[i]->type == TRAIN)
+    for (int i = train_set_size; i < test_set_size; i++) {
+        if (sorted_matches[i]->type == TRAIN)
             printf("i: %d, type: TRAIN\n", i);
-        else if (sorted_matches[i]->type == TEST){
+        else if (sorted_matches[i]->type == TEST) {
             printf("i: %d, type: TEST\n", i);
-        }
-        else if (sorted_matches[i]->type == VALIDATION){
+        } else if (sorted_matches[i]->type == VALIDATION) {
             printf("i: %d, type: VALIDATION\n", i);
-        }
-        else{
-             printf("i: %d, NAT!\n", i);
+        } else {
+            printf("i: %d, NAT!\n", i);
         }
     }
 
-    ulong i = 0;
-    for (keyp k = set_iterate_r(json_train_keys, &i); k != NULL; k = set_iterate_r(json_train_keys, &i)) {
+    i_state = 0;
+    for (keyp k = set_iterate_r(json_train_keys, &i_state); k != NULL; k = set_iterate_r(json_train_keys, &i_state)) {
         // printf("%s\n", (char*)k);
         json = (JSON_ENTITY **) dict_get(json_dict, k);
         ml_tokenize_json(ml, *json);
@@ -258,7 +256,7 @@ int main(int argc, char *argv[]) {
 
     float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     float *result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
-  
+
     LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
 
     int *y = malloc(batch_size * sizeof(int));
@@ -275,14 +273,14 @@ int main(int argc, char *argv[]) {
     SpecEntry *spec1, *spec2;
     float *y_pred = NULL;
 
+    LogReg *clf_cp = malloc(sizeof(LogReg));
+    float *loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
+
+    /* Epochs loop*/
     for (int e = 0; e < epochs; e++) {
-
-
-
         for (int j = 0; j < train_set_size / batch_size; j++) {
             for (int i = 0; i < batch_size; i++) {
                 x = ur_get(ur_mini_batch);
-
                 json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[x]->spec1);
                 ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
                 ml_tfidf(ml, bow_vector1, wc);
@@ -292,18 +290,13 @@ int main(int argc, char *argv[]) {
                 ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
                 ml_tfidf(ml, bow_vector2, wc);
                 spec2 = sts_get(X, sorted_matches[x]->spec2);
-
                 for (int c = 0; c < ml_get_bow_size(ml); c++) {
                     result_vec[i * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
                 }
                 y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
             }
-
-            //TODO: train batch
             train(clf, result_vec, y, batch_size);
         }
-
-
 
         // TODO: predict test set
         // Mazevoume ta apotelesmata se ena pinaka
@@ -312,15 +305,10 @@ int main(int argc, char *argv[]) {
         // krataw se kathe epoch ena antigrafo tou montelou 
         // an dw oti tis epomenes 5 fores anevainei to loss
         // kanw break kai gynaw sto antigrafo.
-        LogReg *clf_cp = malloc(sizeof(LogReg));
 
-        /***TEST***/
-
-        float *loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
         float max_loss = -1;
-       
+
         for (int i = train_set_size; i < test_set_size; i++) {
-            
             json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec1);
             ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
             ml_tfidf(ml, bow_vector1, wc);
@@ -332,63 +320,41 @@ int main(int argc, char *argv[]) {
             spec2 = sts_get(X, sorted_matches[i]->spec2);
 
             for (int c = 0; c < ml_get_bow_size(ml); c++) {
-                result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
+                result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
+                        (int) (bow_vector1[i] - bow_vector2[i]));
             }
             y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
         }
 
-
-
-
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
-        memcpy(clf, clf_cp, sizeof(LogReg));
-        for(int i = 0; i < test_set_size - train_set_size - 1; i++){
+        memcpy(clf_cp, clf, sizeof(LogReg));
+        for (int i = 0; i < test_set_size - train_set_size - 1; i++) {
             loss[i] = logloss(y_pred[i], y[i]);
-            if (i == 0){
+            if (i == 0) {
                 max_loss = loss[i];
-            }
-            else{
-                if (max_loss < loss[i]){
+            } else {
+                if (max_loss < loss[i]) {
                     max_loss = loss[i];
                 }
-            }       
+            }
         }
+
 
         ur_reset(ur_mini_batch);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     putchar('\n');
 
     //TODO: predict validation set, ypologismos score (px F1)
-
     //TODO: Predict to montelo tou user, ypologismos score
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+    free(loss);
+    free(clf_cp);
 
-   
     free(bow_vector1);
     free(bow_vector2);
-    
+
     ur_destroy(&ur_mini_batch);
     ur_destroy(&ur_dataset);
 
@@ -400,4 +366,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
