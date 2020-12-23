@@ -334,6 +334,10 @@ int main(int argc, char *argv[]) {
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
         memcpy(clf_cp, clf, sizeof(LogReg));
+
+        //todo: array of max loss of every epoch
+        //todo: array with the model of every epoch
+
         for (int i = 0; i < test_set_size - train_set_size - 1; i++) {
             loss[i] = logloss(y_pred[i], y[i]);
             if (i == 0) {
@@ -345,6 +349,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        //todo: check if the last five max losses are ascending
 
         ur_reset(ur_mini_batch);
     }
