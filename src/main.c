@@ -113,16 +113,18 @@ STS *init_sts_dataset_X(char *path) {
 
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
-    int wc = 0, rand_pos1 = 0, rand_pos2 = 0, counter = 0, chunks = 0;
+    int wc = 0, rand_pos1 = 0, rand_pos2 = 0, dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0, x = 0;
     Options options = {NULL, NULL, NULL};
     UniqueRand ur = NULL;
+    UniqueRand ur_dataset = NULL;
     ulong iterate_state = 0;
+    setp json_train_keys = NULL;
     STS *X = NULL;
     hashp json_ht = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-
     Match matches = NULL;
+    Match *sorted_matches = NULL;
 
     /* Parse arguments*/
     read_options(argc, argv, &options);
@@ -135,10 +137,8 @@ int main(int argc, char *argv[]) {
 
     /* Iterate in dataset X in order to get the path for each  json file*/
     iterate_state = 0;
-    // for ( int i = 0, entry = dict_iterate_r(X->ht, &iterate_state) ; entry!=NULL && i < 5 ; i++, entry = dict_iterate_r(X->ht, &iterate_state)) {
-    // for (  int i = 0; (entry = dict_iterate_r(X->ht, &iterate_state)) && i < X->ht->htab->buf_load ; i++) {
-    // for(int i = 0 ; i< 10; i++) {
-    // while((entry = dict_iterate_r(X->ht, &iterate_state))){
+
+    /* Create json hash table using dataset X */
     DICT_FOREACH_ENTRY(entry, X->ht, &iterate_state, X->ht->htab->buf_load) {
 
         /* Constructing the key for this JSON_ENTITY entry*/
@@ -161,72 +161,72 @@ int main(int argc, char *argv[]) {
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
     /* print result*/
-    print_sts(stdout, X, &matches, &chunks, &counter);
+    print_sts(stdout, X, &matches, &chunks, &dataset_size);
     //print_sts_similar(stdout, X);
 
     /* Print different STS*/
     //print_sts_diff(stdout, X);
 
-    print_sts_differences(stdout, X, &matches, &chunks, &counter);
+    print_sts_differences(stdout, X, &matches, &chunks, &dataset_size);
 
-    printf("counter: %d\n", counter);
-    putchar('\n');
+    /**** Training ****/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Training
+    /* Create ml object */
     ml_create(&ml, options.stop_words_path, json_ht->buf_load);
 
-    /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it*/
+    /* Iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it */
     iterate_state = 0;
 
-    int train_set_size =
-            (counter / 2) % 2 ? (int) (counter / 2 - 1) : (int) (counter / 2);
-    
-    int test_set_size = train_set_size + (counter - train_set_size) / 2;
+    train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
 
-    UniqueRand ur_dataset = NULL;
-    ur_create(&ur_dataset, 0, counter - 1);
-    int x = 0;
-    setp json_train_keys = set_new(128);
+    test_set_size = train_set_size + (dataset_size - train_set_size) / 2;
 
+    ur_create(&ur_dataset, 0, dataset_size - 1);
+
+    /*  */
+    json_train_keys = set_new(128);
     dict_config(json_train_keys,
-        DICT_CONF_CMP, (ht_cmp_func) strncmp,
-        DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
-        DICT_CONF_HASH_FUNC, djb2_str,
-        DICT_CONF_KEY_SZ_F, str_sz,
-        DICT_CONF_DONE
+                DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE
     );
-    Match temp;
 
-    Match *sorted_matches = malloc( counter * sizeof(Match));
-    // Split the dataset to TRAIN, TEST & VALIDATION sets
-    for (int i = 0; i < train_set_size; i++){
+    sorted_matches = malloc(dataset_size * sizeof(Match));
+
+    /* Split the dataset to TRAIN, TEST & VALIDATION sets */
+    for (int i = 0; i < train_set_size; i++) {
         x = ur_get(ur_dataset);
-        // Collect randomly half of the dataset for the training
+
+        /* Collect randomly half of the dataset for the training */
         matches[x].type = TRAIN;
-        if (!set_in(json_train_keys, matches[x].spec1)){
+        if (!set_in(json_train_keys, matches[x].spec1)) {
             set_put(json_train_keys, matches[x].spec1);
         }
-        if (!set_in(json_train_keys, matches[x].spec2)){
+
+        if (!set_in(json_train_keys, matches[x].spec2)) {
             set_put(json_train_keys, matches[x].spec2);
         }
-         sorted_matches[i] = &matches[x];
+
+        sorted_matches[i] = &matches[x];
     }
-    // Collect randomly the test set
-    for (int i = train_set_size; i < test_set_size; i++){
+
+    /* Collect randomly the test set */
+    for (int i = train_set_size; i < test_set_size; i++) {
         x = ur_get(ur_dataset);
         matches[x].type = TEST;
         sorted_matches[i] = &matches[x];
     }
-    // Collect whats left to be the validation set
-    for (int i = test_set_size; i < counter; i++){
+
+    /* Collect whats left to be the validation set */
+    for (int i = test_set_size; i < dataset_size; i++) {
         x = ur_get(ur_dataset);
         matches[x].type = VALIDATION;
         sorted_matches[i] = &matches[x];
     }
 
-
-    // for (int i = 0; i < counter; i++){
+    // for (int i = 0; i < dataset_size; i++){
     //     if(sorted_matches[i]->type == TRAIN)
     //         printf("i: %d, type: TRAIN\n", i);
     //     else if (sorted_matches[i]->type == TEST){
@@ -239,7 +239,6 @@ int main(int argc, char *argv[]) {
     //          printf("i: %d, NAT!\n", i);
     //     }
     // }
-
 
     ulong i = 0;
     for (keyp k = set_iterate_r(json_train_keys, &i); k != NULL; k = set_iterate_r(json_train_keys, &i)) {
