@@ -70,6 +70,25 @@ void read_labelled_dataset_csv(STS *dataset_X, char *sigmod_labelled_dataset, ch
     fclose(fp);
 }
 
+void read_user_dataset_csv(char *user_dataset_file, Match *matches, int *counter) {
+    assert(user_dataset_file != NULL);
+    assert(*matches == NULL);
+    assert(*counter == 0);
+    FILE *fp = fopen(user_dataset_file, "r");
+    char left_spec_id[50], right_spec_id[50];
+    //skip first row fseek
+    fseek(fp, 27, SEEK_SET);
+    while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
+        (*matches) = realloc(*matches, (*counter + 1) * sizeof(struct match));
+        // fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
+        (*matches)[*counter].spec1 = left_spec_id;
+        (*matches)[*counter].spec2 = right_spec_id;
+        (*matches)[*counter].relation = -1;
+        (*counter)++;
+    }
+    fclose(fp);
+}
+
 STS *init_sts_dataset_X(char *path) {
     struct dirent **name_list = NULL, **internals_name_list = NULL;
     int n, internals;
