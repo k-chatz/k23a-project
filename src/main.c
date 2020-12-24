@@ -133,6 +133,31 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
+void set_prepare(int p_start, int p_end, STS *X, ML ml, dictp json_dict, Match matches, float *result_vector, int *y) {
+    float *bow_vector1 = malloc(ml_get_bow_size(ml) * sizeof(float));
+    float *bow_vector2 = malloc(ml_get_bow_size(ml) * sizeof(float));
+    int wc = 0;
+    JSON_ENTITY **json1 = NULL, **json2 = NULL;
+    SpecEntry *spec1 = NULL, *spec2 = NULL;
+    for (int i = p_start; i < p_end; i++) {
+        json1 = (JSON_ENTITY **) dict_get(json_dict, matches[i].spec1);
+        ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
+        ml_tfidf(ml, bow_vector1, wc);
+        spec1 = sts_get(X, matches[i].spec1);
+
+        json2 = (JSON_ENTITY **) dict_get(json_dict, matches[i].spec2);
+        ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
+        ml_tfidf(ml, bow_vector2, wc);
+        spec2 = sts_get(X, matches[i].spec2);
+        for (int c = 0; c < ml_get_bow_size(ml); c++) {
+            result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
+        }
+        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+    }
+    free(bow_vector1);
+    free(bow_vector2);
+}
+
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int wc = 0, rand_pos1 = 0, rand_pos2 = 0, dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0, x = 0;
@@ -307,8 +332,6 @@ int main(int argc, char *argv[]) {
     LogReg models[epochs];
 
 
-
-
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_set_size / batch_size; j++) {
             for (int i = 0; i < batch_size; i++) {
@@ -419,33 +442,14 @@ int main(int argc, char *argv[]) {
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-
-
     //TODO: Predict to dataset tou user, ypologismos score
 
     /* Read user dataset */
     read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
 
-    for (int i = 0; i < user_dataset_size; i++) {
-        json1 = (JSON_ENTITY **) dict_get(json_dict, user_matches[i].spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
-        ml_tfidf(ml, bow_vector1, wc);
-        spec1 = sts_get(X, user_matches[i].spec1);
-
-        json2 = (JSON_ENTITY **) dict_get(json_dict, user_matches[i].spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
-        ml_tfidf(ml, bow_vector2, wc);
-        spec2 = sts_get(X, user_matches[i].spec2);
-
-        for (int c = 0; c < ml_get_bow_size(ml); c++) {
-            result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
-                    (int) (bow_vector1[i] - bow_vector2[i]));
-        }
-        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-    }
+    set_prepare(0, user_dataset_size, X, ml, json_dict, user_matches, result_vec_test, y);
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
-
 
     // read user dataset file
 //////////////////////////////////////////////////////////////////////////////////////////////////
