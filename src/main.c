@@ -396,8 +396,55 @@ int main(int argc, char *argv[]) {
 
     /**** Predict ****/
 
-    //TODO: predict validation set, ypologismos score (px F1)
-    //TODO: Predict to montelo tou user, ypologismos score
+    //TODO: predict validation set,
+    // ypologismos score (px F1)
+
+    for (int i = test_set_size; i < dataset_size; i++) {
+        json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec1);
+        ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
+        ml_tfidf(ml, bow_vector1, wc);
+        spec1 = sts_get(X, sorted_matches[i]->spec1);
+
+        json2 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec2);
+        ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
+        ml_tfidf(ml, bow_vector2, wc);
+        spec2 = sts_get(X, sorted_matches[i]->spec2);
+
+        for (int c = 0; c < ml_get_bow_size(ml); c++) {
+            result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
+                    (int) (bow_vector1[i] - bow_vector2[i]));
+        }
+        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+    }
+
+    y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
+
+
+
+    //TODO: Predict to dataset tou user, ypologismos score
+
+    /* Read user dataset */
+    read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
+
+    for (int i = 0; i < user_dataset_size; i++) {
+        json1 = (JSON_ENTITY **) dict_get(json_dict, user_matches[i].spec1);
+        ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
+        ml_tfidf(ml, bow_vector1, wc);
+        spec1 = sts_get(X, user_matches[i].spec1);
+
+        json2 = (JSON_ENTITY **) dict_get(json_dict, user_matches[i].spec2);
+        ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
+        ml_tfidf(ml, bow_vector2, wc);
+        spec2 = sts_get(X, user_matches[i].spec2);
+
+        for (int c = 0; c < ml_get_bow_size(ml); c++) {
+            result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
+                    (int) (bow_vector1[i] - bow_vector2[i]));
+        }
+        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+    }
+
+    y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
 
     // read user dataset file
