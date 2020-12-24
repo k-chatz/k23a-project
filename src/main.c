@@ -40,8 +40,7 @@ void read_options(int argc, char **argv, Options *o) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->stop_words_path = optVal;
             }
-        }
-        else if (strcmp(opt, "-ds") == 0) {
+        } else if (strcmp(opt, "-ds") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->user_dataset_path = optVal;
             }
@@ -263,7 +262,7 @@ int main(int argc, char *argv[]) {
     float *result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     float *result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
 
-    LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.001);
+    LogReg *clf = logreg_new(ml_get_bow_size(ml), (float) 0.0001);
 
     int *y = malloc(batch_size * sizeof(int));
 
@@ -283,6 +282,10 @@ int main(int argc, char *argv[]) {
     float *loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
 
     /* Epochs loop*/
+
+    float max_losses[epochs];
+    LogReg models[epochs];
+
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_set_size / batch_size; j++) {
             for (int i = 0; i < batch_size; i++) {
@@ -333,10 +336,6 @@ int main(int argc, char *argv[]) {
         }
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
-        memcpy(clf_cp, clf, sizeof(LogReg));
-
-        //todo: array of max loss of every epoch
-        //todo: array with the model of every epoch
 
         for (int i = 0; i < test_set_size - train_set_size - 1; i++) {
             loss[i] = logloss(y_pred[i], y[i]);
@@ -349,17 +348,34 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        //todo: check if the last five max losses are ascending
+        /* Copy model & max loss*/
+        memcpy(&models[e], clf, sizeof(LogReg));
+        max_losses[e] = max_loss;
+
+        /* Check if the last five max losses are ascending */
+        if (e > 3) {
+            int q = e;
+            while (q >= e - 4) {
+                if(max_losses[q] < max_losses[q-1]){
+                    break;
+                }
+                q--;
+            }
+            if (e - q == 5) {
+                clf = &models[e - 4];
+                break;
+            }
+        }
 
         ur_reset(ur_mini_batch);
-    }
 
-    putchar('\n');
+    } // epocs
+
+    /**** Predict ****/
 
     //TODO: predict validation set, ypologismos score (px F1)
     //TODO: Predict to montelo tou user, ypologismos score
 
-    // Predict
 
     // read user dataset file
 //////////////////////////////////////////////////////////////////////////////////////////////////
