@@ -146,9 +146,9 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
 
-void print_sts_differences(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
 
 
 void print_sts_similar(FILE *file, STS *sts);

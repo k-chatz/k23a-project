@@ -242,7 +242,7 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
+void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {
@@ -268,8 +268,7 @@ void print_sts(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) 
     }
 }
 
-
-void print_sts_differences(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
+void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
     for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
          key = dict_iterate_r(sts->ht, &iter_state)) {

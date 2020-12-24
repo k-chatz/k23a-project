@@ -19,7 +19,7 @@ typedef struct options {
     char *dataset_dir;
     char *labelled_dataset_path;
     char *stop_words_path;
-    char *user_dataset_path;
+    char *user_dataset_file;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -42,7 +42,7 @@ void read_options(int argc, char **argv, Options *o) {
             }
         } else if (strcmp(opt, "-ds") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                o->user_dataset_path = optVal;
+                o->user_dataset_file = optVal;
             }
         }
     }
@@ -136,6 +136,7 @@ STS *init_sts_dataset_X(char *path) {
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int wc = 0, rand_pos1 = 0, rand_pos2 = 0, dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0, x = 0;
+    int user_dataset_size = 0;
     Options options = {NULL, NULL, NULL, NULL};
     UniqueRand ur = NULL;
     UniqueRand ur_dataset = NULL;
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
     dictp json_dict = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-    Match matches = NULL;
+    Match matches = NULL, user_matches = NULL;
     Match *sorted_matches = NULL;
 
     /* Parse arguments*/
@@ -190,13 +191,13 @@ int main(int argc, char *argv[]) {
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
     /* print result*/
-    print_sts(stdout, X, &matches, &chunks, &dataset_size);
+    sts_similar(stdout, X, &matches, &chunks, &dataset_size);
     //print_sts_similar(stdout, X);
 
     /* Print different STS*/
     //print_sts_diff(stdout, X);
 
-    print_sts_differences(stdout, X, &matches, &chunks, &dataset_size);
+    sts_different(stdout, X, &matches, &chunks, &dataset_size);
 
     /**** Training ****/
 
@@ -305,6 +306,9 @@ int main(int argc, char *argv[]) {
     float max_losses[epochs];
     LogReg models[epochs];
 
+
+
+
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_set_size / batch_size; j++) {
             for (int i = 0; i < batch_size; i++) {
@@ -375,7 +379,7 @@ int main(int argc, char *argv[]) {
         if (e > 3) {
             int q = e;
             while (q >= e - 4) {
-                if(max_losses[q] < max_losses[q-1]){
+                if (max_losses[q] < max_losses[q - 1]) {
                     break;
                 }
                 q--;
