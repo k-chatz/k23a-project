@@ -155,7 +155,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
             result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector_1[i] - bow_vector_2[i]));
         }
-        y[i] =(findRoot(X, spec1) == findRoot(X, spec2));
+        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
 
     }
 }
@@ -194,16 +194,16 @@ Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int
     return sorted_matches;
 }
 
-float calc_max_loss(float *loss, float *y_pred, int *y, int offset) {
+float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     float max_loss = 0;
     /* Calculate max_loss */
     for (int i = 0; i < offset; i++) {
-        loss[i] = logloss(y_pred[i], y[i]);
+        losses[i] = logloss(y_pred[i], y[i]);
         if (i == 0) {
-            max_loss = loss[i];
+            max_loss = losses[i];
         } else {
-            if (max_loss < loss[i]) {
-                max_loss = loss[i];
+            if (max_loss < losses[i]) {
+                max_loss = losses[i];
             }
         }
     }
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
     int user_dataset_size = 0, q = 0;
-    float max_losses[epochs], *loss = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
+    float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y = NULL;
     LogReg *clf = NULL;
@@ -294,7 +294,6 @@ int main(int argc, char *argv[]) {
 
     ur_create(&ur_dataset, 0, dataset_size - 1);
 
-    /*  */
     json_train_keys = set_new(128);
     dict_config(json_train_keys,
                 DICT_CONF_CMP, (ht_cmp_func) strncmp,
@@ -322,12 +321,13 @@ int main(int argc, char *argv[]) {
 
     y = malloc(batch_size * sizeof(int));
 
-    loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
+    losses = malloc((test_set_size - train_set_size - 1) * sizeof(float));
 
     /* Create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_set_size - 1);
 
     bow_vector_1 = malloc(ml_get_bow_size(ml) * sizeof(float));
+
     bow_vector_2 = malloc(ml_get_bow_size(ml) * sizeof(float));
 
     /**** Epochs loop ****/
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &sorted_matches, result_vec, y);
 
-            for( int batch = 0; batch < batch_size; batch++) {
+            for (int batch = 0; batch < batch_size; batch++) {
                 train(clf, &result_vec[batch * ml_get_bow_size(ml)], &y[batch], batch_size);
             }
             // int batch = rand() % 4;
@@ -350,10 +350,10 @@ int main(int argc, char *argv[]) {
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-        /* Calculate the max loss value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(loss, y_pred,y,  test_set_size - train_set_size - 1);
+        /* Calculate the max losses value & save into max_losses array*/
+        max_losses[e] = calc_max_loss(losses, y_pred, y, test_set_size - train_set_size - 1);
 
-        /* Copy model & max loss*/
+        /* Copy model & max losses*/
         memcpy(&models[e], clf, sizeof(LogReg));
 
         /* Check if the last five max losses are ascending */
@@ -376,37 +376,37 @@ int main(int argc, char *argv[]) {
 
     /**** Predict ****/
 
-    //TODO: ypologismos score (px F1)
+    //TODO: calculate F1 score
 
-    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches,
-                result_vec_test, y);
+    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+                json_dict, &sorted_matches, result_vec_test, y);
 
+    /* Predict validation set */
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-    //TODO: ypologismos score
+    //TODO: calculate user dataset score
 
     /* Read user dataset */
     read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
 
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &user_matches,
-                result_vec_test, y);
+    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+                json_dict, &user_matches, result_vec_test, y);
 
+    /* Predict user dataset */
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-    // read user dataset file
-//////////////////////////////////////////////////////////////////////////////////////////////////
-    free(loss);
-
+    free(losses);
     free(bow_vector_1);
     free(bow_vector_2);
 
+    /* Destroy unique random objects */
     ur_destroy(&ur_mini_batch);
     ur_destroy(&ur_dataset);
 
-    /* Destroy STS dataset X*/
+    /* Destroy STS dataset X */
     sts_destroy(X);
 
-    /* Destroy json dict*/
+    /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
 
     return 0;
