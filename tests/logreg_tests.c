@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-//#include "../include/acutest.h"
+#include "../include/acutest.h"
 #include "../include/logreg.h"
 
 #ifndef ACUTEST_H

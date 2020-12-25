@@ -134,8 +134,6 @@ void ml_idf(ML ml, float *bow_vector) {
     }
 }
 
-
-
 /***Public functions***/
 
 bool ml_create(ML *ml, const char *sw_file, int load) {
