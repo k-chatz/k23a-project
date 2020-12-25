@@ -137,7 +137,7 @@ STS *init_sts_dataset_X(char *path) {
 
 void
 prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, UniqueRand ur, STS *X, ML ml,
-            dictp json_dict, Match *matches, float *result_vector, float *y) {
+            dictp json_dict, Match *matches, float *result_vector, int *y) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
@@ -155,7 +155,8 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
             result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector_1[i] - bow_vector_2[i]));
         }
-        y[i] = (float) (findRoot(X, spec1) == findRoot(X, spec2));
+        y[i] =(findRoot(X, spec1) == findRoot(X, spec2));
+
     }
 }
 
@@ -193,12 +194,29 @@ Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int
     return sorted_matches;
 }
 
+float calc_max_loss(float *loss, float *y_pred, int *y, int offset) {
+    float max_loss = 0;
+    /* Calculate max_loss */
+    for (int i = 0; i < offset; i++) {
+        loss[i] = logloss(y_pred[i], y[i]);
+        if (i == 0) {
+            max_loss = loss[i];
+        } else {
+            if (max_loss < loss[i]) {
+                max_loss = loss[i];
+            }
+        }
+    }
+    return max_loss;
+}
+
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
     int user_dataset_size = 0, q = 0;
-    float max_loss = 0, max_losses[epochs], *loss = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
-    float *bow_vector_1 = NULL, *bow_vector_2 = NULL, *y = NULL;
+    float max_losses[epochs], *loss = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
+    float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+    int *y = NULL;
     LogReg *clf = NULL;
     LogReg models[epochs];
     Options options = {NULL, NULL, NULL, NULL};
@@ -301,6 +319,7 @@ int main(int argc, char *argv[]) {
     result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
     clf = logreg_new(ml_get_bow_size(ml), 0.0001);
+
     y = malloc(batch_size * sizeof(int));
 
     loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
@@ -315,30 +334,24 @@ int main(int argc, char *argv[]) {
     for (int e = 0; e < epochs; e++) {
 
         for (int j = 0; j < train_set_size / batch_size; j++) {
-            prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict, &sorted_matches, result_vec, y);
-            train(clf, result_vec, y, batch_size);
+            prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
+                        &sorted_matches, result_vec, y);
+
+            for( int batch = 0; batch < batch_size; batch++) {
+                train(clf, &result_vec[batch * ml_get_bow_size(ml)], &y[batch], batch_size);
+            }
+            // int batch = rand() % 4;
+            // float maxDelta = train(reg, &Xs[2 * batch], &Ys[batch], batch_sz);
+            //train(clf, result_vec, y, batch_size);
         }
-        max_loss = -1;
 
         prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &sorted_matches, result_vec_test, y);
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-        /* Calculate max_loss */
-        for (int i = 0; i < test_set_size - train_set_size - 1; i++) {
-            loss[i] = logloss(y_pred[i], y[i]);
-            if (i == 0) {
-                max_loss = loss[i];
-            } else {
-                if (max_loss < loss[i]) {
-                    max_loss = loss[i];
-                }
-            }
-        }
-
-        /* Save current max_loss into max_losses array*/
-        max_losses[e] = max_loss;
+        /* Calculate the max loss value & save into max_losses array*/
+        max_losses[e] = calc_max_loss(loss, y_pred,y,  test_set_size - train_set_size - 1);
 
         /* Copy model & max loss*/
         memcpy(&models[e], clf, sizeof(LogReg));
@@ -359,7 +372,6 @@ int main(int argc, char *argv[]) {
         }
 
         ur_reset(ur_mini_batch);
-
     }
 
     /**** Predict ****/
