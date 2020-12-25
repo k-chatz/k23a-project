@@ -23,6 +23,15 @@ void string_cleanup(void) {
     remove(".test_stopwords");
 }
 
+
+// void f1_score_test(){
+//     float y[10] = {0, 1, 1, 0, 1, 1, 1, 1, 0 ,0};  
+//     float y_test[10] = {1, 1, 1, 0, 1, 0, 0, 1, 0 ,0};
+//     float score = ml_f1_score(y, y_test, 10);
+//     printf("f1_score = %f\n", score);
+
+// }
+
 #ifndef ACUTEST_H
 
 struct test_ {

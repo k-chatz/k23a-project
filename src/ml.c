@@ -275,6 +275,30 @@ int get_removed_words_num(ML ml) {
     return ml->removed_words_num;
 }
 
+float ml_f1_score(float *y, float* y_pred, int y_size){
+    float true_pos = 0.0, true_neg = 0.0, false_pos = 0.0, false_neg = 0.0;
+    float precision, recall; 
+    for (int i = 0; i < y_size; i++){
+        if (y[i] == 1 && y_pred[i]== 1){
+            true_pos++;
+        }
+        else if (y[i] == 0 && y_pred[i]== 0){
+            true_neg++;
+        }
+        else if (y[i] == 1 && y_pred[i]== 0){
+            false_neg++;
+        }
+        else if (y[i] == 0 && y_pred[i]== 1){ //else
+            false_pos++;
+        }
+    }
+
+    precision = true_pos / (true_pos + false_pos);
+    recall = true_pos / (true_pos + false_neg);
+
+    return 2 * precision * recall / (precision + recall);
+}
+
 void print_bow_dict(ML ml) {
     char *x = NULL;
     while ((x = (char *) dict_iterate(ml->bow_dict))) {

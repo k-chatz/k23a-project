@@ -26,6 +26,8 @@ void set_removed_words_num(ML ml, int c);
 
 int get_removed_words_num(ML ml);
 
+float ml_f1_score(float *y, float* y_pred, int y_size);
+
 void print_bow_dict(ML ml);
 
 void print_vector(ML ml, float *vector);
