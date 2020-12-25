@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 1
+#define epochs 40
 #define batch_size 100
 
 typedef struct options {
@@ -55,10 +55,11 @@ void free_json_ht_ent(JSON_ENTITY **val) {
 void read_labelled_dataset_csv(STS *dataset_X, char *sigmod_labelled_dataset, char *flag) {
     char left_spec_id[50], right_spec_id[50], label[50];
     FILE *fp = fopen(sigmod_labelled_dataset, "r");
-    //skip first row fseek
+    //skip first row
     uint merges = 0, diffs = 0;
     fseek(fp, 33, SEEK_SET);
     while (fscanf(fp, "%[^,],%[^,],%s\n", left_spec_id, right_spec_id, label) != EOF) {
+        //fprintf(stdout, "%s, %s\n", left_spec_id, right_spec_id);
         if (!strcmp(label, flag) && strcmp(left_spec_id, right_spec_id) != 0) {
             if (!strncmp(flag, "1", 1)) {
                 merges += sts_merge(dataset_X, left_spec_id, right_spec_id) >= 0;
@@ -76,11 +77,11 @@ void read_user_dataset_csv(char *user_dataset_file, Match *matches, int *counter
     assert(*counter == 0);
     FILE *fp = fopen(user_dataset_file, "r");
     char left_spec_id[50], right_spec_id[50];
-    //skip first row fseek
+    //skip first row
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*matches) = realloc(*matches, (*counter + 1) * sizeof(struct match));
-        fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
+        //fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
         (*matches)[*counter].spec1 = strdup(left_spec_id);
         (*matches)[*counter].spec2 = strdup(right_spec_id);
         (*matches)[*counter].relation = -1;
@@ -134,9 +135,9 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
-void prepare_set(int p_start, int p_end, bool random, UniqueRand ur, STS *X, ML ml, dictp json_dict, Match *matches, float *result_vector, int *y) {
-    float *bow_vector_1 = malloc(ml_get_bow_size(ml) * sizeof(float));
-    float *bow_vector_2 = malloc(ml_get_bow_size(ml) * sizeof(float));
+void
+prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, UniqueRand ur, STS *X, ML ml,
+            dictp json_dict, Match *matches, float *result_vector, float *y) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
@@ -154,23 +155,54 @@ void prepare_set(int p_start, int p_end, bool random, UniqueRand ur, STS *X, ML 
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
             result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector_1[i] - bow_vector_2[i]));
         }
-        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+        y[i] = (float) (findRoot(X, spec1) == findRoot(X, spec2));
     }
-    free(bow_vector_1);
-    free(bow_vector_2);
+}
+
+Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int test_set_size, int dataset_size,
+                    UniqueRand ur) {
+    int x = 0;
+    Match sorted_matches = malloc(dataset_size * sizeof(struct match));
+    /* Split the dataset to TRAIN, TEST & VALIDATION sets */
+    for (int i = 0; i < train_set_size; i++) {
+        x = ur_get(ur);
+        /* Collect randomly half of the dataset for the training */
+        matches[x].type = TRAIN;
+        if (!set_in(json_train_keys, matches[x].spec1)) {
+            set_put(json_train_keys, matches[x].spec1);
+        }
+        if (!set_in(json_train_keys, matches[x].spec2)) {
+            set_put(json_train_keys, matches[x].spec2);
+        }
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
+    }
+
+    /* Collect randomly the test set */
+    for (int i = train_set_size; i < test_set_size; i++) {
+        x = ur_get(ur);
+        matches[x].type = TEST;
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
+    }
+
+    /* Collect whats left to be the validation set */
+    for (int i = test_set_size; i < dataset_size; i++) {
+        x = ur_get(ur);
+        matches[x].type = VALIDATION;
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
+    }
+    return sorted_matches;
 }
 
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
-    int wc = 0, rand_pos1 = 0, rand_pos2 = 0, dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0, x = 0;
-    int user_dataset_size = 0, q = 0, *y = NULL;
+    int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
+    int user_dataset_size = 0, q = 0;
     float max_loss = 0, max_losses[epochs], *loss = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
+    float *bow_vector_1 = NULL, *bow_vector_2 = NULL, *y = NULL;
     LogReg *clf = NULL;
-    LogReg *clf_cp = NULL;
-    SpecEntry *spec1, *spec2;
     LogReg models[epochs];
     Options options = {NULL, NULL, NULL, NULL};
-    UniqueRand ur = NULL, ur_dataset = NULL, ur_mini_batch = NULL;
+    UniqueRand ur_dataset = NULL, ur_mini_batch = NULL;
     ulong i_state = 0;
     setp json_train_keys = NULL;
     STS *X = NULL;
@@ -254,35 +286,8 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
-    sorted_matches = malloc(dataset_size * sizeof(struct match));
-
-    /* Split the dataset to TRAIN, TEST & VALIDATION sets */
-    for (int i = 0; i < train_set_size; i++) {
-        x = ur_get(ur_dataset);
-        /* Collect randomly half of the dataset for the training */
-        matches[x].type = TRAIN;
-        if (!set_in(json_train_keys, matches[x].spec1)) {
-            set_put(json_train_keys, matches[x].spec1);
-        }
-        if (!set_in(json_train_keys, matches[x].spec2)) {
-            set_put(json_train_keys, matches[x].spec2);
-        }
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
-
-    /* Collect randomly the test set */
-    for (int i = train_set_size; i < test_set_size; i++) {
-        x = ur_get(ur_dataset);
-        matches[x].type = TEST;
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
-
-    /* Collect whats left to be the validation set */
-    for (int i = test_set_size; i < dataset_size; i++) {
-        x = ur_get(ur_dataset);
-        matches[x].type = VALIDATION;
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
+    /* Split and sort dataset into sorted matches array */
+    sorted_matches = split_dataset(matches, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
 
     i_state = 0;
     for (keyp k = set_iterate_r(json_train_keys, &i_state); k != NULL; k = set_iterate_r(json_train_keys, &i_state)) {
@@ -295,30 +300,28 @@ int main(int argc, char *argv[]) {
 
     result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
-    clf = logreg_new(ml_get_bow_size(ml), (float) 0.0001);
+    clf = logreg_new(ml_get_bow_size(ml), 0.0001);
     y = malloc(batch_size * sizeof(int));
 
-    JSON_ENTITY **json1 = NULL, **json2 = NULL;
-
-    float *bow_vector1 = malloc(ml_get_bow_size(ml) * sizeof(float));
-    float *bow_vector2 = malloc(ml_get_bow_size(ml) * sizeof(float));
-
-    clf_cp = malloc(sizeof(LogReg));
     loss = malloc((test_set_size - train_set_size - 1) * sizeof(float));
 
     /* Create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_set_size - 1);
 
+    bow_vector_1 = malloc(ml_get_bow_size(ml) * sizeof(float));
+    bow_vector_2 = malloc(ml_get_bow_size(ml) * sizeof(float));
+
     /**** Epochs loop ****/
     for (int e = 0; e < epochs; e++) {
 
         for (int j = 0; j < train_set_size / batch_size; j++) {
-            prepare_set(0, batch_size, true, ur_mini_batch, X, ml, json_dict, &sorted_matches, result_vec, y);
+            prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict, &sorted_matches, result_vec, y);
             train(clf, result_vec, y, batch_size);
         }
         max_loss = -1;
 
-        prepare_set(train_set_size, test_set_size, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y);
+        prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
+                    &sorted_matches, result_vec_test, y);
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
@@ -361,28 +364,29 @@ int main(int argc, char *argv[]) {
 
     /**** Predict ****/
 
-    //TODO: predict validation set,
-    // ypologismos score (px F1)
-    prepare_set(test_set_size, dataset_size, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y);
+    //TODO: ypologismos score (px F1)
+
+    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches,
+                result_vec_test, y);
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
-    //TODO: Predict to dataset tou user, ypologismos score
+    //TODO: ypologismos score
 
     /* Read user dataset */
     read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
 
-    prepare_set(0, user_dataset_size, false, NULL, X, ml, json_dict, &user_matches, result_vec_test, y);
+    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &user_matches,
+                result_vec_test, y);
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
     // read user dataset file
 //////////////////////////////////////////////////////////////////////////////////////////////////
     free(loss);
-    free(clf_cp);
 
-    free(bow_vector1);
-    free(bow_vector2);
+    free(bow_vector_1);
+    free(bow_vector_2);
 
     ur_destroy(&ur_mini_batch);
     ur_destroy(&ur_dataset);

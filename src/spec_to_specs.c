@@ -257,7 +257,7 @@ void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter
                         (*chunks)++;
                         *matches = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
                     }
-                    fprintf(file, "%s, %s\n", A->data, B->data);
+                    //fprintf(file, "%s, %s\n", A->data, B->data);
                     (*matches)[*counter].spec1 = A->data;
                     (*matches)[*counter].spec2 = B->data;
                     (*matches)[*counter].relation = 1;
@@ -287,7 +287,7 @@ void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *count
                                 (*chunks)++;
                                 (*matches) = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
                             }
-                            fprintf(file, "%s, %s\n", A_sim->data, B->data);
+                            //fprintf(file, "%s, %s\n", A_sim->data, B->data);
                             (*matches)[*counter].spec1 = A_sim->data;
                             (*matches)[*counter].spec2 = B->data;
                             (*matches)[*counter].relation = 0;
