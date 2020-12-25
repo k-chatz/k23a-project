@@ -52,8 +52,13 @@ include_directories(.)
 #        tests/ml_tests.c
 #        )
 
-#main
+#logreg tests
+#add_executable(k23a_project
+#        src/logreg.c
+#        tests/logreg_tests.c
+#        )
 
+#main
 add_executable(k23a_project
         src/main.c
         src/lists.c
