@@ -43,14 +43,14 @@ include_directories(.)
 #        )
 
 #ml tests
-#add_executable(k23a_project
-#        src/lists.c
-#        src/hash.c
-#        src/ml.c
-#        src/json_parser.c
-#        src/tokenizer.c
-#        tests/ml_tests.c
-#        )
+add_executable(k23a_project
+        src/lists.c
+        src/hash.c
+        src/ml.c
+        src/json_parser.c
+        src/tokenizer.c
+        tests/ml_tests.c
+        )
 
 #logreg tests
 #add_executable(k23a_project
@@ -59,16 +59,16 @@ include_directories(.)
 #        )
 
 #main
-add_executable(k23a_project
-        src/main.c
-        src/lists.c
-        src/hash.c
-        src/unique_rand.c
-        src/json_parser.c
-        src/spec_to_specs.c
-        src/ml.c
-        src/tokenizer.c
-        src/logreg.c
-        )
+#add_executable(k23a_project
+#        src/main.c
+#        src/lists.c
+#        src/hash.c
+#        src/unique_rand.c
+#        src/json_parser.c
+#        src/spec_to_specs.c
+#        src/ml.c
+#        src/tokenizer.c
+#        src/logreg.c
+#        )
 
 target_link_libraries(k23a_project m)

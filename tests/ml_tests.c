@@ -30,6 +30,41 @@ void f1_score_test() {
             TEST_CHECK(score == (float) 0.727272749);
 }
 
+void tokenize_json() {
+    ML ml = NULL;
+    char *json = "{\n"
+                 "    \"<page title>\": \"Olympus OM-D E-M5 Silver w/14-42 IIR Lens\",\n"
+                 "    \"image format\": \"M-43\",\n"
+                 "    \"image stabilization\": \"IBIS (In Body Stabilization)\",\n"
+                 "    \"lens mount\": \"Micro 4/3\",\n"
+                 "    \"memory type\": \"SDHC-SDXC\",\n"
+                 "    \"resolution\": \"16.1 mp\",\n"
+                 "    \"sensor details\": \"CMOS\",\n"
+                 "    \"video recording format\": \"Full HD\",\n"
+                 "    \"viewfinder type\": \"EVF - Electronic OLED\"\n"
+                 "}";
+    ml_create(&ml, "/home/msi/CLionProjects/k23a-project/resources/unwanted-words.txt", 1);
+    JSON_ENTITY *jsonEntity = json_parse_string(json);
+    dictp dict = ml_tokenize_json(ml, jsonEntity);
+    char *entry = NULL;
+    ulong start = 0;
+    DICT_FOREACH_ENTRY(entry, dict, &start, dict->htab->buf_load) {
+                TEST_CHECK(
+                strcmp(entry, "micro") == 0 ||
+                strcmp(entry, "sdhc") == 0 ||
+                strcmp(entry, "body") == 0 ||
+                strcmp(entry, "sdxc") == 0 ||
+                strcmp(entry, "full") == 0 ||
+                strcmp(entry, "oled") == 0 ||
+                strcmp(entry, "silver") == 0 ||
+                strcmp(entry, "ibis") == 0 ||
+                strcmp(entry, "olympus") == 0 ||
+                strcmp(entry, "cmos") == 0 ||
+                strcmp(entry, "lens") == 0
+        );
+    }
+}
+
 #ifndef ACUTEST_H
 
 struct test_ {
@@ -44,6 +79,7 @@ struct test_ {
 TEST_LIST = {
         {"string_cleanup", string_cleanup},
         {"f1_score_test",  f1_score_test},
+        {"tokenize_json",  tokenize_json},
         {NULL, NULL}
 };
 

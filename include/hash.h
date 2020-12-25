@@ -17,8 +17,8 @@
 #define HT_FOREACH_ENTRY(ENTRY, HT, START, END) \
    for (unsigned int i = 0; (ENTRY = htab_iterate_r(HT, START)) && i < END ; i++)
 
-#define DICT_FOREACH_ENTRY(ENTRY, HT, START, END) \
-   for (unsigned int i = 0; (ENTRY = dict_iterate_r(HT, START)) && i < END ; i++)
+#define DICT_FOREACH_ENTRY(ENTRY, DICT, START, END) \
+   for (unsigned int i = 0; (ENTRY = dict_iterate_r(DICT, START)) && i < END ; i++)
 
 /*!
 @defgroup htab htab_t
