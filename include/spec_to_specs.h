@@ -27,7 +27,7 @@ typedef LISTOF(SpecEntry *) SpecList;
  */
 typedef struct {
     /*! @brief Index of specs */
-    dictp ht;
+    dictp dict;
 } STS;
 
 enum match_type {

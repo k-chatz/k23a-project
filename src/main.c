@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 40
+#define epochs 1
 #define batch_size 100
 
 typedef struct options {
@@ -80,10 +80,11 @@ void read_user_dataset_csv(char *user_dataset_file, Match *matches, int *counter
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*matches) = realloc(*matches, (*counter + 1) * sizeof(struct match));
-        // fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
-        (*matches)[*counter].spec1 = left_spec_id;
-        (*matches)[*counter].spec2 = right_spec_id;
+        fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
+        (*matches)[*counter].spec1 = strdup(left_spec_id);
+        (*matches)[*counter].spec2 = strdup(right_spec_id);
         (*matches)[*counter].relation = -1;
+        (*matches)[*counter].type = NAT;
         (*counter)++;
     }
     fclose(fp);
@@ -133,22 +134,22 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
-void set_prepare(int p_start, int p_end, STS *X, ML ml, dictp json_dict, Match matches, float *result_vector, int *y) {
+void set_prepare(int p_start, int p_end, STS *X, ML ml, dictp json_dict, Match *matches, float *result_vector, int *y) {
     float *bow_vector1 = malloc(ml_get_bow_size(ml) * sizeof(float));
     float *bow_vector2 = malloc(ml_get_bow_size(ml) * sizeof(float));
     int wc = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
     for (int i = p_start; i < p_end; i++) {
-        json1 = (JSON_ENTITY **) dict_get(json_dict, matches[i].spec1);
+        json1 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[i].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
         ml_tfidf(ml, bow_vector1, wc);
-        spec1 = sts_get(X, matches[i].spec1);
+        spec1 = sts_get(X, (*matches)[i].spec1);
 
-        json2 = (JSON_ENTITY **) dict_get(json_dict, matches[i].spec2);
+        json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)->spec2);
         ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
         ml_tfidf(ml, bow_vector2, wc);
-        spec2 = sts_get(X, matches[i].spec2);
+        spec2 = sts_get(X, (*matches)[i].spec2);
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
             result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
         }
@@ -171,8 +172,7 @@ int main(int argc, char *argv[]) {
     dictp json_dict = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-    Match matches = NULL, user_matches = NULL;
-    Match *sorted_matches = NULL;
+    Match matches = NULL, user_matches = NULL, sorted_matches = NULL;
 
     /* Parse arguments*/
     read_options(argc, argv, &options);
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     X = init_sts_dataset_X(options.dataset_dir);
 
     /* Create json hashtable*/
-    json_dict = dict_new3(128, sizeof(JSON_ENTITY *), X->ht->htab->buf_cap);
+    json_dict = dict_new3(128, sizeof(JSON_ENTITY *), X->dict->htab->buf_cap);
     dict_config(json_dict,
                 DICT_CONF_HASH_FUNC, djb2_str,
                 DICT_CONF_KEY_CPY, strncpy,
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     i_state = 0;
 
     /* Create json hash table using dataset X */
-    DICT_FOREACH_ENTRY(entry, X->ht, &i_state, X->ht->htab->buf_load) {
+    DICT_FOREACH_ENTRY(entry, X->dict, &i_state, X->dict->htab->buf_load) {
 
         /* Constructing the key for this JSON_ENTITY entry*/
         sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
-    sorted_matches = malloc(dataset_size * sizeof(Match));
+    sorted_matches = malloc(dataset_size * sizeof(struct match));
 
     /* Split the dataset to TRAIN, TEST & VALIDATION sets */
     for (int i = 0; i < train_set_size; i++) {
@@ -263,30 +263,32 @@ int main(int argc, char *argv[]) {
         if (!set_in(json_train_keys, matches[x].spec2)) {
             set_put(json_train_keys, matches[x].spec2);
         }
-
-        sorted_matches[i] = &matches[x];
+        // sorted_matches[i] = &matches[x];
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
     }
 
     /* Collect randomly the test set */
     for (int i = train_set_size; i < test_set_size; i++) {
         x = ur_get(ur_dataset);
         matches[x].type = TEST;
-        sorted_matches[i] = &matches[x];
+        // sorted_matches[i] = &matches[x];
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
     }
 
     /* Collect whats left to be the validation set */
     for (int i = test_set_size; i < dataset_size; i++) {
         x = ur_get(ur_dataset);
         matches[x].type = VALIDATION;
-        sorted_matches[i] = &matches[x];
+        //sorted_matches[i] = &matches[x];
+        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
     }
 
     for (int i = train_set_size; i < test_set_size; i++) {
-        if (sorted_matches[i]->type == TRAIN)
+        if (sorted_matches[i].type == TRAIN)
             printf("i: %d, type: TRAIN\n", i);
-        else if (sorted_matches[i]->type == TEST) {
+        else if (sorted_matches[i].type == TEST) {
             printf("i: %d, type: TEST\n", i);
-        } else if (sorted_matches[i]->type == VALIDATION) {
+        } else if (sorted_matches[i].type == VALIDATION) {
             printf("i: %d, type: VALIDATION\n", i);
         } else {
             printf("i: %d, NAT!\n", i);
@@ -331,20 +333,19 @@ int main(int argc, char *argv[]) {
     float max_losses[epochs];
     LogReg models[epochs];
 
-
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_set_size / batch_size; j++) {
             for (int i = 0; i < batch_size; i++) {
                 x = ur_get(ur_mini_batch);
-                json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[x]->spec1);
+                json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[x].spec1);
                 ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
                 ml_tfidf(ml, bow_vector1, wc);
-                spec1 = sts_get(X, sorted_matches[x]->spec1);
+                spec1 = sts_get(X, sorted_matches[x].spec1);
 
-                json2 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[x]->spec2);
+                json2 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[x].spec2);
                 ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
                 ml_tfidf(ml, bow_vector2, wc);
-                spec2 = sts_get(X, sorted_matches[x]->spec2);
+                spec2 = sts_get(X, sorted_matches[x].spec2);
                 for (int c = 0; c < ml_get_bow_size(ml); c++) {
                     result_vec[i * ml_get_bow_size(ml) + c] = abs((int) (bow_vector1[i] - bow_vector2[i]));
                 }
@@ -363,23 +364,7 @@ int main(int argc, char *argv[]) {
 
         float max_loss = -1;
 
-        for (int i = train_set_size; i < test_set_size; i++) {
-            json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec1);
-            ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
-            ml_tfidf(ml, bow_vector1, wc);
-            spec1 = sts_get(X, sorted_matches[i]->spec1);
-
-            json2 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec2);
-            ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
-            ml_tfidf(ml, bow_vector2, wc);
-            spec2 = sts_get(X, sorted_matches[i]->spec2);
-
-            for (int c = 0; c < ml_get_bow_size(ml); c++) {
-                result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
-                        (int) (bow_vector1[i] - bow_vector2[i]));
-            }
-            y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-        }
+        set_prepare(train_set_size, test_set_size, X, ml, json_dict, &sorted_matches, result_vec_test, y);
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
@@ -421,24 +406,7 @@ int main(int argc, char *argv[]) {
 
     //TODO: predict validation set,
     // ypologismos score (px F1)
-
-    for (int i = test_set_size; i < dataset_size; i++) {
-        json1 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector1, &wc);
-        ml_tfidf(ml, bow_vector1, wc);
-        spec1 = sts_get(X, sorted_matches[i]->spec1);
-
-        json2 = (JSON_ENTITY **) dict_get(json_dict, sorted_matches[i]->spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector2, &wc);
-        ml_tfidf(ml, bow_vector2, wc);
-        spec2 = sts_get(X, sorted_matches[i]->spec2);
-
-        for (int c = 0; c < ml_get_bow_size(ml); c++) {
-            result_vec_test[(i - train_set_size) * ml_get_bow_size(ml) + c] = abs(
-                    (int) (bow_vector1[i] - bow_vector2[i]));
-        }
-        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-    }
+    set_prepare(test_set_size, dataset_size, X, ml, json_dict, &sorted_matches, result_vec_test, y);
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
@@ -447,7 +415,7 @@ int main(int argc, char *argv[]) {
     /* Read user dataset */
     read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
 
-    set_prepare(0, user_dataset_size, X, ml, json_dict, user_matches, result_vec_test, y);
+    set_prepare(0, user_dataset_size, X, ml, json_dict, &user_matches, result_vec_test, y);
 
     y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 

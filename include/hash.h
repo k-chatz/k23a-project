@@ -87,7 +87,7 @@ static inline size_t htab_entry_size2(size_t key_sz, size_t val_sz) {
 
 /*!
 @relates htab_t
-@brief calculates the entry size for ht
+@brief calculates the entry size for dict
 */
 static inline size_t htab_entry_size(htab_t *ht) {
     return htab_entry_size2(ht->key_sz, ht->val_sz);
@@ -103,7 +103,7 @@ static inline size_t htab_size(ulong buf_cap, size_t key_sz, size_t val_sz) {
 @relates htab_t
 @brief initializes an allocated hashtable
 @param[in] ht : the hash table
-@param[in] ht_hash_func : the hashing function used for ht
+@param[in] ht_hash_func : the hashing function used for dict
 @param[in] key_sz : size of keys
 @param[in] val_sz : size of vals
 */
@@ -217,7 +217,7 @@ bool htab_rehash_deep(hashp old, hashp new, valp (*copy_val)(valp val));
 @brief Iterates through the hashtable returning the next occupied element with
 each call.
 
-@params[in] ht : the hash table
+@params[in] dict : the hash table
 @params[in] state : the state of the iterator
 @returns the next key in the hash table
  */
