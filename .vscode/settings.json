@@ -11,5 +11,6 @@
         "string_view": "c",
         "*.tcc": "c",
         "streambuf": "c"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

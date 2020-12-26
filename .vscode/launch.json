@@ -10,7 +10,6 @@
             "type": "cppdbg",
             "request": "launch",
             "preLaunchTask": "Build Make",
-            // "program": "${workspaceFolder}/project", //path to your programs exe and exe name
             "program": "${workspaceFolder}/project",
             "args": [
                 "-dir",
@@ -32,6 +31,31 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+
+        {
+            "name": "Test",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/tests-bin/logreg_tests",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
+
+
+
+
+
     ]
 }

@@ -32,7 +32,9 @@
         {
             "label": "Build Test",
             "type": "shell",
-            "command": "gcc tests/hash_tests.c src/json_parser.c src/lists.c src/hash.c -o general_tests"
+            "command": "gcc tests/logreg_tests.c src/logreg.c -o logreg_tests"
         }
     ]
 }
+
+        

@@ -82,7 +82,7 @@ struct test_ {
 TEST_LIST = {
         {"string_cleanup", string_cleanup},
         {"f1_score_test",  f1_score_test},
-        {"tokenize_json",  tokenize_json},
+        // {"tokenize_json",  tokenize_json},
         {NULL, NULL}
 };
 
