@@ -87,12 +87,10 @@ bool ml_rm_stop_words(ML ml, char *input) {
     if (ml->stop_words == NULL) {
         return false;
     }
-    char *token_val;
     char *temp = strdup(input), *token, *rest = NULL;
     input[0] = '\0';
     for (token = strtok_r(temp, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        token_val = dict_get(ml->stop_words, token);
-        if (token_val == NULL) {
+        if (dict_get(ml->stop_words, token) == NULL) {
             strcat(input, token);
             strcat(input, " ");
         }
