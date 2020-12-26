@@ -46,7 +46,7 @@ void tokenize_json() {
                  "    \"video recording format\": \"Full HD\",\n"
                  "    \"viewfinder type\": \"EVF - Electronic OLED\"\n"
                  "}";
-    ml_create(&ml, "/home/msi/CLionProjects/k23a-project/resources/unwanted-words.txt", 1);
+    ml_create(&ml, "../resources/unwanted-words.txt", 1);
     JSON_ENTITY *jsonEntity = json_parse_string(json);
     dictp dict = ml_tokenize_json(ml, jsonEntity);
     char *entry = NULL;
