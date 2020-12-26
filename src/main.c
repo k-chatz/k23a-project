@@ -153,12 +153,12 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         ml_tfidf(ml, bow_vector_2, wc);
         spec2 = sts_get(X, (*matches)[x].spec2);
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
-            result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs( (bow_vector_1[c] - bow_vector_2[c]));
-            // printf("%f ", result_vector[(i - p_start) * ml_get_bow_size(ml) + c]);
+            result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = fabs( (bow_vector_1[c] - bow_vector_2[c]));
+            printf("%f ", result_vector[(i - p_start) * ml_get_bow_size(ml) + c]);
             // printf("%f ", bow_vector_1[c]);
         }
         y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-        // printf("\n\n\n\n");
+        printf("\n\n\n\n");
     }
 }
 
