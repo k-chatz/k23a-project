@@ -3,7 +3,9 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
 
 #ifndef ACUTEST_H
 #include <assert.h>

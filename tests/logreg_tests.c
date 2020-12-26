@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
+
 #include "../include/logreg.h"
 
 #ifndef ACUTEST_H

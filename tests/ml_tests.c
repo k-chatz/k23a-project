@@ -1,4 +1,7 @@
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
+
 #include "../include/ml.h"
 
 #ifndef ACUTEST_H

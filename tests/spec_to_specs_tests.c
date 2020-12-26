@@ -1,6 +1,8 @@
-#include "../include/spec_to_specs.h"
-
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
+
+#include "../include/spec_to_specs.h"
 
 #ifndef ACUTEST_H
 

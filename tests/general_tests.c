@@ -1,4 +1,8 @@
+#include <stdio.h>
+
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
 
 #ifndef ACUTEST_H
 

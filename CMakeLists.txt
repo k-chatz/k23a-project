@@ -7,43 +7,56 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
+#general_test
+add_executable(k23a_project_general_tests
+        tests/general_tests.c
+        )
+
 #json_parser_tests
-#add_executable(k23a_project
-#        tests/json_parser_tests.c
-#        src/json_parser.c
-#        src/lists.c
-#        src/hash.c
-#        src/spec_ids.c
-#        src/spec_to_specs.c
-#        include/lists.h
-#        include/hash.h
-#        include/json_parser.h
-#        )
+add_executable(k23a_project_json_parser_tests
+        tests/json_parser_tests.c
+        src/json_parser.c
+        src/lists.c
+        src/hash.c
+        src/spec_to_specs.c
+        include/lists.h
+        include/hash.h
+        include/json_parser.h
+        )
 
 #lists_tests
-#add_executable(k23a_project
-#        tests/lists_tests.c
-#        src/lists.c
-#        )
+add_executable(k23a_project_lists_tests
+        tests/lists_tests.c
+        src/lists.c
+        )
 
 #hash tests
-#add_executable(k23a_project
-#        tests/hash_tests.c
-#        src/lists.c
-#        src/json_parser.c
-#        src/hash.c
-#        )
+add_executable(k23a_project_hash_tests
+        tests/hash_tests.c
+        src/lists.c
+        src/tokenizer.c
+        src/json_parser.c
+        src/hash.c
+        )
 
-#spec_to_specs_tests
-#add_executable(k23a_project
-#        tests/spec_to_specs_tests.c
-#        src/spec_to_specs.c
-#        src/lists.c
-#        src/hash.c
-#        )
+#hset tests
+add_executable(k23a_project_hset_tests
+        tests/hset_tests.c
+        src/hash.c
+        src/hset.c
+        src/lists.c
+        )
+
+#spec to specs tests
+add_executable(k23a_project_spec_to_specs_tests
+        tests/spec_to_specs_tests.c
+        src/spec_to_specs.c
+        src/lists.c
+        src/hash.c
+        )
 
 #ml tests
-add_executable(k23a_project
+add_executable(k23a_project_ml_tests
         src/lists.c
         src/hash.c
         src/ml.c
@@ -53,22 +66,40 @@ add_executable(k23a_project
         )
 
 #logreg tests
-#add_executable(k23a_project
-#        src/logreg.c
-#        tests/logreg_tests.c
-#        )
+add_executable(k23a_project_logreg_tests
+        src/logreg.c
+        tests/logreg_tests.c
+        )
+
+#tokenizer tests
+add_executable(k23a_project_tokenizer_tests
+        tests/tokenizer_tests.c
+        src/json_parser.c
+        src/hash.c
+        src/lists.c
+        src/tokenizer.c
+        )
 
 #main
-#add_executable(k23a_project
-#        src/main.c
-#        src/lists.c
-#        src/hash.c
-#        src/unique_rand.c
-#        src/json_parser.c
-#        src/spec_to_specs.c
-#        src/ml.c
-#        src/tokenizer.c
-#        src/logreg.c
-#        )
+add_executable(k23a_project
+        src/main.c
+        src/lists.c
+        src/hash.c
+        src/unique_rand.c
+        src/json_parser.c
+        src/spec_to_specs.c
+        src/ml.c
+        src/tokenizer.c
+        src/logreg.c
+        )
 
+target_link_libraries(k23a_project_general_tests m)
+target_link_libraries(k23a_project_json_parser_tests m)
+target_link_libraries(k23a_project_lists_tests m)
+target_link_libraries(k23a_project_hash_tests m)
+target_link_libraries(k23a_project_hset_tests m)
+target_link_libraries(k23a_project_spec_to_specs_tests m)
+target_link_libraries(k23a_project_ml_tests m)
+target_link_libraries(k23a_project_logreg_tests m)
+target_link_libraries(k23a_project_tokenizer_tests m)
 target_link_libraries(k23a_project m)

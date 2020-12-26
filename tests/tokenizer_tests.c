@@ -1,6 +1,17 @@
+#ifdef MAKEFILE
 #include "../include/acutest.h"
-#include "../include/tokenizer.h"
+#endif
+
 #include <stdbool.h>
+//#include "../include/acutest.h"
+#include "../include/tokenizer.h"
+
+#ifndef ACUTEST_H
+
+#include <assert.h>
+
+#define TEST_CHECK assert
+#endif
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
@@ -111,7 +122,7 @@ void tokenize_number(void) {
                             sprintf(buf2, buf1, digits[d1].str, digits[d2].str,
                                     digits[d3].str);
                             bool success = tokenize_word(buf2);
-                            TEST_CHECK(success == expected_success);
+                                    TEST_CHECK(success == expected_success);
                         }
                     }
                 }
@@ -126,7 +137,7 @@ void tokenize_string(void) {
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
         sprintf(buf, "\"%s\"", str_contents[i]);
-        TEST_CHECK(tokenize_word(buf));
+                TEST_CHECK(tokenize_word(buf));
     }
 }
 
@@ -140,13 +151,13 @@ void tokenize_big_string(void) {
             "definitions- opens in a new window or tab\n... Read moreabout the "
             "condition\"";
 
-    TEST_CHECK(tokenize_word(bigstr));
+            TEST_CHECK(tokenize_word(bigstr));
 }
 
 void tokenize_whitespace(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
     tokenizer_t *tok = json_tokenizer_from_string("  \t\n \n  ");
-    TEST_CHECK(tokenizer_next(tok) == NULL && tok->feof);
+            TEST_CHECK(tokenizer_next(tok) == NULL && tok->feof);
     tokenizer_free(tok);
 }
 
@@ -156,14 +167,25 @@ void tokenize_multiword(void) {
     tokenizer_t *tokenizer = json_tokenizer_from_string(in_str);
     for (int i = 0; i < ARR_LEN(in_toks); i++) {
         char *out_tok = tokenizer_next(tokenizer);
-        TEST_CHECK(strcmp(in_toks[i], out_tok) == 0);
+                TEST_CHECK(strcmp(in_toks[i], out_tok) == 0);
     }
 
     /* check if we consumed all the input */
-    TEST_CHECK(tokenizer_next(tokenizer) == NULL);
-    TEST_CHECK(tokenizer->feof);
+            TEST_CHECK(tokenizer_next(tokenizer) == NULL);
+            TEST_CHECK(tokenizer->feof);
     tokenizer_free(tokenizer);
 }
+
+#ifndef ACUTEST_H
+
+struct test_ {
+    const char *name;
+
+    void (*func)(void);
+};
+
+#define TEST_LIST const struct test_ test_list_[]
+#endif
 
 TEST_LIST = {{"tokenize_true",       tokenize_true},
              {"tokenize_false",      tokenize_false},
@@ -180,3 +202,15 @@ TEST_LIST = {{"tokenize_true",       tokenize_true},
              {"tokenize_whitespace", tokenize_whitespace},
              {"tokenize_multiword",  tokenize_multiword},
              {NULL, NULL}};
+
+#ifndef ACUTEST_H
+
+int main(int argc, char *argv[]) {
+    int i;
+    for (i = 0; test_list_[i].name != NULL; i++) {
+        test_list_[i].func();
+    }
+    return 0;
+}
+
+#endif
