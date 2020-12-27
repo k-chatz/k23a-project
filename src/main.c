@@ -12,8 +12,9 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 30
+#define epochs 500
 #define batch_size 100
+#define learning_rate 0.0001
 
 typedef struct options {
     char *dataset_dir;
@@ -316,7 +317,7 @@ int main(int argc, char *argv[]) {
 
     result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
-    clf = logreg_new(ml_get_bow_size(ml), 0.0001);
+    clf = logreg_new(ml_get_bow_size(ml), learning_rate);
 
     y = malloc(batch_size * sizeof(int));
 
@@ -350,10 +351,10 @@ int main(int argc, char *argv[]) {
         prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &sorted_matches, result_vec_test, y);
 
-        y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
+        y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size));
 
         /* Calculate the max losses value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(losses, y_pred, y, test_set_size - train_set_size - 1);
+        max_losses[e] = calc_max_loss(losses, y_pred, y, test_set_size - train_set_size);
 
         /* Copy model & max losses*/
         memcpy(&models[e], clf, sizeof(LogReg));
@@ -384,7 +385,7 @@ int main(int argc, char *argv[]) {
                 json_dict, &sorted_matches, result_vec_test, y);
 
     /* Predict validation set */
-    y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size - 1));
+    y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size));
     for (int i = test_set_size; i < dataset_size; i++){
         printf("spec1: %s, spec2: %s, y: %d, y_pred: %f\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation, y_pred[i-test_set_size]);
     }
@@ -401,7 +402,7 @@ int main(int argc, char *argv[]) {
     //             json_dict, &user_matches, result_vec_test, y);
 
     /* Predict user dataset */
-    // y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
+    // y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size));
 
     free(losses);
     free(bow_vector_1);
