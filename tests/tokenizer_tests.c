@@ -163,9 +163,14 @@ void tokenize_whitespace(void) {
 
 void tokenize_sentence(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
-    tokenizer_t *tok = tokenizer_from_string("    this is a string, is    true is a   string is   able to trueueueue "); // [a-zA-z]+
-    char *token = tokenizer_next(tok);
-            //TEST_CHECK(token == NULL && tok->feof);
+    tokenizer_t *tok = tokenizer_from_string(
+            "    this is a string, is    true is a   string is   able to trueueueue "); // [a-zA-z]+
+    char *token = NULL;
+
+    while ((token = tokenizer_next(tok)) != NULL) {
+        printf("[%s]", token);
+    }
+    //TEST_CHECK(token == NULL && tok->feof);
     tokenizer_free(tok);
 }
 

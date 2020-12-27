@@ -39,7 +39,6 @@ static inline void buf_set_char(tokenizer_t *tok, int i, char c) {
         tok->buf_sz *= 2;
         tok->buf = realloc(tok->buf, tok->buf_sz * sizeof(char));
     }
-
     tok->buf[i] = c;
 }
 
@@ -53,57 +52,15 @@ static inline char buf_get_char(tokenizer_t *tok, int i) {
             tok->feof = true;
             return '\0';
         }
-
         buf_set_char(tok, i, (c > 0 ? c : 0));
         buf_set_char(tok, i + 1, '\0');
     }
-
     return tok->buf[i];
 }
 
 /* ________________________ */
 /* Specific tokenizer rules */
 /* ________________________ */
-
-static inline bool is_stopword(tokenizer_t *tokenizer) {
-    char *stopwords[148] = {
-            "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and",
-            "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could",
-            "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got",
-            "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in",
-            "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might",
-            "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only",
-            "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since",
-            "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they",
-            "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when",
-            "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you",
-            "your", "mm", "f", "x", "a", "b", "c", "d", "e", "g", "h", "i", "j", "k", "l", "m", "n", "o",
-            "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "type", "mp"
-    };
-
-    bool flag = true;
-    for (int j = 0; j < sizeof(stopwords); ++j) {
-        flag = true;
-        char *tok = stopwords[j];
-        for (int i = 0; i < sizeof(tok) / sizeof(char) - 1; i++) {
-            char ch = buf_get_char(tokenizer, i);
-            if (ch != tok[i]) {
-                flag = false;
-                break;
-            } else {
-                if ((int) ch == 32) {
-                    flag = true;
-                    break;
-                }
-                printf("1");
-            }
-        }
-        if (flag == true) {
-            break;
-        }
-    }
-    return flag;
-}
 
 #define MATCH_TOKEN(FNAME, TOK)                                                \
     static inline bool FNAME(tokenizer_t *tokenizer) {                         \
@@ -220,6 +177,44 @@ static bool is_string(tokenizer_t *tokenizer) {
     return false;
 }
 
+static inline bool is_stopword(tokenizer_t *tokenizer) {
+    char *stopwords[148] = {
+            "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and",
+            "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could",
+            "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got",
+            "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in",
+            "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might",
+            "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only",
+            "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since",
+            "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they",
+            "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when",
+            "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you",
+            "your", "mm", "f", "x", "a", "b", "c", "d", "e", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+            "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "type", "mp"
+    };
+    bool stopword = true;
+    for (int j = 0; j < 148; ++j) {
+        stopword = true;
+        char *tok = stopwords[j];
+        for (int i = 0; i < sizeof(tok) / sizeof(char) - 1; i++) {
+            char ch = buf_get_char(tokenizer, i);
+            if (ch != tok[i] && ch != 32) {
+                stopword = false;
+                break;
+            } else {
+                stopword = true;
+                if (tok[i] == '\0' && ch == 32) {
+                    break;
+                }
+            }
+        }
+        if (stopword == true) {
+            break;
+        }
+    }
+    return stopword;
+}
+
 #define RETURN_IF_TRUE(f)                                                      \
     if (f(tok))                                                                \
     return tok->buf
@@ -231,7 +226,7 @@ char *json_next_token(tokenizer_t *tok) {
     while (isspace(buf_get_char(tok, 0))) {
         tok->buf[0] = '\0';
     }
-    tok->buf[1] = '\0'; //    aaew//qwdq
+    tok->buf[1] = '\0';
     RETURN_IF_TRUE(is_true);
     RETURN_IF_TRUE(is_false);
     RETURN_IF_TRUE(is_null);
@@ -250,14 +245,19 @@ char *str_next_token(tokenizer_t *tok) {
     tok->buf[0] = '\0'; /* reset the token */
     /* eat whitespace first */
     char ch;
-    while (isspace((ch = buf_get_char(tok, 0))))
+
+
+    while (isspace((ch = buf_get_char(tok, 0)))){
         tok->buf[0] = '\0';
+    }
     tok->buf[1] = '\0';
 
-    if (is_stopword(tok)) {
-        return tok->buf;
+    while (is_stopword(tok))
+        tok->buf[0] = '\0';
+    //tok->buf[1] = '\0';
 
-    }                                                             \
+    return tok->buf;
+
     //RETURN_IF_TRUE(is_number);
     return NULL; /* no valid token found */
 }
