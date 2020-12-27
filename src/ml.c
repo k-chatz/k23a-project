@@ -178,7 +178,7 @@ dictp ml_bag_of_words(ML ml, char *input) {
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         if (!set_in(ml->json_set, token)) {
             size_t token_len = strlen(token);
-            if (token_len <= 3 || token_len > 7) {
+            if (token_len <= 3 || token_len > 9) {
                 continue;
             }
             set_put(ml->json_set, token);

@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 40
+#define epochs 30
 #define batch_size 100
 
 typedef struct options {
@@ -153,10 +153,9 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         ml_tfidf(ml, bow_vector_2, wc);
         spec2 = sts_get(X, (*matches)[x].spec2);
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
-            result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = abs((int) (bow_vector_1[i] - bow_vector_2[i]));
+            result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
         y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
-
     }
 }
 
@@ -337,9 +336,12 @@ int main(int argc, char *argv[]) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &sorted_matches, result_vec, y);
 
-            for (int batch = 0; batch < batch_size; batch++) {
-                train(clf, &result_vec[batch * ml_get_bow_size(ml)], &y[batch], batch_size);
-            }
+            
+            train(clf, result_vec, y, batch_size);
+            
+            // for (int batch = 0; batch < batch_size; batch++) {
+            //     train(clf, &result_vec[batch * ml_get_bow_size(ml)], &y[batch], batch_size);
+            // }
             // int batch = rand() % 4;
             // float maxDelta = train(reg, &Xs[2 * batch], &Ys[batch], batch_sz);
             //train(clf, result_vec, y, batch_size);
@@ -382,18 +384,24 @@ int main(int argc, char *argv[]) {
                 json_dict, &sorted_matches, result_vec_test, y);
 
     /* Predict validation set */
-    y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
+    y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size - 1));
+    for (int i = test_set_size; i < dataset_size; i++){
+        printf("spec1: %s, spec2: %s, y: %d, y_pred: %f\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation, y_pred[i-test_set_size]);
+    }
 
     //TODO: calculate user dataset score
 
     /* Read user dataset */
-    read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
+    // read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
 
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                json_dict, &user_matches, result_vec_test, y);
+
+
+
+    // prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+    //             json_dict, &user_matches, result_vec_test, y);
 
     /* Predict user dataset */
-    y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
+    // y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size - 1));
 
     free(losses);
     free(bow_vector_1);
