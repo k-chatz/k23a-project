@@ -15,6 +15,7 @@ add_executable(k23a_project_general_tests
 #json_parser_tests
 add_executable(k23a_project_json_parser_tests
         tests/json_parser_tests.c
+        src/tokenizer.c
         src/json_parser.c
         src/lists.c
         src/hash.c

@@ -1,17 +1,7 @@
-#ifdef MAKEFILE
-#include "../include/acutest.h"
-#endif
-
 #include <stdbool.h>
-//#include "../include/acutest.h"
+
+#include "../include/acutest.h"
 #include "../include/tokenizer.h"
-
-#ifndef ACUTEST_H
-
-#include <assert.h>
-
-#define TEST_CHECK assert
-#endif
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
@@ -165,11 +155,11 @@ void tokenize_sentence(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
     tokenizer_t *tok = tokenizer_from_string(
             "    this is a string, is    true is a   string is   able to trueueueue "); // [a-zA-z]+
-    char *token = NULL;
+    //char *token = NULL;
 
-    while ((token = tokenizer_next(tok)) != NULL) {
-        printf("[%s]", token);
-    }
+//    while ((token = tokenizer_next(tok)) != NULL) {
+//        printf("[%s]", token);
+//    }
     //TEST_CHECK(token == NULL && tok->feof);
     tokenizer_free(tok);
 }
@@ -188,17 +178,6 @@ void tokenize_multiword(void) {
             TEST_CHECK(tokenizer->feof);
     tokenizer_free(tokenizer);
 }
-
-#ifndef ACUTEST_H
-
-struct test_ {
-    const char *name;
-
-    void (*func)(void);
-};
-
-#define TEST_LIST const struct test_ test_list_[]
-#endif
 
 TEST_LIST = {
         {"tokenize_true",       tokenize_true},
@@ -219,14 +198,3 @@ TEST_LIST = {
         {NULL, NULL}
 };
 
-#ifndef ACUTEST_H
-
-int main(int argc, char *argv[]) {
-    int i;
-    for (i = 0; test_list_[i].name != NULL; i++) {
-        test_list_[i].func();
-    }
-    return 0;
-}
-
-#endif

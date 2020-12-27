@@ -1,20 +1,10 @@
-#ifdef MAKEFILE
-#include "../include/acutest.h"
-#endif
-
-#include "../include/json_parser.h"
 #include <stdbool.h>
 #include <string.h>
 
-#ifndef ACUTEST_H
-#include <assert.h>
-
-#define TEST_CHECK assert
-#define TEST_ASSERT assert
-#endif
+#include "../include/acutest.h"
+#include "../include/json_parser.h"
 
 #define ARR_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
-
 
 /* ________________________________________ */
 /* _____________ Parser tests ______________*/
@@ -110,33 +100,11 @@ void parse_obj_complex(void) {
     CLEANUP();
 }
 
-
-#ifndef ACUTEST_H
-
-struct test_ {
-    const char *name;
-
-    void (*func)(void);
-};
-
-#define TEST_LIST const struct test_ test_list_[]
-#endif
-
 TEST_LIST = {{"parse_number",      parse_number},
              {"parse_bool",        parse_bool},
              {"parse_array",       parse_array},
              {"parse_obj",         parse_obj},
              {"parse_obj_complex", parse_obj_complex},
-             {NULL, NULL}};
+             {NULL, NULL}
+};
 
-#ifndef ACUTEST_H
-
-int main(int argc, char *argv[]) {
-    int i;
-    for (i = 0; test_list_[i].name != NULL; i++) {
-        test_list_[i].func();
-    }
-    return 0;
-}
-
-#endif
