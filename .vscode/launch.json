@@ -17,7 +17,9 @@
                 "-csv",
                 "Datasets/sigmod_medium_labelled_dataset.csv",
                 "-sw",
-                "resources/unwanted-words.txt"
+                "resources/unwanted-words.txt",
+                "-m",
+                "tfidf"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

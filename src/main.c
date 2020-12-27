@@ -21,6 +21,7 @@ typedef struct options {
     char *labelled_dataset_path;
     char *stop_words_path;
     char *user_dataset_file;
+    char *vec_mode;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -44,6 +45,10 @@ void read_options(int argc, char **argv, Options *o) {
         } else if (strcmp(opt, "-ds") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->user_dataset_file = optVal;
+            }
+        } else if (strcmp(opt, "-m") == 0){
+            if (optVal != NULL && optVal[0] != '-') {
+                o->vec_mode = optVal;
             }
         }
     }
@@ -138,7 +143,7 @@ STS *init_sts_dataset_X(char *path) {
 
 void
 prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, UniqueRand ur, STS *X, ML ml,
-            dictp json_dict, Match *matches, float *result_vector, int *y) {
+            dictp json_dict, Match *matches, float *result_vector, int *y, bool mode) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
@@ -146,12 +151,16 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
-        ml_tfidf(ml, bow_vector_1, wc);
+        if(mode){
+            ml_tfidf(ml, bow_vector_1, wc);
+        }
         spec1 = sts_get(X, (*matches)[x].spec1);
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
-        ml_tfidf(ml, bow_vector_2, wc);
+        if(mode){
+            ml_tfidf(ml, bow_vector_2, wc);
+        }
         spec2 = sts_get(X, (*matches)[x].spec2);
         for (int c = 0; c < ml_get_bow_size(ml); c++) {
             result_vector[(i - p_start) * ml_get_bow_size(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
@@ -217,9 +226,10 @@ int main(int argc, char *argv[]) {
     float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y = NULL;
+    bool mode;
     LogReg *clf = NULL;
     LogReg models[epochs];
-    Options options = {NULL, NULL, NULL, NULL};
+    Options options = {NULL, NULL, NULL, NULL, NULL};
     UniqueRand ur_dataset = NULL, ur_mini_batch = NULL;
     ulong i_state = 0;
     setp json_train_keys = NULL;
@@ -231,6 +241,8 @@ int main(int argc, char *argv[]) {
 
     /* Parse arguments*/
     read_options(argc, argv, &options);
+
+    mode = !strcmp(options.vec_mode, "tfidf");
 
     /* Initialize an STS dataset X*/
     X = init_sts_dataset_X(options.dataset_dir);
@@ -312,8 +324,8 @@ int main(int argc, char *argv[]) {
         json = (JSON_ENTITY **) dict_get(json_dict, k);
         ml_tokenize_json(ml, *json);
     }
-
-    ml_idf_remove(ml);
+    if (mode)
+        ml_idf_remove(ml);
 
     result_vec = malloc(batch_size * ml_get_bow_size(ml) * sizeof(float));
     result_vec_test = malloc((test_set_size - train_set_size) * ml_get_bow_size(ml) * sizeof(float));
@@ -329,17 +341,17 @@ int main(int argc, char *argv[]) {
     bow_vector_1 = malloc(ml_get_bow_size(ml) * sizeof(float));
 
     bow_vector_2 = malloc(ml_get_bow_size(ml) * sizeof(float));
-
+     
     /**** Epochs loop ****/
     for (int e = 0; e < epochs; e++) {
 
         for (int j = 0; j < train_set_size / batch_size; j++) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
-                        &sorted_matches, result_vec, y);
+                        &sorted_matches, result_vec, y, mode);
             train(clf, result_vec, y, batch_size);
         }
         prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
-                    &sorted_matches, result_vec_test, y);
+                    &sorted_matches, result_vec_test, y, mode);
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size));
 
@@ -372,7 +384,7 @@ int main(int argc, char *argv[]) {
     //TODO: calculate F1 score
 
     prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                json_dict, &sorted_matches, result_vec_test, y);
+                json_dict, &sorted_matches, result_vec_test, y, mode);
 
     /* Predict validation set */
     y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size));
