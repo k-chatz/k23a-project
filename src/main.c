@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 50
+#define epochs 5
 #define batch_size 34
 #define learning_rate 0.0001
 
@@ -46,7 +46,7 @@ void read_options(int argc, char **argv, Options *o) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->user_dataset_file = optVal;
             }
-        } else if (strcmp(opt, "-m") == 0){
+        } else if (strcmp(opt, "-m") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->vec_mode = optVal;
             }
@@ -151,14 +151,14 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
-        if(mode){
+        if (mode) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
         spec1 = sts_get(X, (*matches)[x].spec1);
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
-        if(mode){
+        if (mode) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
         spec2 = sts_get(X, (*matches)[x].spec2);
@@ -169,12 +169,12 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
     }
 }
 
-Match shuffle_dataset(Match matches, int dataset_size){
+Match shuffle_dataset(Match matches, int dataset_size) {
     UniqueRand ur = NULL;
     Match shuffle_matches = malloc(dataset_size * sizeof(struct match));
     int x = 0;
     ur_create(&ur, 0, dataset_size - 1);
-    for (int i = 0; i < dataset_size; i++){
+    for (int i = 0; i < dataset_size; i++) {
         x = ur_get(ur);
         shuffle_matches[i] = matches[x];
     }
@@ -185,7 +185,6 @@ Match shuffle_dataset(Match matches, int dataset_size){
 Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int test_set_size, int dataset_size,
                     UniqueRand ur) {
 
-    
 
     int x = 0;
     Match sorted_matches = malloc(dataset_size * sizeof(struct match));
@@ -218,9 +217,6 @@ Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int
     }
     return sorted_matches;
 }
-
-
-
 
 float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     float max_loss = 0;
@@ -340,7 +336,8 @@ int main(int argc, char *argv[]) {
 
 
     /* Split and sort dataset into sorted matches array */
-    sorted_matches = split_dataset(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
+    sorted_matches = split_dataset(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size,
+                                   ur_dataset);
 
     i_state = 0;
     for (keyp k = set_iterate_r(json_train_keys, &i_state); k != NULL; k = set_iterate_r(json_train_keys, &i_state)) {
@@ -365,7 +362,7 @@ int main(int argc, char *argv[]) {
     bow_vector_1 = malloc(ml_get_bow_size(ml) * sizeof(float));
 
     bow_vector_2 = malloc(ml_get_bow_size(ml) * sizeof(float));
-     
+
     /**** Epochs loop ****/
     for (int e = 0; e < epochs; e++) {
 
@@ -403,13 +400,12 @@ int main(int argc, char *argv[]) {
         ur_reset(ur_mini_batch);
 
 
-
         float *old_weight = clf->weights;
     }
 
     /**** Predict ****/
 
-    //TODO: calculate F1 score
+
 
     prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
                 json_dict, &sorted_matches, result_vec_test, y, mode);
@@ -417,23 +413,38 @@ int main(int argc, char *argv[]) {
     /* Predict validation set */
     y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size));
     for (int i = test_set_size; i < dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation, y_pred[i-test_set_size]);
+        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", sorted_matches[i].spec1, sorted_matches[i].spec2,
+               sorted_matches[i].relation, y_pred[i - test_set_size]);
 
     }
-
-    //TODO: calculate user dataset score
+    //TODO: calculate F1 score
+    float *y_pred1 = malloc((dataset_size - test_set_size) * sizeof(float));
+    float *y1 = malloc((dataset_size - test_set_size) * sizeof(float));
+    for (int i = 0; i < dataset_size - test_set_size; i++) {
+        if (y_pred[i] < 0.3) {
+            y_pred1[i] = 0.0;
+        } else {
+            y_pred1[i] = 1.0;
+        }
+        if (y[i] == 0){
+            y1[i] = 0.0;
+        }
+        else {
+            y1[i] = 1.0;
+        }
+    }
+    printf("\nf1 score: %f\n", ml_f1_score((float *) y1, y_pred1, dataset_size - test_set_size));
 
     /* Read user dataset */
     // read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
-
-
-
 
     // prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
     //             json_dict, &user_matches, result_vec_test, y);
 
     /* Predict user dataset */
     // y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size));
+
+    //TODO: calculate user dataset score
 
     free(losses);
     free(bow_vector_1);
