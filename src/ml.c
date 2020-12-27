@@ -255,11 +255,11 @@ void ml_idf_remove(ML ml) {
     DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
-        if (w->idf > 10) {
+        if (w->idf > 9.85) {
             dict_del(ml->bow_dict, entry);
             continue;
         }
-        w->position = i;
+        w->position = (int) i;
     }
 }
 
@@ -271,20 +271,17 @@ int get_removed_words_num(ML ml) {
     return ml->removed_words_num;
 }
 
-float ml_f1_score(float *y, float* y_pred, int y_size){
+float ml_f1_score(float *y, float *y_pred, int y_size) {
     float true_pos = 0.0, true_neg = 0.0, false_pos = 0.0, false_neg = 0.0;
-    float precision, recall; 
-    for (int i = 0; i < y_size; i++){
-        if (y[i] == 1 && y_pred[i]== 1){
+    float precision, recall;
+    for (int i = 0; i < y_size; i++) {
+        if (y[i] == 1 && y_pred[i] == 1) {
             true_pos++;
-        }
-        else if (y[i] == 0 && y_pred[i]== 0){
+        } else if (y[i] == 0 && y_pred[i] == 0) {
             true_neg++;
-        }
-        else if (y[i] == 1 && y_pred[i]== 0){
+        } else if (y[i] == 1 && y_pred[i] == 0) {
             false_neg++;
-        }
-        else if (y[i] == 0 && y_pred[i]== 1){ //else
+        } else if (y[i] == 0 && y_pred[i] == 1) { //else
             false_pos++;
         }
     }

@@ -336,18 +336,8 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < train_set_size / batch_size; j++) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &sorted_matches, result_vec, y);
-
-            
             train(clf, result_vec, y, batch_size);
-            
-            // for (int batch = 0; batch < batch_size; batch++) {
-            //     train(clf, &result_vec[batch * ml_get_bow_size(ml)], &y[batch], batch_size);
-            // }
-            // int batch = rand() % 4;
-            // float maxDelta = train(reg, &Xs[2 * batch], &Ys[batch], batch_sz);
-            //train(clf, result_vec, y, batch_size);
         }
-
         prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &sorted_matches, result_vec_test, y);
 
@@ -386,7 +376,7 @@ int main(int argc, char *argv[]) {
 
     /* Predict validation set */
     y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size));
-    for (int i = test_set_size; i < dataset_size; i++){
+    for (int i = test_set_size; i < dataset_size; i++) {
         printf("spec1: %s, spec2: %s, y: %d, y_pred: %f\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation, y_pred[i-test_set_size]);
     }
 
