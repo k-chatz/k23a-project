@@ -1,6 +1,8 @@
-#include "../include/spec_to_specs.h"
-
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
+
+#include "../include/spec_to_specs.h"
 
 #ifndef ACUTEST_H
 
@@ -18,7 +20,7 @@ void add_test(void) {
     for (i = 0; i < N; i++) {
         sts_add(sts, ids[i]);
         SpecEntry *test = sts_get(sts, ids[i]);
-        TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->ht->htab, test), ids[i]) == 0);
+        TEST_CHECK(strcmp(htab_get_keyp_from_valp(sts->dict->htab, test), ids[i]) == 0);
     }
     sts_destroy(sts);
 }

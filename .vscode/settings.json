@@ -9,6 +9,8 @@
         "vector": "c",
         "iterator": "c",
         "string_view": "c",
-        "*.tcc": "c"
-    }
+        "*.tcc": "c",
+        "streambuf": "c"
+    },
+    "cmake.configureOnOpen": true
 }

@@ -14,6 +14,8 @@
 #define HT_CAP 128
 #define HT_BSZ 256
 
+#define MATCHES_CHUNK_SIZE 1000
+
 typedef struct SpecEntry_s SpecEntry;
 
 typedef LISTOF(char *) StrList;
@@ -25,8 +27,22 @@ typedef LISTOF(SpecEntry *) SpecList;
  */
 typedef struct {
     /*! @brief Index of specs */
-    dictp ht;
+    dictp dict;
 } STS;
+
+enum match_type {
+    NAT,
+    TRAIN,
+    TEST,
+    VALIDATION
+};
+
+typedef struct match {
+    char *spec1;
+    char *spec2;
+    int relation;
+    enum match_type type;
+} *Match;
 
 /*!
   @brief STS hashtable entry.
@@ -43,6 +59,8 @@ struct SpecEntry_s {
     StrList *similar, *similar_tail, *different, *different_tail;
     /*! @brief Length of similar */
     ulong similar_len, different_len;
+
+    bool printed;
 };
 
 SpecEntry *findRoot(STS *sts, SpecEntry *spec);
@@ -128,9 +146,13 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void print_sts(FILE *file, STS *sts);
+void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+
+void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+
 
 void print_sts_similar(FILE *file, STS *sts);
+
 
 void print_sts_diff(FILE *file, STS *sts);
 

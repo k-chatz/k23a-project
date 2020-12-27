@@ -1,4 +1,7 @@
+#ifdef MAKEFILE
 #include "../include/acutest.h"
+#endif
+
 #include "../include/json_parser.h"
 #include <stdbool.h>
 #include <string.h>

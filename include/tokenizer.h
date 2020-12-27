@@ -32,4 +32,6 @@ tokenizer_t *json_tokenizer_from_filename(char *filename);
 
 tokenizer_t *json_tokenizer_from_string(char *string);
 
+tokenizer_t *tokenizer_from_string(char *string);
+
 #endif

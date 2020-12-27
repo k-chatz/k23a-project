@@ -34,12 +34,12 @@ void print_spec(void *spec) {
 }
 
 SpecEntry *findRoot(STS *sts, SpecEntry *spec) {
-    SpecEntry *root = dict_get(sts->ht, spec->parent);
+    SpecEntry *root = dict_get(sts->dict, spec->parent);
     if (spec == root)
         return spec;
 
     /* three shortening */
-    spec->parent = ((SpecEntry *) dict_get(sts->ht, spec->parent))->parent;
+    spec->parent = ((SpecEntry *) dict_get(sts->dict, spec->parent))->parent;
 
     return findRoot(sts, root);
 }
@@ -51,7 +51,7 @@ STS *sts_new() {
     STS *new = malloc(sizeof(STS));
     /* clang-format off */
     /* @formatter:off */
-    new->ht = dict_config(
+    new->dict = dict_config(
             dict_new2(MAX_ID_LEN, sizeof(SpecEntry)),
             DICT_CONF_HASH_FUNC, djb2_str,
             DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
@@ -77,7 +77,7 @@ static void destroy_spec(SpecEntry *spec) {
 }
 
 void sts_destroy(STS *sts) {
-    dict_free(sts->ht, (void (*)(void *)) destroy_spec);
+    dict_free(sts->dict, (void (*)(void *)) destroy_spec);
     free(sts);
 }
 
@@ -92,7 +92,9 @@ int sts_add(STS *sts, char *id) {
     temp.similar_tail = temp.similar;
     temp.similar_len = 1;
     temp.different = NULL;
-    dict_put(sts->ht, id, &temp);
+    temp.different_len = 0;
+    temp.printed = false;
+    dict_put(sts->dict, id, &temp);
     return 0;
 }
 
@@ -109,8 +111,8 @@ int sts_merge(STS *sts, char *id1, char *id2) {
     }
 #endif
     SpecEntry *spec1, *spec2;
-    spec1 = findRoot(sts, dict_get(sts->ht, id1));
-    spec2 = findRoot(sts, dict_get(sts->ht, id2));
+    spec1 = findRoot(sts, dict_get(sts->dict, id1));
+    spec2 = findRoot(sts, dict_get(sts->dict, id2));
 
     if (spec1->similar_len < spec2->similar_len) {
         /* swap */
@@ -142,8 +144,8 @@ int sts_merge(STS *sts, char *id1, char *id2) {
 /* Merges two sts nodes to point to the same expanded list */
 int sts_diff(STS *sts, char *id1, char *id2) {
     SpecEntry *spec1, *spec2;
-    spec1 = findRoot(sts, dict_get(sts->ht, id1));
-    spec2 = findRoot(sts, dict_get(sts->ht, id2));
+    spec1 = findRoot(sts, dict_get(sts->dict, id1));
+    spec2 = findRoot(sts, dict_get(sts->dict, id2));
 
     if (spec1->different_len < spec2->different_len) {
         /* swap */
@@ -185,7 +187,7 @@ int sts_diff(STS *sts, char *id1, char *id2) {
 }
 
 SpecEntry *sts_get(STS *sts, char *id) {
-    return dict_get(sts->ht, id);
+    return dict_get(sts->dict, id);
 }
 
 void free_StrList_data(StrList *list) {
@@ -196,10 +198,10 @@ void free_StrList_data(StrList *list) {
 void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "digraph {\n\n");
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
-         key = dict_iterate_r(sts->ht, &iter_state)) {
+    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL;
+         key = dict_iterate_r(sts->dict, &iter_state)) {
         SpecEntry *sp, *root;
-        sp = dict_get(sts->ht, key);
+        sp = dict_get(sts->dict, key);
         root = findRoot(sts, sp);
         StrList *similar = root->similar;
 
@@ -240,29 +242,70 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void print_sts(FILE *file, STS *sts) {
+void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL;
-         key = dict_iterate_r(sts->ht, &iter_state)) {
+    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL;
+         key = dict_iterate_r(sts->dict, &iter_state)) {
         /* get the spec */
-        SpecEntry *sp = dict_get(sts->ht, key);
+        SpecEntry *sp = dict_get(sts->dict, key);
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
             LL_FOREACH(A, sp->similar) {
                 LL_FOREACH(B, (StrList *) A->next) {
-                    fprintf(file, "%s, %s\n", A->data, B->data);
+                    if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
+                        (*chunks)++;
+                        *matches = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
+                    }
+                    //fprintf(file, "%s, %s\n", A->data, B->data);
+                    (*matches)[*counter].spec1 = A->data;
+                    (*matches)[*counter].spec2 = B->data;
+                    (*matches)[*counter].relation = 1;
+                    (*counter)++;
                 }
             }
         }
     }
 }
 
+void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
+    ulong iter_state = 0;
+    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL;
+         key = dict_iterate_r(sts->dict, &iter_state)) {
+        /* get the spec */
+        SpecEntry *sp = dict_get(sts->dict, key), *temp;
+        /* is sp a representative? */
+        if (sp == findRoot(sts, sp)) {
+
+            /* sp is a set representative */
+            LL_FOREACH(A, sp->different) {
+                temp = dict_get(sts->dict, A->data);
+                if (temp->printed) {
+                    LL_FOREACH(A_sim, (StrList *) A->next) {
+                        LL_FOREACH(B, temp->similar) {
+                            if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
+                                (*chunks)++;
+                                (*matches) = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
+                            }
+                            //fprintf(file, "%s, %s\n", A_sim->data, B->data);
+                            (*matches)[*counter].spec1 = A_sim->data;
+                            (*matches)[*counter].spec2 = B->data;
+                            (*matches)[*counter].relation = 0;
+                            (*counter)++;
+                        }
+                    }
+                }
+            }
+            sp->printed = true;
+        }
+    }
+}
+
 void print_sts_similar(FILE *file, STS *sts) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
+    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL; key = dict_iterate_r(sts->dict, &iter_state)) {
         SpecEntry *sp, *root;
-        sp = dict_get(sts->ht, key);
+        sp = dict_get(sts->dict, key);
         root = findRoot(sts, sp);
         if (root->id != sp->id) {
             continue;
@@ -277,9 +320,9 @@ void print_sts_similar(FILE *file, STS *sts) {
 
 void print_sts_diff(FILE *file, STS *sts) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->ht, &iter_state); key != NULL; key = dict_iterate_r(sts->ht, &iter_state)) {
+    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL; key = dict_iterate_r(sts->dict, &iter_state)) {
         SpecEntry *sp, *root;
-        sp = dict_get(sts->ht, key);
+        sp = dict_get(sts->dict, key);
         root = findRoot(sts, sp);
         if (root->id != sp->id) {
             continue;

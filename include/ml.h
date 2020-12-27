@@ -16,7 +16,7 @@ void ml_str_cleanup(ML ml, char *input);
 
 dictp ml_tokenize_json(ML ml, JSON_ENTITY *json);
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, int *wc);
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc);
 
 void ml_tfidf(ML ml, float *bow_vector, int wc);
 
@@ -25,6 +25,8 @@ void ml_idf_remove(ML ml);
 void set_removed_words_num(ML ml, int c);
 
 int get_removed_words_num(ML ml);
+
+float ml_f1_score(float *y, float* y_pred, int y_size);
 
 void print_bow_dict(ML ml);
 
