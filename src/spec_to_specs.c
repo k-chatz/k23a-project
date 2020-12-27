@@ -244,10 +244,10 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
 
 void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL;
-         key = dict_iterate_r(sts->dict, &iter_state)) {
+    char *entry = NULL;
+    DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
         /* get the spec */
-        SpecEntry *sp = dict_get(sts->dict, key);
+        SpecEntry *sp = dict_get(sts->dict, entry);
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
             /* sp is a set representative */
@@ -270,13 +270,12 @@ void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter
 
 void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL;
-         key = dict_iterate_r(sts->dict, &iter_state)) {
+    char *entry = NULL;
+    DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
         /* get the spec */
-        SpecEntry *sp = dict_get(sts->dict, key), *temp;
+        SpecEntry *sp = dict_get(sts->dict, entry), *temp;
         /* is sp a representative? */
         if (sp == findRoot(sts, sp)) {
-
             /* sp is a set representative */
             LL_FOREACH(A, sp->different) {
                 temp = dict_get(sts->dict, A->data);
@@ -303,9 +302,10 @@ void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *count
 
 void print_sts_similar(FILE *file, STS *sts) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL; key = dict_iterate_r(sts->dict, &iter_state)) {
+    char *entry = NULL;
+    DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
         SpecEntry *sp, *root;
-        sp = dict_get(sts->dict, key);
+        sp = dict_get(sts->dict, entry);
         root = findRoot(sts, sp);
         if (root->id != sp->id) {
             continue;
@@ -320,9 +320,10 @@ void print_sts_similar(FILE *file, STS *sts) {
 
 void print_sts_diff(FILE *file, STS *sts) {
     ulong iter_state = 0;
-    for (char *key = dict_iterate_r(sts->dict, &iter_state); key != NULL; key = dict_iterate_r(sts->dict, &iter_state)) {
+    char *entry = NULL;
+    DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
         SpecEntry *sp, *root;
-        sp = dict_get(sts->dict, key);
+        sp = dict_get(sts->dict, entry);
         root = findRoot(sts, sp);
         if (root->id != sp->id) {
             continue;

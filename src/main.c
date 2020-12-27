@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 500
-#define batch_size 100
+#define epochs 6
+#define batch_size 37
 #define learning_rate 0.0001
 
 typedef struct options {
@@ -388,8 +388,9 @@ int main(int argc, char *argv[]) {
 
     /* Predict validation set */
     y_pred = predict(clf, result_vec_test, (dataset_size - test_set_size));
-    for (int i = test_set_size; i < dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred: %f\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation, y_pred[i-test_set_size]);
+    for (int i = 0; i < train_set_size; i++) {
+        printf("spec1: %s, spec2: %s, y: %d\n",sorted_matches[i].spec1, sorted_matches[i].spec2, sorted_matches[i].relation);
+
     }
 
     //TODO: calculate user dataset score
