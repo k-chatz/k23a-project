@@ -19,7 +19,7 @@
                 "-sw",
                 "resources/unwanted-words.txt",
                 "-m",
-                "tfidf"
+                "bow"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

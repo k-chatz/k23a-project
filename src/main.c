@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 500
-#define batch_size 100
+#define epochs 50
+#define batch_size 34
 #define learning_rate 0.0001
 
 typedef struct options {
@@ -169,8 +169,24 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
     }
 }
 
+Match shuffle_dataset(Match matches, int dataset_size){
+    UniqueRand ur = NULL;
+    Match shuffle_matches = malloc(dataset_size * sizeof(struct match));
+    int x = 0;
+    ur_create(&ur, 0, dataset_size - 1);
+    for (int i = 0; i < dataset_size; i++){
+        x = ur_get(ur);
+        shuffle_matches[i] = matches[x];
+    }
+    return shuffle_matches;
+}
+
+
 Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int test_set_size, int dataset_size,
                     UniqueRand ur) {
+
+    
+
     int x = 0;
     Match sorted_matches = malloc(dataset_size * sizeof(struct match));
     /* Split the dataset to TRAIN, TEST & VALIDATION sets */
@@ -202,6 +218,9 @@ Match split_dataset(Match matches, setp json_train_keys, int train_set_size, int
     }
     return sorted_matches;
 }
+
+
+
 
 float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     float max_loss = 0;
@@ -315,8 +334,13 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
+
+    //TODO: shuffle the dataset
+    Match shuffled_dataset = shuffle_dataset(matches, dataset_size);
+
+
     /* Split and sort dataset into sorted matches array */
-    sorted_matches = split_dataset(matches, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
+    sorted_matches = split_dataset(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
 
     i_state = 0;
     for (keyp k = set_iterate_r(json_train_keys, &i_state); k != NULL; k = set_iterate_r(json_train_keys, &i_state)) {
@@ -377,6 +401,10 @@ int main(int argc, char *argv[]) {
         }
 
         ur_reset(ur_mini_batch);
+
+
+
+        float *old_weight = clf->weights;
     }
 
     /**** Predict ****/
