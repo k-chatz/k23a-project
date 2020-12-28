@@ -165,7 +165,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
-        y[i] = (findRoot(X, spec1) == findRoot(X, spec2));
+        y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
     }
 }
 
@@ -236,7 +236,9 @@ int main(int argc, char *argv[]) {
     int user_dataset_size = 0, q = 0;
     float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    int *y = malloc(batch_size * sizeof(int));
+    int y[batch_size];
+    int *y_test = NULL;
+    int *y_val = NULL;
     bool mode;
     LogReg *model = NULL;
     LogReg models[epochs];
@@ -308,8 +310,9 @@ int main(int argc, char *argv[]) {
     i_state = 0;
 
     train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
-
     test_set_size = train_set_size + (dataset_size - train_set_size) / 2;
+    y_test = malloc((test_set_size - train_set_size) * sizeof(int));
+    losses = malloc((test_set_size - train_set_size - 1) * sizeof(float));
 
     ur_create(&ur_dataset, 0, dataset_size - 1);
 
@@ -339,24 +342,19 @@ int main(int argc, char *argv[]) {
         ml_idf_remove(ml);
     }
 
+    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
     result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
-
     result_vec_test = malloc((test_set_size - train_set_size) * ml_bow_sz(ml) * sizeof(float));
 
     /* initialize the model */
     model = logreg_new(ml_bow_sz(ml), learning_rate);
 
-    losses = malloc((test_set_size - train_set_size - 1) * sizeof(float));
-
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_set_size - 1);
 
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
-
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
-
-
     /************************************************ Epochs loop ****************************************************/
+
     for (int e = 0; e < epochs; e++) {
 
         for (int j = 0; j < train_set_size / batch_size; j++) {
@@ -365,13 +363,12 @@ int main(int argc, char *argv[]) {
             train(model, result_vec, y, batch_size);
         }
 
-        //todo: ---------> check this because it produces invalid free in the sts_destroy(X) function
-        // prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, sorted_matches, result_vec_test, y, mode);
+        prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y_test, mode);
 
         y_pred = predict(model, result_vec_test, (test_set_size - train_set_size));
 
         /* Calculate the max losses value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(losses, y_pred, y, test_set_size - train_set_size);
+        max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_set_size - train_set_size);
 
         /* Copy model & max losses*/
         memcpy(&models[e], model, sizeof(LogReg));
@@ -395,9 +392,9 @@ int main(int argc, char *argv[]) {
     }
 
     /******************************************************************************************************************/
+    y_val = malloc((dataset_size - test_set_size) * sizeof(int));
 
-    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                json_dict, &sorted_matches, result_vec_test, y, mode);
+    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y_val, mode);
 
     /**************************************************** Predict ****************************************************/
 
@@ -417,7 +414,7 @@ int main(int argc, char *argv[]) {
         } else {
             y_pred1[i] = 1.0;
         }
-        if (y[i] == 0) {
+        if (y_val[i] == 0) {
             y1[i] = 0.0;
         } else {
             y1[i] = 1.0;
