@@ -239,18 +239,39 @@ int main(int argc, char *argv[]) {
     int y[batch_size];
     int *y_test = NULL;
     int *y_val = NULL;
+    int similar_sz = 0;
+    int similar_train_set_sz = 0;
+    int similar_test_set_sz = 0;
+    int similar_val_set_sz = 0;
+    int different_sz = 0;
+    int different_train_set_sz = 0;
+    int different_test_set_sz = 0;
+    int different_val_set_sz = 0;
     bool mode;
     LogReg *model = NULL;
     LogReg models[epochs];
     Options options = {NULL, NULL, NULL, NULL, NULL};
-    URand ur_dataset = NULL, ur_mini_batch = NULL;
+    URand ur_dataset = NULL, ur_mini_batch = NULL, ur_train = NULL, ur_test = NULL, ur_val = NULL;
     ulong i_state = 0;
     setp json_train_keys = NULL;
     STS *X = NULL;
     dictp json_dict = NULL;
     ML ml = NULL;
     JSON_ENTITY **json = NULL;
-    Match *matches = NULL, *user_matches = NULL, *sorted_matches = NULL;
+    Match *matches = NULL,
+            *similar_matches = NULL,
+            *similar_matches_train = NULL,
+            *similar_matches_test = NULL,
+            *similar_matches_val = NULL,
+            *different_matches = NULL,
+            *different_matches_train = NULL,
+            *different_matches_test = NULL,
+            *different_matches_val = NULL,
+            *train_set = NULL,
+            *test_set = NULL,
+            *val_set = NULL,
+            *user_matches = NULL,
+            *sorted_matches = NULL;
 
     /* parse arguments*/
     read_options(argc, argv, &options);
@@ -296,10 +317,88 @@ int main(int argc, char *argv[]) {
     read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
 
     /* init similar matches */
-    init_similar_matches(stdout, X, &matches, &chunks, &dataset_size);
+    chunks = 0;
+    init_similar_matches(stdout, X, &similar_matches, &chunks, &similar_sz);
 
     /* init different matches*/
-    init_different_matches(stdout, X, &matches, &chunks, &dataset_size);
+    chunks = 0;
+    init_different_matches(stdout, X, &different_matches, &chunks, &different_sz);
+
+    /* calculate similar set sizes */
+    similar_train_set_sz = (similar_sz / 2) % 2 ? (int) (similar_sz / 2 - 1) : (int) (similar_sz / 2);
+    similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
+    similar_val_set_sz = similar_test_set_sz;
+
+    similar_matches_train = malloc(similar_train_set_sz * sizeof(Match));
+    similar_matches_test = malloc(similar_test_set_sz * sizeof(Match));
+    similar_matches_val = malloc(similar_val_set_sz * sizeof(Match));
+
+    memcpy(similar_matches_train, similar_matches, similar_train_set_sz * sizeof(Match));
+    memcpy(similar_matches_test, similar_matches + similar_train_set_sz, similar_test_set_sz * sizeof(Match));
+    memcpy(similar_matches_val, similar_matches + similar_train_set_sz + similar_test_set_sz,
+           similar_val_set_sz * sizeof(Match));
+
+    /* calculate different set sizes */
+    different_train_set_sz = (different_sz / 2) % 2 ? (int) (different_sz / 2 - 1) : (int) (different_sz / 2);
+    different_test_set_sz = (different_sz - different_train_set_sz) / 2;
+    different_val_set_sz = similar_test_set_sz;
+
+    different_matches_train = malloc(different_train_set_sz * sizeof(Match));
+    different_matches_test = malloc(different_test_set_sz * sizeof(Match));
+    different_matches_val = malloc(different_val_set_sz * sizeof(Match));
+
+    memcpy(different_matches_train, different_matches, different_train_set_sz * sizeof(Match));
+    memcpy(different_matches_test, different_matches + different_train_set_sz, different_test_set_sz * sizeof(Match));
+    memcpy(different_matches_val, different_matches + different_train_set_sz + different_test_set_sz,
+           different_val_set_sz * sizeof(Match));
+
+
+    /*create the whole train set, test set and val set*/
+    int train_sz = similar_train_set_sz + different_train_set_sz;
+    int test_sz = similar_test_set_sz + different_test_set_sz;
+    int val_sz =  similar_val_set_sz + different_val_set_sz;
+   
+    train_set = malloc(train_sz * sizeof(Match));
+    test_set = malloc(test_sz * sizeof(Match));
+    val_set = malloc(val_sz * sizeof(Match));
+
+    ur_create(ur_train, 0, train_sz - 1);
+    ur_create(ur_test, 0, test_sz - 1);
+    ur_create(ur_val, 0, val_sz - 1);
+    int rand_i;
+    // TODO: function
+    /*Fill the train_set array*/
+    for (int i = 0; i < train_sz; i++){
+        rand_i = ur_get(ur_train);
+        if (i < similar_train_set_sz){
+            train_set[rand_i] = similar_matches_train[i];
+        }
+        else {
+            train_set[rand_i] = different_matches_train[i - similar_train_set_sz];
+        }
+    }
+
+    /*Fill the test_set array*/
+    for (int i = 0; i < test_sz; i++){
+        rand_i = ur_get(ur_test);
+        if (i < similar_test_set_sz){
+            test_set[rand_i] = similar_matches_test[i];
+        }
+        else {
+            test_set[rand_i] = different_matches_test[i - similar_test_set_sz];
+        }
+    }
+
+    /*Fill the val_set array*/
+    for (int i = 0; i < val_sz; i++){
+        rand_i = ur_get(ur_val);
+        if (i < similar_val_set_sz){
+            val_set[rand_i] = similar_matches_val[i];
+        }
+        else {
+            val_set[rand_i] = different_matches_val[i - similar_val_set_sz];
+        }
+    }
 
     /**************************************************** Training ****************************************************/
 
