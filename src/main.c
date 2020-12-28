@@ -362,9 +362,9 @@ int main(int argc, char *argv[]) {
     test_set = malloc(test_sz * sizeof(Match));
     val_set = malloc(val_sz * sizeof(Match));
 
-    ur_create(ur_train, 0, train_sz - 1);
-    ur_create(ur_test, 0, test_sz - 1);
-    ur_create(ur_val, 0, val_sz - 1);
+    ur_create(&ur_train, 0, train_sz - 1);
+    ur_create(&ur_test, 0, test_sz - 1);
+    ur_create(&ur_val, 0, val_sz - 1);
     int rand_i;
     // TODO: function
     /*Fill the train_set array*/
@@ -389,6 +389,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    
+
     /*Fill the val_set array*/
     for (int i = 0; i < val_sz; i++){
         rand_i = ur_get(ur_val);
@@ -400,6 +402,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    for (int i = 0; i < val_sz; i++){
+        printf("spec1: %s, spec2: %s, relation: %d\n", val_set[i].spec1, val_set[i].spec2, val_set[i].relation);
+    }
+
     /**************************************************** Training ****************************************************/
 
     /* Create ml object */
@@ -408,12 +414,12 @@ int main(int argc, char *argv[]) {
     /* iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it */
     i_state = 0;
 
-    train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
-    test_set_size = train_set_size + (dataset_size - train_set_size) / 2;
-    y_test = malloc((test_set_size - train_set_size) * sizeof(int));
-    losses = malloc((test_set_size - train_set_size - 1) * sizeof(float));
+    // train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
+    // test_set_size = train_set_size + (dataset_size - train_set_size) / 2;
+    y_test = malloc(test_sz * sizeof(int));
+    losses = malloc(test_sz * sizeof(float));
 
-    ur_create(&ur_dataset, 0, dataset_size - 1);
+    // ur_create(&ur_dataset, 0, dataset_size - 1);
 
     json_train_keys = set_new(128);
     dict_config(json_train_keys,
@@ -424,11 +430,24 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
+
+     /*Add jsons to vocab*/
+    for (int i = 0; i < train_sz; i++) {
+        /* Collect randomly half of the dataset for the training */
+        // matches[x].type = TRAIN;
+        if (!set_in(json_train_keys, train_set[i].spec1)) {
+            set_put(json_train_keys, train_set[i].spec1);
+        }
+        if (!set_in(json_train_keys, train_set[i].spec2)) {
+            set_put(json_train_keys, train_set[i].spec2);
+        }
+    }
+
     /* shuffle the dataset */
-    Match *shuffled_dataset = shuffle_dataset(matches, dataset_size);
+    // Match *shuffled_dataset = shuffle_dataset(matches, dataset_size);
 
     /* split and sort dataset into sorted matches array */
-    sorted_matches = split(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
+    // sorted_matches = split(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
 
     i_state = 0;
     HSET_FOREACH_ENTRY(entry, json_train_keys, &i_state, json_train_keys->htab->buf_load) {
@@ -444,30 +463,32 @@ int main(int argc, char *argv[]) {
     bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
     bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
     result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
-    result_vec_test = malloc((test_set_size - train_set_size) * ml_bow_sz(ml) * sizeof(float));
+    result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
 
     /* initialize the model */
     model = logreg_new(ml_bow_sz(ml), learning_rate);
 
     /* create mini batch unique random */
-    ur_create(&ur_mini_batch, 0, train_set_size - 1);
+    ur_create(&ur_mini_batch, 0, train_sz - 1);
 
     /************************************************ Epochs loop ****************************************************/
 
     for (int e = 0; e < epochs; e++) {
 
-        for (int j = 0; j < train_set_size / batch_size; j++) {
+        for (int j = 0; j < train_sz / batch_size; j++) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
-                        &sorted_matches, result_vec, y, mode);
+                        &train_set, result_vec, y, mode);
             train(model, result_vec, y, batch_size);
         }
 
-        prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y_test, mode);
+        prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
+                    &test_set, result_vec_test, y_test, mode);
 
-        y_pred = predict(model, result_vec_test, (test_set_size - train_set_size));
+        y_pred = predict(model, result_vec_test, test_sz);
 
         /* Calculate the max losses value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_set_size - train_set_size);
+        max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
 
         /* Copy model & max losses*/
         memcpy(&models[e], model, sizeof(LogReg));
@@ -491,23 +512,24 @@ int main(int argc, char *argv[]) {
     }
 
     /******************************************************************************************************************/
-    y_val = malloc((dataset_size - test_set_size) * sizeof(int));
+    y_val = malloc(val_sz * sizeof(int));
 
-    prepare_set(test_set_size, dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &sorted_matches, result_vec_test, y_val, mode);
+    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
+                result_vec_val, y_val, mode);
 
     /**************************************************** Predict ****************************************************/
 
     /* Predict validation set */
-    y_pred = predict(model, result_vec_test, (dataset_size - test_set_size));
-    for (int i = test_set_size; i < dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", sorted_matches[i].spec1, sorted_matches[i].spec2,
-               sorted_matches[i].relation, y_pred[i - test_set_size]);
+    y_pred = predict(model, result_vec_val, val_sz);
+    for (int i = 0; i < val_sz; i++) {
+        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
+               val_set[i].relation, y_pred[i]);
     }
 
     /* calculate F1 score */
-    float *y_pred1 = malloc((dataset_size - test_set_size) * sizeof(float));
-    float *y1 = malloc((dataset_size - test_set_size) * sizeof(float));
-    for (int i = 0; i < dataset_size - test_set_size; i++) {
+    float *y_pred1 = malloc(val_sz * sizeof(float));
+    float *y1 = malloc(val_sz * sizeof(float));
+    for (int i = 0; i < val_sz; i++) {
         if (y_pred[i] < 0.3) {
             y_pred1[i] = 0.0;
         } else {
@@ -520,7 +542,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("\nf1 score: %f\n", ml_f1_score((float *) y1, y_pred1, dataset_size - test_set_size));
+    printf("\nf1 score: %f\n", ml_f1_score((float *) y1, y_pred1, val_sz));
 
     /* Read user dataset */
     // read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
