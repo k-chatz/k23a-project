@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 5
-#define batch_size 34
+#define epochs 50
+#define batch_size 100
 #define learning_rate 0.0001
 
 typedef struct options {
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
     /* calculate different set sizes */
     different_train_set_sz = (different_sz / 2) % 2 ? (int) (different_sz / 2 - 1) : (int) (different_sz / 2);
     different_test_set_sz = (different_sz - different_train_set_sz) / 2;
-    different_val_set_sz = similar_test_set_sz;
+    different_val_set_sz = different_test_set_sz;
 
     different_matches_train = malloc(different_train_set_sz * sizeof(Match));
     different_matches_test = malloc(different_test_set_sz * sizeof(Match));
@@ -402,9 +402,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (int i = 0; i < val_sz; i++){
-        printf("spec1: %s, spec2: %s, relation: %d\n", val_set[i].spec1, val_set[i].spec2, val_set[i].relation);
-    }
+    // for (int i = 0; i < val_sz; i++){
+    //     printf("spec1: %s, spec2: %s, relation: %d\n", val_set[i].spec1, val_set[i].spec2, val_set[i].relation);
+    // }
 
     /**************************************************** Training ****************************************************/
 
@@ -559,7 +559,6 @@ int main(int argc, char *argv[]) {
 
     /* Destroy unique random objects */
     ur_destroy(&ur_mini_batch);
-    ur_destroy(&ur_dataset);
 
     /* Destroy STS dataset X */
     sts_destroy(X);
