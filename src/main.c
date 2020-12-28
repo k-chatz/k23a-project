@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 50
-#define batch_size 100
+#define epochs 500
+#define batch_size 635
 #define learning_rate 0.0001
 
 typedef struct options {
@@ -329,11 +329,12 @@ int main(int argc, char *argv[]) {
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
-    similar_matches_train = malloc(similar_train_set_sz * sizeof(Match));
+    similar_matches_train = malloc(2 * similar_train_set_sz * sizeof(Match));
     similar_matches_test = malloc(similar_test_set_sz * sizeof(Match));
     similar_matches_val = malloc(similar_val_set_sz * sizeof(Match));
 
     memcpy(similar_matches_train, similar_matches, similar_train_set_sz * sizeof(Match));
+    memcpy(similar_matches_train + similar_train_set_sz, similar_matches, similar_train_set_sz * sizeof(Match));
     memcpy(similar_matches_test, similar_matches + similar_train_set_sz, similar_test_set_sz * sizeof(Match));
     memcpy(similar_matches_val, similar_matches + similar_train_set_sz + similar_test_set_sz,
            similar_val_set_sz * sizeof(Match));

@@ -229,6 +229,7 @@ char *str_next_nlp_token(tokenizer_t *tok) {
     }
     tok->buf[1] = '\0';
     if (is_accepted_nlp_word(tok)) {
+        //TODO: if (word <= 3 || word > 9) -> REJECT
         while (set_in(tok->stopwords, tok->buf)) {
             str_next_nlp_token(tok);
         }
