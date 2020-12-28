@@ -364,8 +364,9 @@ int main(int argc, char *argv[]) {
                         &sorted_matches, result_vec, y, mode);
             train(clf, result_vec, y, batch_size);
         }
-        prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
-                    &sorted_matches, result_vec_test, y, mode);
+
+        //todo: ---------> check this because it produces invalid free in the sts_destroy(X) function
+        // prepare_set(train_set_size, test_set_size, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, sorted_matches, result_vec_test, y, mode);
 
         y_pred = predict(clf, result_vec_test, (test_set_size - train_set_size));
 
