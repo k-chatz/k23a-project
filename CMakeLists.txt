@@ -77,6 +77,7 @@ add_executable(k23a_project_tokenizer_tests
         tests/tokenizer_tests.c
         src/json_parser.c
         src/hash.c
+        src/hset.c
         src/lists.c
         src/tokenizer.c
         )

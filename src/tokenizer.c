@@ -1,28 +1,27 @@
 #include "../include/tokenizer.h"
 
-static tokenizer_t *tokenizer_new(FILE *f, next_token_f next) {
+static tokenizer_t *tokenizer_new(FILE *f, setp stopwords, next_token_f next) {
     tokenizer_t *new = malloc(sizeof(*new));
     new->next = next;
     new->feof = false;
     new->f = f;
+    new->stopwords = stopwords;
     new->buf_sz = 10;
     new->buf = malloc(10 * sizeof(char));
     return new;
 }
 
-tokenizer_t *tokenizer_new_from_filename(char *filename, next_token_f next) {
+tokenizer_t *tokenizer_new_from_filename(char *filename, setp stopwords, next_token_f next) {
     FILE *f = fopen(filename, "r");
-    tokenizer_t *new = tokenizer_new(f, next);
+    tokenizer_t *new = tokenizer_new(f, stopwords, next);
     return new;
 }
 
-tokenizer_t *tokenizer_new_from_string(char *string, next_token_f next) {
+tokenizer_t *tokenizer_new_from_string(char *string, setp stopwords, next_token_f next) {
     FILE *f = fmemopen(string, strlen(string), "r");
     if (f == NULL)
         return NULL;
-
-    tokenizer_t *new = tokenizer_new(f, next);
-
+    tokenizer_t *new = tokenizer_new(f, stopwords, next);
     return new;
 }
 
@@ -177,41 +176,22 @@ static bool is_string(tokenizer_t *tokenizer) {
     return false;
 }
 
-static inline bool is_word(tokenizer_t *tokenizer) {
-    char *stopwords[148] = {
-            "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and",
-            "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could",
-            "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got",
-            "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in",
-            "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might",
-            "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only",
-            "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since",
-            "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they",
-            "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when",
-            "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you",
-            "your", "mm", "type", "mp"
-    };
-    bool stopword = true;
-    for (int j = 0; j < 148; ++j) {
-        stopword = true;
-        char *tok = stopwords[j];
-        for (int i = 0; i < sizeof(tok) / sizeof(char) - 1; i++) {
-            char ch = buf_get_char(tokenizer, i);
-            if (ch != tok[i] && ch != 32) {
-                stopword = false;
-                break;
-            } else {
-                stopword = true;
-                if (tok[i] == '\0' && ch == 32) {
-                    break;
-                }
-            }
+static inline bool is_accepted_nlp_word(tokenizer_t *tokenizer) {
+    char ch;
+    int i = 0;
+    bool w = false;
+    bool is_special;
+    do {
+        ch = buf_get_char(tokenizer, i);
+        buf_set_char(tokenizer, i, (char) tolower(ch));
+        is_special = isspace(ch) || ispunct(ch) || isdigit(ch);
+        if (ch != 0 && is_special) {
+            w = true;
         }
-        if (stopword == true) {
-            break;
-        }
-    }
-    return stopword;
+        i++;
+    } while (ch != 0 && !is_special);
+    buf_set_char(tokenizer, i - 1, 0);
+    return w;
 }
 
 #define RETURN_IF_TRUE(f)                                                      \
@@ -240,42 +220,32 @@ char *json_next_token(tokenizer_t *tok) {
     return NULL; /* no valid token found */
 }
 
-char *str_next_token(tokenizer_t *tok) {
+char *str_next_nlp_token(tokenizer_t *tok) {
     tok->buf[0] = '\0'; /* reset the token */
     /* eat whitespace first */
     char ch;
-
-
-    while (isspace((ch = buf_get_char(tok, 0)))){
+    while (isspace((ch = buf_get_char(tok, 0))) || ispunct(ch) || isdigit(ch)) {
         tok->buf[0] = '\0';
     }
     tok->buf[1] = '\0';
-
-    while (is_word(tok)){
-        tok->buf[0] = '\0';
+    if (is_accepted_nlp_word(tok)) {
+        while (set_in(tok->stopwords, tok->buf)) {
+            str_next_nlp_token(tok);
+        }
+        return tok->buf;
     }
-    int i = 0;
-    while (!isspace((ch = buf_get_char(tok, i)))){
-        i++;
-    }
-            //tok->buf[1] = '\0';
-    if (tok->buf[0] == '\0')
-        return NULL; /* no valid token found */
-    return tok->buf;
-
-    //RETURN_IF_TRUE(is_number);
-   
+    return NULL; /* no valid token found */
 }
 
 tokenizer_t *json_tokenizer_from_filename(char *filename) {
-    return tokenizer_new_from_filename(filename, json_next_token);
+    return tokenizer_new_from_filename(filename, NULL, json_next_token);
 }
 
 tokenizer_t *json_tokenizer_from_string(char *string) {
-    return tokenizer_new_from_string(string, json_next_token);
+    return tokenizer_new_from_string(string, NULL, json_next_token);
 }
 
-tokenizer_t *tokenizer_from_string(char *string) {
-    return tokenizer_new_from_string(string, str_next_token);
+tokenizer_t *tokenizer_nlp(char *string, setp stopwords) {
+    return tokenizer_new_from_string(string, stopwords, str_next_nlp_token);
 }
 

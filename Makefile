@@ -59,7 +59,7 @@ tests-bin/general_tests: $(addprefix objs/, general_tests.o lists.o spec_to_spec
 tests-bin/ml_tests: $(addprefix objs/, ml_tests.o json_parser.o ml.o tokenizer.o hash.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-tests-bin/tokenizer_tests: $(addprefix objs/, tokenizer_tests.o tokenizer.o)
+tests-bin/tokenizer_tests: $(addprefix objs/, tokenizer_tests.o tokenizer.o hset.o hash.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/hset_tests: $(addprefix objs/, hset_tests.o hset.o hash.o)

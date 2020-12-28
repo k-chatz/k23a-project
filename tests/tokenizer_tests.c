@@ -112,7 +112,7 @@ void tokenize_number(void) {
                             sprintf(buf2, buf1, digits[d1].str, digits[d2].str,
                                     digits[d3].str);
                             bool success = tokenize_word(buf2);
-                                    TEST_CHECK(success == expected_success);
+                            TEST_CHECK(success == expected_success);
                         }
                     }
                 }
@@ -127,7 +127,7 @@ void tokenize_string(void) {
     char buf[100];
     for (int i = 0; i < ARR_LEN(str_contents); i++) {
         sprintf(buf, "\"%s\"", str_contents[i]);
-                TEST_CHECK(tokenize_word(buf));
+        TEST_CHECK(tokenize_word(buf));
     }
 }
 
@@ -141,26 +141,58 @@ void tokenize_big_string(void) {
             "definitions- opens in a new window or tab\n... Read moreabout the "
             "condition\"";
 
-            TEST_CHECK(tokenize_word(bigstr));
+    TEST_CHECK(tokenize_word(bigstr));
 }
 
 void tokenize_whitespace(void) {
     /* tokenizing whitespace should yield no tokens and consume it */
     tokenizer_t *tok = json_tokenizer_from_string("  \t\n \n  ");
-            TEST_CHECK(tokenizer_next(tok) == NULL && tok->feof);
+    TEST_CHECK(tokenizer_next(tok) == NULL && tok->feof);
     tokenizer_free(tok);
 }
 
-void tokenize_sentence(void) {
-    /* tokenizing whitespace should yield no tokens and consume it */
-    tokenizer_t *tok = tokenizer_from_string(
-            "    this is a string, is    true is a   string is   able to trueueueue "); // [a-zA-z]+
-    char *token = NULL;
+void tokenize_nlp_sentence(void) {
+    char *stopwords_array[] = {
+            "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and",
+            "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could",
+            "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got",
+            "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in",
+            "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might",
+            "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only",
+            "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since",
+            "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they",
+            "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when",
+            "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you",
+            "your", "mm", "type", "mp", "a"
+    };
+    setp stopwords = set_new(10);
+    dict_config(stopwords,
+                DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE
+    );
+    for (int i = 0; i < sizeof(stopwords_array) / sizeof(char *); ++i) {
+        set_put(stopwords, stopwords_array[i]);
+    }
 
-   while ((token = tokenizer_next(tok)) != NULL) {
-       printf("[%s]", token);
-   }
-    TEST_CHECK(1);
+    /* tokenizing whitespace should yield no tokens and consume it */
+    tokenizer_t *tok = tokenizer_nlp(
+            "nothing word 2 , 9 this I2S a st6riNg, is    TRUE is a 663  string is5   ABle to trueueueue ",
+            stopwords
+    );
+
+    TEST_CHECK(strcmp(tokenizer_next(tok), "nothing") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "word") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "s") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "st") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "ring") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "true") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "string") == 0);
+    TEST_CHECK(strcmp(tokenizer_next(tok), "trueueueue") == 0);
+    TEST_CHECK(tokenizer_next(tok) == NULL);
+
     tokenizer_free(tok);
 }
 
@@ -170,31 +202,31 @@ void tokenize_multiword(void) {
     tokenizer_t *tokenizer = json_tokenizer_from_string(in_str);
     for (int i = 0; i < ARR_LEN(in_toks); i++) {
         char *out_tok = tokenizer_next(tokenizer);
-                TEST_CHECK(strcmp(in_toks[i], out_tok) == 0);
+        TEST_CHECK(strcmp(in_toks[i], out_tok) == 0);
     }
 
     /* check if we consumed all the input */
-            TEST_CHECK(tokenizer_next(tokenizer) == NULL);
-            TEST_CHECK(tokenizer->feof);
+    TEST_CHECK(tokenizer_next(tokenizer) == NULL);
+    TEST_CHECK(tokenizer->feof);
     tokenizer_free(tokenizer);
 }
 
 TEST_LIST = {
-        {"tokenize_true",       tokenize_true},
-        {"tokenize_false",      tokenize_false},
-        {"tokenize_null",       tokenize_null},
-        {"tokenize_lbrace",     tokenize_lbrace},
-        {"tokenize_rbrace",     tokenize_rbrace},
-        {"tokenize_colon",      tokenize_colon},
-        {"tokenize_lbracket",   tokenize_lbracket},
-        {"tokenize_rbracket",   tokenize_rbracket},
-        {"tokenize_comma",      tokenize_comma},
-        {"tokenize_number",     tokenize_number},
-        {"tokenize_string",     tokenize_string},
-        {"tokenize_big_string", tokenize_big_string},
-        {"tokenize_whitespace", tokenize_whitespace},
-        // {"tokenize_sentence",   tokenize_sentence},
-        {"tokenize_multiword",  tokenize_multiword},
+        {"tokenize_true",         tokenize_true},
+        {"tokenize_false",        tokenize_false},
+        {"tokenize_null",         tokenize_null},
+        {"tokenize_lbrace",       tokenize_lbrace},
+        {"tokenize_rbrace",       tokenize_rbrace},
+        {"tokenize_colon",        tokenize_colon},
+        {"tokenize_lbracket",     tokenize_lbracket},
+        {"tokenize_rbracket",     tokenize_rbracket},
+        {"tokenize_comma",        tokenize_comma},
+        {"tokenize_number",       tokenize_number},
+        {"tokenize_string",       tokenize_string},
+        {"tokenize_big_string",   tokenize_big_string},
+        {"tokenize_whitespace",   tokenize_whitespace},
+        {"tokenize_nlp_sentence", tokenize_nlp_sentence},
+        {"tokenize_multiword",    tokenize_multiword},
         {NULL, NULL}
 };
 
