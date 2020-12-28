@@ -177,7 +177,7 @@ static bool is_string(tokenizer_t *tokenizer) {
     return false;
 }
 
-static inline bool is_stopword(tokenizer_t *tokenizer) {
+static inline bool is_word(tokenizer_t *tokenizer) {
     char *stopwords[148] = {
             "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and",
             "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could",
@@ -189,8 +189,7 @@ static inline bool is_stopword(tokenizer_t *tokenizer) {
             "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they",
             "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when",
             "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you",
-            "your", "mm", "f", "x", "a", "b", "c", "d", "e", "g", "h", "i", "j", "k", "l", "m", "n", "o",
-            "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "type", "mp"
+            "your", "mm", "type", "mp"
     };
     bool stopword = true;
     for (int j = 0; j < 148; ++j) {
@@ -252,14 +251,20 @@ char *str_next_token(tokenizer_t *tok) {
     }
     tok->buf[1] = '\0';
 
-    while (is_stopword(tok))
+    while (is_word(tok)){
         tok->buf[0] = '\0';
-    //tok->buf[1] = '\0';
-
+    }
+    int i = 0;
+    while (!isspace((ch = buf_get_char(tok, i)))){
+        i++;
+    }
+            //tok->buf[1] = '\0';
+    if (tok->buf[0] == '\0')
+        return NULL; /* no valid token found */
     return tok->buf;
 
     //RETURN_IF_TRUE(is_number);
-    return NULL; /* no valid token found */
+   
 }
 
 tokenizer_t *json_tokenizer_from_filename(char *filename) {
