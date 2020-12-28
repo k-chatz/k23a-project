@@ -3,6 +3,9 @@
 
 #include "../include/hash.h"
 
+#define HSET_FOREACH_ENTRY(ENTRY, HSET, START, END) \
+   for (unsigned int i = 0; (ENTRY = set_iterate_r(HSET, START)) && i < END ; i++)
+
 typedef dictp setp;
 
 static inline setp set_new(size_t key_sz) {

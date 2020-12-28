@@ -111,7 +111,7 @@ void ml_rm_digits(ML ml, char *input) {
 
 void ml_tf(ML ml, float *bow_vector, int wc) {
     if (wc != 0) {
-        int capacity = ml_get_bow_size(ml);
+        int capacity = ml_bow_sz(ml);
         for (int i = 0; i < capacity; i++) {
             bow_vector[i] = bow_vector[i] * 1 / (float) wc;
         }
@@ -125,7 +125,7 @@ void ml_idf(ML ml, float *bow_vector) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
         // w->idf = (float) log(ml->json_ht_load / w->count);
         //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
-        //for (int i = 0; i < ml_get_bow_size(ml); i++) {
+        //for (int i = 0; i < ml_bow_sz(ml); i++) {
         //bow_vector[i] = bow_vector[i] * w->idf;
         bow_vector[w->position] = bow_vector[w->position] * w->idf;
         //}
@@ -162,7 +162,7 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
     return false;
 }
 
-ulong ml_get_bow_size(ML ml) {
+ulong ml_bow_sz(ML ml) {
     return ml->bow_dict->htab->buf_load;
 }
 
@@ -220,7 +220,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
 
 float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) {
     StringList *json_keys = json_get_obj_keys(json);
-    int capacity = ml_get_bow_size(ml);
+    int capacity = ml_bow_sz(ml);
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
     LL_FOREACH(json_key, json_keys) {
@@ -301,7 +301,7 @@ void print_bow_dict(ML ml) {
 
 void print_vector(ML ml, float *vector) {
     printf("[");
-    for (int i = 0; i < ml_get_bow_size(ml); i++) {
+    for (int i = 0; i < ml_bow_sz(ml); i++) {
         if (vector[i]) {
             printf("%.3f ", vector[i]);
         } else {

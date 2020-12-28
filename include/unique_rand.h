@@ -1,16 +1,16 @@
 #ifndef UNIQUE_RAND_H
 #define UNIQUE_RAND_H
 
-typedef struct unique_rand *UniqueRand;
+typedef struct unique_rand *URand;
 
-void ur_create(UniqueRand *ur, int min, int max);
+void ur_create(URand *ur, int min, int max);
 
-int ur_get(UniqueRand ur);
+int ur_get(URand ur);
 
-void ur_reset(UniqueRand ur);
+void ur_reset(URand ur);
 
-void ur_destroy(UniqueRand *ur);
+void ur_destroy(URand *ur);
 
-void ur_print(UniqueRand ur);
+void ur_print(URand ur);
 
 #endif
