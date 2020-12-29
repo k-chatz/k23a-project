@@ -1,6 +1,7 @@
 #include "../include/logreg.h"
 
 LogReg *logreg_new(int weights_len, float learning_rate) {
+    srand(12345);
     LogReg *out = malloc(sizeof(*out));
     out->weights_len = weights_len;
     out->weights = malloc(weights_len * sizeof(float));

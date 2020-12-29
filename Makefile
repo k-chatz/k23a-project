@@ -5,7 +5,7 @@ vpath	 %_tests   tests-bin
 
 CC	= gcc
 CFLAGS	= -g3 -Wall -DMAKEFILE
-LFLAGS	= -lm
+LFLAGS	= -lm -pg
 
 
 .PHONY: tests all clean githooks docs phony

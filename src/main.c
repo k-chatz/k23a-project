@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 2
-#define batch_size 635
+#define epochs 100
+#define batch_size 2000
 #define learning_rate 0.0001
 
 typedef struct options {
@@ -22,6 +22,7 @@ typedef struct options {
     char *stop_words_path;
     char *user_dataset_file;
     char *vec_mode;
+    char *json_path
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -49,6 +50,10 @@ void read_options(int argc, char **argv, Options *o) {
         } else if (strcmp(opt, "-m") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->vec_mode = optVal;
+            }
+        } else if (strcmp(opt, "-jd") == 0){
+            if (optVal != NULL && optVal[0] != '-') {
+                o->json_path = optVal;
             }
         }
     }
@@ -141,9 +146,66 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
+
+dictp *user_json_dict(char *path) {
+    struct dirent **name_list = NULL, **internals_name_list = NULL;
+    int n, internals;
+    char new_path[512], spec_name[1024];
+    char json_name[512], json_path[1024];
+    dictp json_dict = dict_new2(128, sizeof(JSON_ENTITY *));
+    dict_config(json_dict,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_CPY, strncpy,
+                DICT_CONF_CMP, strncmp,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE
+    );
+
+    /* scan external dataset_dir*/
+    n = scandir(path, &name_list, NULL, alphasort);
+    if (n == -1) {
+        perror("scandir");
+        exit(EXIT_FAILURE);
+    }
+    while (n--) {
+        if (!strcmp(name_list[n]->d_name, ".") || !strcmp(name_list[n]->d_name, "..")) {
+            free(name_list[n]);
+            continue;
+        }
+        snprintf(new_path, 512, "%s/%s", path, name_list[n]->d_name);
+        /* for each site collect specs*/
+        internals = scandir(new_path, &internals_name_list, NULL, alphasort);
+        if (internals == -1) {
+            perror("scandir");
+            exit(EXIT_FAILURE);
+        }
+        while (internals--) {
+            if (!strcmp(internals_name_list[internals]->d_name, ".") ||
+                !strcmp(internals_name_list[internals]->d_name, "..")) {
+                free(internals_name_list[internals]);
+                continue;
+            }
+            strcpy(json_name, internals_name_list[internals]->d_name);
+            snprintf(json_path, 512, "%s/%s", new_path, json_name);
+            internals_name_list[internals]->d_name[strlen(internals_name_list[internals]->d_name) - 5] = '\0';
+            snprintf(spec_name, 1024, "%s//%s", name_list[n]->d_name, internals_name_list[internals]->d_name);
+            /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
+            JSON_ENTITY *ent = json_parse_file(json_path);
+            /* Putting this JSON_ENTITY in 'json_dict' hashtable*/
+            dict_put(json_dict, spec_name, &ent);
+            free(internals_name_list[internals]);
+        }
+        free(internals_name_list);
+        free(name_list[n]);
+    }
+    free(name_list);
+    return json_dict;
+}
+
+
 void
 prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
-            dictp json_dict, Match **matches, float *result_vector, int *y, bool mode) {
+            dictp json_dict, Match **matches, float *result_vector, int *y, bool mode, bool is_user) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
@@ -154,18 +216,23 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         if (mode) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
-        spec1 = sts_get(X, (*matches)[x].spec1);
-
+        if (is_user == 0){
+            spec1 = sts_get(X, (*matches)[x].spec1);
+        }
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
         if (mode) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
-        spec2 = sts_get(X, (*matches)[x].spec2);
+        if (is_user == 0){
+            spec2 = sts_get(X, (*matches)[x].spec2);
+        }
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
-        y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
+        if (is_user == 0){
+            y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
+        }
     }
 }
 
@@ -247,17 +314,18 @@ int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
     int user_dataset_size = 0, q = 0;
-    float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
+    float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL, *result_vec_user = NULL;
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    int *y_test = NULL, *y_val = NULL, y[batch_size];
+    int *y_test = NULL, *y_val = NULL, y[batch_size], *y_user = NULL;
     int similar_sz = 0, different_sz = 0;
     int similar_train_set_sz = 0, similar_test_set_sz = 0, similar_val_set_sz = 0;
     int different_train_set_sz = 0, different_test_set_sz = 0, different_val_set_sz = 0;
     int train_sz = 0, test_sz = 0, val_sz = 0;
+
     bool mode;
     LogReg *model = NULL;
     LogReg models[epochs];
-    Options options = {NULL, NULL, NULL, NULL, NULL};
+    Options options = {NULL, NULL, NULL, NULL, NULL, NULL};
     URand ur_dataset = NULL, ur_mini_batch = NULL, ur_train = NULL, ur_test = NULL, ur_val = NULL;
     ulong i_state = 0;
     setp json_train_keys = NULL;
@@ -446,12 +514,12 @@ int main(int argc, char *argv[]) {
 
         for (int j = 0; j < train_sz / batch_size; j++) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
-                        &train_set, result_vec, y, mode);
+                        &train_set, result_vec, y, mode, 0);
             train(model, result_vec, y, batch_size);
         }
 
         prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
-                    &test_set, result_vec_test, y_test, mode);
+                    &test_set, result_vec_test, y_test, mode, 0);
 
         y_pred = predict(model, result_vec_test, test_sz);
 
@@ -483,7 +551,7 @@ int main(int argc, char *argv[]) {
     y_val = malloc(val_sz * sizeof(int));
 
     prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
-                result_vec_val, y_val, mode);
+                result_vec_val, y_val, mode, 0);
 
     /**************************************************** Predict ****************************************************/
 
@@ -498,7 +566,7 @@ int main(int argc, char *argv[]) {
     float *y_pred1 = malloc(val_sz * sizeof(float));
     float *y1 = malloc(val_sz * sizeof(float));
     for (int i = 0; i < val_sz; i++) {
-        if (y_pred[i] < 0.3) {
+        if (y_pred[i] < 0.5) {
             y_pred1[i] = 0.0;
         } else {
             y_pred1[i] = 1.0;
@@ -510,17 +578,22 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("\nf1 score: %f\n", ml_f1_score((float *) y1, y_pred1, val_sz));
+    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y1, y_pred1, val_sz));
 
     /* Read user dataset */
-    // read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
-
-    // prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-    //             json_dict, &user_matches, result_vec_test, y);
+    read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
+    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    dictp user_dataset_dict = user_json_dict(options.json_path);
+    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+                user_dataset_dict, &user_matches, result_vec_user, y_user, mode, 1);
 
     /* Predict user dataset */
-    // y_pred = predict(model, result_vec_test, (test_set_size - train_set_size));
+    y_pred = predict(model, result_vec_test, user_dataset_size);
 
+    for (int i = 0; i < user_dataset_size; i++) {
+        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_matches[i].spec1, user_matches[i].spec2
+                , y_pred[i]);
+    }
     free(losses);
     free(bow_vector_1);
     free(bow_vector_2);
