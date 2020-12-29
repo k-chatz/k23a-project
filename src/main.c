@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 500
+#define epochs 700
 #define batch_size 635
 #define learning_rate 0.0001
 
@@ -435,12 +435,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < train_sz; i++) {
         /* Collect randomly half of the dataset for the training */
         // matches[x].type = TRAIN;
-        if (!set_in(json_train_keys, train_set[i].spec1)) {
-            set_put(json_train_keys, train_set[i].spec1);
-        }
-        if (!set_in(json_train_keys, train_set[i].spec2)) {
-            set_put(json_train_keys, train_set[i].spec2);
-        }
+        set_put(json_train_keys, train_set[i].spec1);
+        set_put(json_train_keys, train_set[i].spec2);
     }
 
     /* shuffle the dataset */
@@ -455,7 +451,7 @@ int main(int argc, char *argv[]) {
         json = (JSON_ENTITY **) dict_get(json_dict, entry);
         ml_tokenize_json(ml, *json);
     }
-
+    print_bow_dict(ml);
     if (mode) {
         ml_idf_remove(ml);
     }
