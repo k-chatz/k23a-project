@@ -10,9 +10,8 @@
 #include "../include/ml.h"
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
-#include "../include/hset.h"
 
-#define epochs 100
+#define epochs 10
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -22,7 +21,7 @@ typedef struct options {
     char *stop_words_path;
     char *user_dataset_file;
     char *vec_mode;
-    char *json_path
+    char *json_path;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -147,7 +146,7 @@ STS *init_sts_dataset_X(char *path) {
 }
 
 
-dictp *user_json_dict(char *path) {
+dictp user_json_dict(char *path) {
     struct dirent **name_list = NULL, **internals_name_list = NULL;
     int n, internals;
     char new_path[512], spec_name[1024];
@@ -491,7 +490,7 @@ int main(int argc, char *argv[]) {
         json = (JSON_ENTITY **) dict_get(json_dict, entry);
         ml_tokenize_json(ml, *json);
     }
-    print_bow_dict(ml);
+
     if (mode) {
         ml_idf_remove(ml);
     }

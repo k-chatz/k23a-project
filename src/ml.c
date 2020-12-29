@@ -195,17 +195,9 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *sentence = json_to_string(cur_ent);
-            tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml->stopwords);
-            while ((token = tokenizer_next(tok)) != NULL) {
-                ulong len = strlen(token);
-                if (len < 3 || len >= 10) {
-                    continue;
-                } else {
-                    set_put(ml->json_set, token);
-                }
-            }
-            tokenizer_free(tok);
+            char *x = json_to_string(cur_ent);
+            ml_str_cleanup(ml, x);
+            ml_bag_of_words(ml, x);
         }
     }
 
@@ -228,25 +220,23 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
 }
 
 float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) {
-    char *token = NULL, *rest = NULL;
-    int capacity = ml_bow_sz(ml);
     StringList *json_keys = json_get_obj_keys(json);
-    Word *w = NULL;
+    int capacity = ml_bow_sz(ml);
     memset(bow_vector, 0, capacity * sizeof(float));
     *wc = 0;
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            tokenizer_t *tok = tokenizer_nlp(json_to_string(cur_ent));
-            while ((token = tokenizer_next(tok)) != NULL) {
-                w = (Word *) dict_get(ml->bow_dict, token);
+            char *value = json_to_string(cur_ent);
+            char *token = NULL, *rest = NULL;
+            for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                Word *w = (Word *) dict_get(ml->bow_dict, token);
                 if (w == NULL) {
                     continue;
                 }
                 bow_vector[w->position] += 1.0;
                 (*wc)++;
             }
-            tokenizer_free(tok);
         }
     }
     return bow_vector;
