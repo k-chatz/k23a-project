@@ -3,12 +3,16 @@
 
 #include "../include/hash.h"
 
+#define HSET_FOREACH_ENTRY(ENTRY, HSET, START, END) \
+   for (unsigned int i = 0; (ENTRY = set_iterate_r(HSET, START)) && i < END ; i++)
+
 typedef dictp setp;
 
 static inline setp set_new(size_t key_sz) {
     return dict_new2(key_sz, 0);
 }
 
+//TODO: make this function return true/false
 static inline setp set_put(setp set, keyp key) {
     int val = 0;
     if (dict_get(set, key) == NULL)

@@ -22,10 +22,10 @@ void static inline swap(int *r1, int *r2) {
 
 /***Public functions***/
 
-void ur_create(UniqueRand *ur, int min, int max) {
+void ur_create(URand *ur, int min, int max) {
     assert(max > min);
     assert(*ur == NULL);
-    *ur = (UniqueRand) malloc(sizeof(struct unique_rand));
+    *ur = (URand) malloc(sizeof(struct unique_rand));
     (*ur)->min = min;
     (*ur)->max = max;
     (*ur)->length = max - min + 1;
@@ -35,14 +35,14 @@ void ur_create(UniqueRand *ur, int min, int max) {
     }
 }
 
-void ur_reset(UniqueRand ur) {
+void ur_reset(URand ur) {
     ur->length = (ur->max - ur->min + 1);
     for (int i = 0; i < ur->length; i++) {
         ur->values[i] = ur->min + i;
     }
 }
 
-int ur_get(UniqueRand ur) {
+int ur_get(URand ur) {
     int i = 0;
     if (ur->length > 0) {
         srand(time(0));
@@ -55,14 +55,14 @@ int ur_get(UniqueRand ur) {
     }
 }
 
-void ur_destroy(UniqueRand *ur) {
+void ur_destroy(URand *ur) {
     assert(ur != NULL);
     free((*ur)->values);
     free(*ur);
     *ur = NULL;
 }
 
-void ur_print(UniqueRand ur) {
+void ur_print(URand ur) {
     unsigned int x = (ur->max - ur->min + 1);
     for (int i = 0; i < x; i++) {
         printf("values[%d]=%d\n", i, ur->values[i]);

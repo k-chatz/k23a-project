@@ -8,7 +8,7 @@ typedef struct ml *ML;
 
 bool ml_create(ML *ht, const char *sw_file, int load);
 
-ulong ml_get_bow_size(ML ml);
+ulong ml_bow_sz(ML ml);
 
 dictp ml_bag_of_words(ML ml, char *buf);
 

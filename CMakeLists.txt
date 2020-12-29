@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(k23a_project C)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
 
 set(CMAKE_C_STANDARD 11)
 
@@ -15,6 +15,7 @@ add_executable(k23a_project_general_tests
 #json_parser_tests
 add_executable(k23a_project_json_parser_tests
         tests/json_parser_tests.c
+        src/tokenizer.c
         src/json_parser.c
         src/lists.c
         src/hash.c
@@ -76,6 +77,7 @@ add_executable(k23a_project_tokenizer_tests
         tests/tokenizer_tests.c
         src/json_parser.c
         src/hash.c
+        src/hset.c
         src/lists.c
         src/tokenizer.c
         )

@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="test_spec_to_specs" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-E" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k23a_project" TARGET_NAME="k23a_project_spec_to_specs_tests" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k23a_project" RUN_TARGET_NAME="k23a_project_spec_to_specs_tests">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

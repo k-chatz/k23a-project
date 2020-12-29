@@ -42,7 +42,7 @@ typedef struct match {
     char *spec2;
     int relation;
     enum match_type type;
-} *Match;
+} Match;
 
 /*!
   @brief STS hashtable entry.
@@ -146,9 +146,9 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void sts_similar(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+void init_similar_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter);
 
-void sts_different(FILE *file, STS *sts, Match *matches, int *chunks, int *counter);
+void init_different_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter);
 
 
 void print_sts_similar(FILE *file, STS *sts);
