@@ -12,8 +12,8 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 7
-#define batch_size 635
+#define epochs 100
+#define batch_size 2000
 #define learning_rate 0.0001
 
 typedef struct options {

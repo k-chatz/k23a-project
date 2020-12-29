@@ -23,7 +23,7 @@
                 "-jd",
                 "resources/user_json_files",
                 "-m",
-                "bow"
+                "tfidf"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
