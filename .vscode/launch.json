@@ -18,6 +18,10 @@
                 "Datasets/sigmod_large_labelled_dataset.csv",
                 "-sw",
                 "resources/unwanted-words.txt",
+                "-ds",
+                "resources/user_dataset.csv",
+                "-jd",
+                "resources/user_json_files",
                 "-m",
                 "bow"
             ],
