@@ -12,6 +12,7 @@ static inline setp set_new(size_t key_sz) {
     return dict_new2(key_sz, 0);
 }
 
+//TODO: make this function return true/false
 static inline setp set_put(setp set, keyp key) {
     int val = 0;
     if (dict_get(set, key) == NULL)
