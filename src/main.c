@@ -367,6 +367,7 @@ int main(int argc, char *argv[]) {
     ur_create(&ur_test, 0, test_sz - 1);
     ur_create(&ur_val, 0, val_sz - 1);
     int rand_i;
+
     // TODO: function
     /*Fill the train_set array*/
     for (int i = 0; i < train_sz; i++){
@@ -389,8 +390,6 @@ int main(int argc, char *argv[]) {
             test_set[rand_i] = different_matches_test[i - similar_test_set_sz];
         }
     }
-
-    
 
     /*Fill the val_set array*/
     for (int i = 0; i < val_sz; i++){

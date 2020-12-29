@@ -249,4 +249,3 @@ tokenizer_t *json_tokenizer_from_string(char *string) {
 tokenizer_t *tokenizer_nlp(char *string, setp stopwords) {
     return tokenizer_new_from_string(string, stopwords, str_next_nlp_token);
 }
-

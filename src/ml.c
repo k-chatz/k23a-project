@@ -11,7 +11,7 @@
 
 struct ml {
     dictp bow_dict;
-    dictp stop_words;
+    dictp stopwords;
     setp json_set;
     const char *sw_file;
     int json_ht_load;
@@ -84,13 +84,13 @@ void ml_rm_punct_and_upper_case(ML ml, char *input) {
 
 bool ml_rm_stop_words(ML ml, char *input) {
     assert(input != NULL);
-    if (ml->stop_words == NULL) {
+    if (ml->stopwords == NULL) {
         return false;
     }
     char *temp = strdup(input), *token, *rest = NULL;
     input[0] = '\0';
     for (token = strtok_r(temp, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        if (dict_get(ml->stop_words, token) == NULL) {
+        if (dict_get(ml->stopwords, token) == NULL) {
             strcat(input, token);
             strcat(input, " ");
         }
@@ -154,7 +154,7 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
                     DICT_CONF_HASH_FUNC, djb2_str,
                     DICT_CONF_KEY_SZ_F, str_sz,
                     DICT_CONF_DONE);
-        (*ml)->stop_words = ml_stop_words(*ml);
+        (*ml)->stopwords = ml_stop_words(*ml);
         (*ml)->json_ht_load = load;
         (*ml)->removed_words_num = 0;
         return true;
@@ -194,8 +194,12 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
-            ml_str_cleanup(ml, x);
-            ml_bag_of_words(ml, x);
+            tokenizer_t *tok = tokenizer_nlp(x, ml->stopwords);
+            char *token = tokenizer_next(tok);
+            if (token != NULL) {
+                set_put(ml->json_set, token);
+            }
+            tokenizer_free(tok);
         }
     }
     /* Iterate set */
