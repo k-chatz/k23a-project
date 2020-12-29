@@ -4,7 +4,7 @@ vpath	 %.h       include
 vpath	 %_tests   tests-bin
 
 CC	= gcc
-CFLAGS	= -g3 -O3 -Wall -DMAKEFILE -pg
+CFLAGS	= -g3 -Wall -DMAKEFILE
 LFLAGS	= -lm
 
 
