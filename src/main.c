@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 700
+#define epochs 10
 #define batch_size 635
 #define learning_rate 0.0001
 

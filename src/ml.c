@@ -196,11 +196,14 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *sentence = json_to_string(cur_ent);
-//            ml_str_cleanup(ml, sentence);
-//            ml_bag_of_words(ml, sentence);
             tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml->stopwords);
             while ((token = tokenizer_next(tok)) != NULL) {
-                set_put(ml->json_set, token);
+                ulong len = strlen(token);
+                if (len < 3 || len >= 10) {
+                    continue;
+                } else {
+                    set_put(ml->json_set, token);
+                }
             }
             tokenizer_free(tok);
         }
@@ -234,18 +237,6 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) 
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *value = json_to_string(cur_ent);
-
-//            for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-//                Word *w = (Word *) dict_get(ml->bow_dict, token);
-//                if (w == NULL) {
-//                    continue;
-//                }
-//                bow_vector[w->position] += 1.0;
-//                (*wc)++;
-//                // if (bow_vector[w->position] == 1) {
-//            }
-
             tokenizer_t *tok = tokenizer_nlp(json_to_string(cur_ent));
             while ((token = tokenizer_next(tok)) != NULL) {
                 w = (Word *) dict_get(ml->bow_dict, token);
@@ -256,12 +247,8 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) 
                 (*wc)++;
             }
             tokenizer_free(tok);
-
         }
     }
-
-//    print_vector(ml, bow_vector);
-
     return bow_vector;
 }
 
