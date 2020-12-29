@@ -178,7 +178,7 @@ void tokenize_nlp_sentence(void) {
     }
 
     /* tokenizing whitespace should yield no tokens and consume it */
-    tokenizer_t *tok = tokenizer_nlp(
+    tokenizer_t *tok = tokenizer_nlp_sw(
             "nothing word 2 , 9 this I2S a st6riNg, is    TRUE is a 663  string is5   ABle to trueueueue ",
             stopwords
     );

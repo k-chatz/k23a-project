@@ -220,7 +220,7 @@ char *json_next_token(tokenizer_t *tok) {
     return NULL; /* no valid token found */
 }
 
-char *str_next_nlp_token(tokenizer_t *tok) {
+char *str_next_nlp_not_sw_token(tokenizer_t *tok) {
     tok->buf[0] = '\0'; /* reset the token */
     /* eat whitespace first */
     char ch;
@@ -229,10 +229,25 @@ char *str_next_nlp_token(tokenizer_t *tok) {
     }
     tok->buf[1] = '\0';
     if (is_accepted_nlp_word(tok)) {
-        //TODO: if (word <= 3 || word > 9) -> REJECT
         while (set_in(tok->stopwords, tok->buf)) {
-            str_next_nlp_token(tok);
+            str_next_nlp_not_sw_token(tok);
         }
+        return tok->buf;
+    }
+    return NULL; /* no valid token found */
+}
+
+char *str_next_nlp_token(tokenizer_t *tok) {
+    tok->buf[0] = '\0'; /* reset the token */
+    /* eat whitespace first */
+    char ch;
+    while (isspace((ch = buf_get_char(tok, 0))) || ispunct(ch) || isdigit(ch)) {
+        tok->buf[0] = '\0';
+    }
+    tok->buf[1] = '\0';
+
+    if (is_accepted_nlp_word(tok)) {
+
         return tok->buf;
     }
     return NULL; /* no valid token found */
@@ -246,6 +261,10 @@ tokenizer_t *json_tokenizer_from_string(char *string) {
     return tokenizer_new_from_string(string, NULL, json_next_token);
 }
 
-tokenizer_t *tokenizer_nlp(char *string, setp stopwords) {
-    return tokenizer_new_from_string(string, stopwords, str_next_nlp_token);
+tokenizer_t *tokenizer_nlp(char *string) {
+    return tokenizer_new_from_string(string, NULL, str_next_nlp_token);
+}
+
+tokenizer_t *tokenizer_nlp_sw(char *string, setp stopwords) {
+    return tokenizer_new_from_string(string, stopwords, str_next_nlp_not_sw_token);
 }

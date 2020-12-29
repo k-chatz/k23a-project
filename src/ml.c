@@ -194,7 +194,9 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
             char *x = json_to_string(cur_ent);
-            tokenizer_t *tok = tokenizer_nlp(x, ml->stopwords);
+//            ml_str_cleanup(ml, x);
+//            ml_bag_of_words(ml, x);
+            tokenizer_t *tok = tokenizer_nlp_sw(x, ml->stopwords);
             char *token = tokenizer_next(tok);
             if (token != NULL) {
                 set_put(ml->json_set, token);

@@ -35,6 +35,8 @@ tokenizer_t *json_tokenizer_from_filename(char *filename);
 
 tokenizer_t *json_tokenizer_from_string(char *string);
 
-tokenizer_t *tokenizer_nlp(char *string, setp stopwords);
+tokenizer_t *tokenizer_nlp(char *string);
+
+tokenizer_t *tokenizer_nlp_sw(char *string, setp stopwords);
 
 #endif
