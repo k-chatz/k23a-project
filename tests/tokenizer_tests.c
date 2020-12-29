@@ -183,19 +183,15 @@ void tokenize_nlp_sentence(void) {
             "     nothing word 2 , 9 this I2S a st6riNg, is    TRUE is a 663  string is5   ABle to trueueueue ",
             stopwords
     );
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "nothing") == 0);
-//
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "word") == 0);
-//
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "ring") == 0);
-//
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "true") == 0);
-//
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "string") == 0);
-//
-//    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "trueueueue") == 0);
-//
-//    TEST_CHECK((token = tokenizer_next(tok)) == NULL);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "nothing") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "word") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "s") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "st") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "ring") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "true") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "string") == 0);
+    TEST_CHECK(strcmp((token = tokenizer_next(tok)), "trueueueue") == 0);
+    TEST_CHECK((token = tokenizer_next(tok)) == NULL);
 
     tokenizer_free(tok);
 }

@@ -179,7 +179,6 @@ static bool is_string(tokenizer_t *tokenizer) {
 static inline bool is_accepted_nlp_word(tokenizer_t *tokenizer) {
     char ch;
     int i = 0;
-    int c = 0;
     bool completed_word = false;
     bool is_special;
     do {
@@ -188,21 +187,11 @@ static inline bool is_accepted_nlp_word(tokenizer_t *tokenizer) {
         is_special = isspace(ch) || ispunct(ch) || isdigit(ch);
         if (ch != 0 && is_special) {
             completed_word = true;
-        } else {
-            c++;
         }
         i++;
     } while (ch != 0 && !is_special);
-
-    //todo: check this
     buf_set_char(tokenizer, i - 1, 0);
-
-    if (completed_word) {
-        return c > 2 && c < 10;
-    } else {
-        return false;
-    }
-    //return (completed_word && c > 2 && c < 11);
+    return completed_word;
 }
 
 #define RETURN_IF_TRUE(f)                                                      \
@@ -256,14 +245,7 @@ char *str_next_nlp_token(tokenizer_t *tok) {
         tok->buf[0] = '\0';
     }
     tok->buf[1] = '\0';
-
-    if (is_accepted_nlp_word(tok)) {
-        ulong len = strlen(tok->buf);
-        while (len <= 2 || len > 10) {
-            str_next_nlp_token(tok);
-        }
-        return tok->buf;
-    }
+    RETURN_IF_TRUE(is_accepted_nlp_word);
     return NULL; /* no valid token found */
 }
 
