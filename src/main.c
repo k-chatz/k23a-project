@@ -12,7 +12,7 @@
 #include "../include/unique_rand.h"
 #include "../include/hset.h"
 
-#define epochs 10
+#define epochs 2
 #define batch_size 635
 #define learning_rate 0.0001
 
@@ -230,23 +230,30 @@ float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     return max_loss;
 }
 
+void merge_set(Match *set, int set_sz, URand ur_train, int similar_set_sz, Match *similar_matches_train,
+               Match *different_matches_train) {
+    int rand_i = 0;
+    for (int i = 0; i < set_sz; i++) {
+        rand_i = ur_get(ur_train);
+        if (i < similar_set_sz) {
+            set[rand_i] = similar_matches_train[i];
+        } else {
+            set[rand_i] = different_matches_train[i - similar_set_sz];
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     char json_website[128], json_num[128], json_path[280], *entry = NULL;
     int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
     int user_dataset_size = 0, q = 0;
     float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL;
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    int y[batch_size];
-    int *y_test = NULL;
-    int *y_val = NULL;
-    int similar_sz = 0;
-    int similar_train_set_sz = 0;
-    int similar_test_set_sz = 0;
-    int similar_val_set_sz = 0;
-    int different_sz = 0;
-    int different_train_set_sz = 0;
-    int different_test_set_sz = 0;
-    int different_val_set_sz = 0;
+    int *y_test = NULL, *y_val = NULL, y[batch_size];
+    int similar_sz = 0, different_sz = 0;
+    int similar_train_set_sz = 0, similar_test_set_sz = 0, similar_val_set_sz = 0;
+    int different_train_set_sz = 0, different_test_set_sz = 0, different_val_set_sz = 0;
+    int train_sz = 0, test_sz = 0, val_sz = 0;
     bool mode;
     LogReg *model = NULL;
     LogReg models[epochs];
@@ -291,7 +298,7 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
-    /* iterate in dataset X in order to get the path for each  json file*/
+    /* iterate in dataset X in order to get the path for each json file*/
     i_state = 0;
 
     /* create json hash table using dataset X */
@@ -353,12 +360,11 @@ int main(int argc, char *argv[]) {
     memcpy(different_matches_val, different_matches + different_train_set_sz + different_test_set_sz,
            different_val_set_sz * sizeof(Match));
 
-
     /*create the whole train set, test set and val set*/
-    int train_sz = similar_train_set_sz + different_train_set_sz;
-    int test_sz = similar_test_set_sz + different_test_set_sz;
-    int val_sz =  similar_val_set_sz + different_val_set_sz;
-   
+    train_sz = similar_train_set_sz + different_train_set_sz;
+    test_sz = similar_test_set_sz + different_test_set_sz;
+    val_sz = similar_val_set_sz + different_val_set_sz;
+
     train_set = malloc(train_sz * sizeof(Match));
     test_set = malloc(test_sz * sizeof(Match));
     val_set = malloc(val_sz * sizeof(Match));
@@ -366,45 +372,11 @@ int main(int argc, char *argv[]) {
     ur_create(&ur_train, 0, train_sz - 1);
     ur_create(&ur_test, 0, test_sz - 1);
     ur_create(&ur_val, 0, val_sz - 1);
-    int rand_i;
 
-    // TODO: function
-    /*Fill the train_set array*/
-    for (int i = 0; i < train_sz; i++){
-        rand_i = ur_get(ur_train);
-        if (i < similar_train_set_sz){
-            train_set[rand_i] = similar_matches_train[i];
-        }
-        else {
-            train_set[rand_i] = different_matches_train[i - similar_train_set_sz];
-        }
-    }
-
-    /*Fill the test_set array*/
-    for (int i = 0; i < test_sz; i++){
-        rand_i = ur_get(ur_test);
-        if (i < similar_test_set_sz){
-            test_set[rand_i] = similar_matches_test[i];
-        }
-        else {
-            test_set[rand_i] = different_matches_test[i - similar_test_set_sz];
-        }
-    }
-
-    /*Fill the val_set array*/
-    for (int i = 0; i < val_sz; i++){
-        rand_i = ur_get(ur_val);
-        if (i < similar_val_set_sz){
-            val_set[rand_i] = similar_matches_val[i];
-        }
-        else {
-            val_set[rand_i] = different_matches_val[i - similar_val_set_sz];
-        }
-    }
-
-    // for (int i = 0; i < val_sz; i++){
-    //     printf("spec1: %s, spec2: %s, relation: %d\n", val_set[i].spec1, val_set[i].spec2, val_set[i].relation);
-    // }
+    /* merge the train, test & val sets */
+    merge_set(train_set, train_sz, ur_train, similar_train_set_sz, similar_matches_train, different_matches_train);
+    merge_set(test_set, test_sz, ur_test, similar_test_set_sz, similar_matches_train, different_matches_train);
+    merge_set(val_set, val_sz, ur_val, similar_val_set_sz, similar_matches_train, different_matches_train);
 
     /**************************************************** Training ****************************************************/
 
@@ -431,7 +403,7 @@ int main(int argc, char *argv[]) {
     );
 
 
-     /*Add jsons to vocab*/
+    /*Add jsons to vocab*/
     for (int i = 0; i < train_sz; i++) {
         /* Collect randomly half of the dataset for the training */
         // matches[x].type = TRAIN;
