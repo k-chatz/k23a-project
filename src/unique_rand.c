@@ -43,10 +43,10 @@ void ur_reset(URand ur) {
 }
 
 int ur_get(URand ur) {
+    unsigned int seed = 123456;
     int i = 0;
     if (ur->length > 0) {
-        srand(time(0));
-        i = rand() % ur->length;
+        i = rand_r(&seed) % ur->length;
         --ur->length;
         swap(&ur->values[i], &ur->values[ur->length]);
         return (int) ur->values[ur->length];

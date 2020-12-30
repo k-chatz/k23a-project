@@ -1,13 +1,13 @@
 #include "../include/logreg.h"
 
 LogReg *lr_new(int weights_len, float learning_rate) {
-    srand(12345);
+    unsigned int seed = 12345;
     LogReg *out = malloc(sizeof(*out));
     out->weights_len = weights_len;
     out->weights = malloc(weights_len * sizeof(float));
     for (int i = 0; i < weights_len; i++)
-        out->weights[i] = ((float) rand()) / RAND_MAX;
-    out->bias = ((float) rand()) / RAND_MAX;
+        out->weights[i] = ((float) rand_r(&seed)) / RAND_MAX;
+    out->bias = ((float) rand_r(&seed)) / RAND_MAX;
     out->learning_rate = learning_rate;
     return out;
 }
@@ -43,8 +43,8 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     float *Ps = lr_predict(reg, Xs, batch_sz);
 
     /* calculate the Deltas */
-    float *Deltas = malloc(reg->weights_len * sizeof(float) + 1);
-    memset(Deltas, 0, reg->weights_len * sizeof(float) + 1);
+    float *Deltas = malloc((reg->weights_len  + 1) * sizeof(float));
+    memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
     for (int i = 0; i < batch_sz; i++) {
         int j;
         for (j = 0; j < reg->weights_len; j++) {

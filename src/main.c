@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 500
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -81,11 +81,11 @@ void read_labelled_dataset_csv(STS *dataset_X, char *labelled_dataset, char *fla
     fclose(fp);
 }
 
-void read_user_dataset_csv(char *user_dataset_file, Pair **pairs, int *counter) {
-    assert(user_dataset_file != NULL);
+void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pairs, int *counter) {
+    assert(user_labelled_dataset_file != NULL);
     assert(*pairs == NULL);
     assert(*counter == 0);
-    FILE *fp = fopen(user_dataset_file, "r");
+    FILE *fp = fopen(user_labelled_dataset_file, "r");
     char left_spec_id[50], right_spec_id[50];
     //skip first row
     fseek(fp, 27, SEEK_SET);
@@ -295,12 +295,12 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
-    similar_pairs_train = malloc(2 * similar_train_set_sz * sizeof(Pair));
+    similar_pairs_train = malloc(similar_train_set_sz * sizeof(Pair));
     similar_pairs_test = malloc(similar_test_set_sz * sizeof(Pair));
     similar_pairs_val = malloc(similar_val_set_sz * sizeof(Pair));
 
     memcpy(similar_pairs_train, similar_pairs, similar_train_set_sz * sizeof(Pair));
-    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
+//    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
     memcpy(similar_pairs_test, similar_pairs + similar_train_set_sz, similar_test_set_sz * sizeof(Pair));
     memcpy(similar_pairs_val, similar_pairs + similar_train_set_sz + similar_test_set_sz,
            similar_val_set_sz * sizeof(Pair));
@@ -406,9 +406,16 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
     int *y_user = malloc(user_dataset_size * sizeof(float));
     float *result_vec_user = NULL, *y_pred = NULL;
     /* Read user dataset */
-    read_user_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
+    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
     result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
+//    char *entry = NULL;
+//    ulong i_state = 0;
+//    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
+//        printf("[%s]\n", entry);
+//        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
+//        json_print_value(*json);
+//    }
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
 
@@ -491,7 +498,6 @@ int main(int argc, char *argv[]) {
     setp json_train_keys = NULL;
     Pair *user_pairs = NULL;
     ML ml = NULL;
-
     Options options = {NULL,
                        NULL,
                        NULL,
@@ -568,11 +574,8 @@ int main(int argc, char *argv[]) {
                val_set[i].relation, y_pred[i]);
     }
 
-        /* calculate F1 score */
-    
-
     /* calculate F1 score */
-    printf("\nf1 score: %f\n\n", ml_f1_score(y_val, y_pred, val_sz));
+    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
     /******************************************** Predict User Dataset ************************************************/
 
@@ -580,8 +583,6 @@ int main(int argc, char *argv[]) {
                          bow_vector_1, bow_vector_2, user_pairs, model, X);
 
     /******************************************************************************************************************/
-
-    
 
     free(bow_vector_1);
     free(bow_vector_2);
