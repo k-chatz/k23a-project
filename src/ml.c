@@ -7,7 +7,6 @@
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 #include "../include/ml.h"
-#include "../include/hset.h"
 
 struct ml {
     dictp bow_dict;
@@ -123,12 +122,7 @@ void ml_idf(ML ml, float *bow_vector) {
     ulong iterate_state = 0;
     DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
         Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
-        // w->idf = (float) log(ml->json_ht_load / w->count);
-        //printf("%s\tcount:[%d], position:[%d], ml_idf:[%f]\n", entry, w->count, w->position, w->idf);
-        //for (int i = 0; i < ml_bow_sz(ml); i++) {
-        //bow_vector[i] = bow_vector[i] * w->idf;
         bow_vector[w->position] = bow_vector[w->position] * w->idf;
-        //}
     }
 }
 

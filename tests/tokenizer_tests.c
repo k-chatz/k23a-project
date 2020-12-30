@@ -229,4 +229,3 @@ TEST_LIST = {
         {"tokenize_multiword",    tokenize_multiword},
         {NULL, NULL}
 };
-

@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 10
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -50,7 +50,7 @@ void read_options(int argc, char **argv, Options *o) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->vec_mode = optVal;
             }
-        } else if (strcmp(opt, "-jd") == 0){
+        } else if (strcmp(opt, "-jd") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->json_path = optVal;
             }
@@ -215,7 +215,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         if (mode) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
-        if (is_user == 0){
+        if (is_user == 0) {
             spec1 = sts_get(X, (*matches)[x].spec1);
         }
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec2);
@@ -223,13 +223,13 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         if (mode) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
-        if (is_user == 0){
+        if (is_user == 0) {
             spec2 = sts_get(X, (*matches)[x].spec2);
         }
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
-        if (is_user == 0){
+        if (is_user == 0) {
             y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
         }
     }
@@ -590,8 +590,7 @@ int main(int argc, char *argv[]) {
     y_pred = predict(model, result_vec_test, user_dataset_size);
 
     for (int i = 0; i < user_dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_matches[i].spec1, user_matches[i].spec2
-                , y_pred[i]);
+        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_matches[i].spec1, user_matches[i].spec2, y_pred[i]);
     }
     free(losses);
     free(bow_vector_1);
