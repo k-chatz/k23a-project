@@ -69,11 +69,16 @@ STS *sts_new() {
     return new;
 }
 
+void free_spec_list_node(StrList *node) {
+    free(node->data);
+    free(node);
+}
+
 /* Destroy a spec */
 static void destroy_spec(SpecEntry *spec) {
     free(spec->id);
-    ll_free(spec->similar, free);
-    ll_free(spec->different, free);
+    ll_free(spec->similar, (llfree_f) free);
+    ll_free(spec->different, (llfree_f) free_spec_list_node);
 }
 
 void sts_destroy(STS *sts) {
@@ -242,7 +247,7 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose) {
     fprintf(file, "\n}\n");
 }
 
-void init_similar_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter) {
+void init_similar_pairs(FILE *file, STS *sts, Pair **pairs, int *chunks, int *counter) {
     ulong iter_state = 0;
     char *entry = NULL;
     DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
@@ -255,12 +260,12 @@ void init_similar_matches(FILE *file, STS *sts, Match **matches, int *chunks, in
                 LL_FOREACH(B, (StrList *) A->next) {
                     if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
                         (*chunks)++;
-                        *matches = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
+                        *pairs = realloc(*pairs, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct pair));
                     }
                     //fprintf(file, "%s, %s\n", A->data, B->data);
-                    (*matches)[*counter].spec1 = A->data;
-                    (*matches)[*counter].spec2 = B->data;
-                    (*matches)[*counter].relation = 1;
+                    (*pairs)[*counter].spec1 = A->data;
+                    (*pairs)[*counter].spec2 = B->data;
+                    (*pairs)[*counter].relation = 1;
                     (*counter)++;
                 }
             }
@@ -268,7 +273,7 @@ void init_similar_matches(FILE *file, STS *sts, Match **matches, int *chunks, in
     }
 }
 
-void init_different_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter) {
+void init_different_pairs(FILE *file, STS *sts, Pair **pairs, int *chunks, int *counter) {
     ulong iter_state = 0;
     char *entry = NULL;
     DICT_FOREACH_ENTRY(entry, sts->dict, &iter_state, sts->dict->htab->buf_load) {
@@ -284,12 +289,12 @@ void init_different_matches(FILE *file, STS *sts, Match **matches, int *chunks, 
                         LL_FOREACH(B, temp->similar) {
                             if ((*counter) + 1 > (*chunks * MATCHES_CHUNK_SIZE)) {
                                 (*chunks)++;
-                                (*matches) = realloc(*matches, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct match));
+                                (*pairs) = realloc(*pairs, (*chunks) * MATCHES_CHUNK_SIZE * sizeof(struct pair));
                             }
                             //fprintf(file, "%s, %s\n", A_sim->data, B->data);
-                            (*matches)[*counter].spec1 = A_sim->data;
-                            (*matches)[*counter].spec2 = B->data;
-                            (*matches)[*counter].relation = 0;
+                            (*pairs)[*counter].spec1 = A_sim->data;
+                            (*pairs)[*counter].spec2 = B->data;
+                            (*pairs)[*counter].relation = 0;
                             (*counter)++;
                         }
                     }

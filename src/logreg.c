@@ -1,6 +1,6 @@
 #include "../include/logreg.h"
 
-LogReg *logreg_new(int weights_len, float learning_rate) {
+LogReg *lr_new(int weights_len, float learning_rate) {
     srand(12345);
     LogReg *out = malloc(sizeof(*out));
     out->weights_len = weights_len;
@@ -12,36 +12,35 @@ LogReg *logreg_new(int weights_len, float learning_rate) {
     return out;
 }
 
-void logreg_free(LogReg *reg) {
+void lr_free(LogReg *reg) {
     free(reg->weights);
     free(reg);
 }
 
-float sigmoid(float x) { return exp(x) / (1 + exp(x)); }
+float lr_sigmoid(float x) { return exp(x) / (1 + exp(x)); }
 
-float logloss(float p, bool y) { return -log((y ? p : 1 - p)); }
+float lr_loss(float p, bool y) { return -log((y ? p : 1 - p)); }
 
-float predict_one(LogReg *reg, float *X) {
+float lr_predict_one(LogReg *reg, float *X) {
     float lin_sum = 0;
     float p;
     int i;
     for (i = 0; i < reg->weights_len; i++) {
         lin_sum += reg->weights[i] * X[i];
     }
-    p = sigmoid(lin_sum + reg->bias);
+    p = lr_sigmoid(lin_sum + reg->bias);
     return p;
 }
 
-float *predict(LogReg *reg, float *Xs, int batch_sz) {
+float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
     float *Ps = malloc(sizeof(Ps) * batch_sz);
     for (int i = 0; i < batch_sz; i++)
-        Ps[i] = predict_one(reg, &Xs[i * reg->weights_len]);
+        Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
     return Ps;
 }
 
-
-float train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
-    float *Ps = predict(reg, Xs, batch_sz);
+float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
+    float *Ps = lr_predict(reg, Xs, batch_sz);
 
     /* calculate the Deltas */
     float *Deltas = malloc(reg->weights_len * sizeof(float) + 1);
@@ -70,4 +69,3 @@ float train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     free(Deltas);
     return max_delta;
 }
-

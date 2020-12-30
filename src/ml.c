@@ -156,6 +156,14 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
     return false;
 }
 
+void ml_destroy(ML *ml) {
+    assert(*ml != NULL);
+    dict_free((*ml)->bow_dict, NULL);
+    dict_free((*ml)->stopwords, NULL);
+    dict_free((*ml)->json_set, NULL);
+    free(*ml);
+}
+
 ulong ml_bow_sz(ML ml) {
     return ml->bow_dict->htab->buf_load;
 }
@@ -171,7 +179,6 @@ dictp ml_bag_of_words(ML ml, char *input) {
     char *buf = strdup(input);
     for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
         if (!set_in(ml->json_set, token)) {
-            size_t token_len = strlen(token);
             set_put(ml->json_set, token);
         }
     }
@@ -180,7 +187,7 @@ dictp ml_bag_of_words(ML ml, char *input) {
 }
 
 dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
-    char *token = NULL, *entry, *x = NULL;
+    char *entry, *x = NULL;
     ulong i_start = 0;
     Word *word = NULL;
     StringList *json_keys = json_get_obj_keys(json);
@@ -189,7 +196,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *x = json_to_string(cur_ent);
+            x = json_to_string(cur_ent);
             ml_str_cleanup(ml, x);
             ml_bag_of_words(ml, x);
         }
@@ -263,29 +270,27 @@ int get_removed_words_num(ML ml) {
     return ml->removed_words_num;
 }
 
-float ml_f1_score(float *y, float *y_pred, int y_size) {
+float ml_f1_score(const float *y, const float *y_pred, int y_size) {
     float true_pos = 0.0, true_neg = 0.0, false_pos = 0.0, false_neg = 0.0;
     float precision, recall;
     for (int i = 0; i < y_size; i++) {
-        if (y[i] == 1 && y_pred[i] == 1) {
+        if (y[i] == 1 && y_pred[i] >= 0.5) {
             true_pos++;
-        } else if (y[i] == 0 && y_pred[i] == 0) {
+        } else if (y[i] == 0 && y_pred[i] < 0.5) {
             true_neg++;
-        } else if (y[i] == 1 && y_pred[i] == 0) {
+        } else if (y[i] == 1 && y_pred[i] < 0.5) {
             false_neg++;
-        } else if (y[i] == 0 && y_pred[i] == 1) { //else
+        } else if (y[i] == 0 && y_pred[i] >= 0.5) { //else
             false_pos++;
         }
     }
-
+    if (((true_pos + false_pos) == 0) || ((true_pos + false_neg) == 0)) return 0;
     precision = true_pos / (true_pos + false_pos);
     recall = true_pos / (true_pos + false_neg);
-
     return 2 * precision * recall / (precision + recall);
 }
 
 void print_bow_dict(ML ml) {
-    char *x = NULL;
     char *entry = NULL;
     ulong i_state = 0;
     DICT_FOREACH_ENTRY(entry, ml->bow_dict, &i_state, ml->bow_dict->htab->buf_load) {

@@ -39,7 +39,9 @@ htab_t *htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap) {
 }
 
 void htab_destroy(htab_t *ht, void (*free_t)(void *)) {
-    htab_free_entries(ht, free_t);
+    if (free_t != NULL) {
+        htab_free_entries(ht, free_t);
+    }
     free(ht);
 }
 

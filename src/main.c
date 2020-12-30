@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 1
+#define epochs 100
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -81,21 +81,21 @@ void read_labelled_dataset_csv(STS *dataset_X, char *labelled_dataset, char *fla
     fclose(fp);
 }
 
-void read_user_dataset_csv(char *user_dataset_file, Match **matches, int *counter) {
+void read_user_dataset_csv(char *user_dataset_file, Pair **pairs, int *counter) {
     assert(user_dataset_file != NULL);
-    assert(*matches == NULL);
+    assert(*pairs == NULL);
     assert(*counter == 0);
     FILE *fp = fopen(user_dataset_file, "r");
     char left_spec_id[50], right_spec_id[50];
     //skip first row
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
-        (*matches) = realloc(*matches, (*counter + 1) * sizeof(struct match));
-        //fprintf(stdout, "Save to matches array: %s, %s\n", left_spec_id, right_spec_id);
-        (*matches)[*counter].spec1 = strdup(left_spec_id);
-        (*matches)[*counter].spec2 = strdup(right_spec_id);
-        (*matches)[*counter].relation = -1;
-        (*matches)[*counter].type = NAT;
+        (*pairs) = realloc(*pairs, (*counter + 1) * sizeof(struct pair));
+        //fprintf(stdout, "Save to pairs array: %s, %s\n", left_spec_id, right_spec_id);
+        (*pairs)[*counter].spec1 = strdup(left_spec_id);
+        (*pairs)[*counter].spec2 = strdup(right_spec_id);
+        (*pairs)[*counter].relation = -1;
+        (*pairs)[*counter].type = NAT;
         (*counter)++;
     }
     fclose(fp);
@@ -145,7 +145,6 @@ STS *init_sts_dataset_X(char *path) {
     return sts;
 }
 
-
 dictp user_json_dict(char *path) {
     struct dirent **name_list = NULL, **internals_name_list = NULL;
     int n, internals;
@@ -185,7 +184,7 @@ dictp user_json_dict(char *path) {
                 continue;
             }
             strcpy(json_name, internals_name_list[internals]->d_name);
-            snprintf(json_path, 512, "%s/%s", new_path, json_name);
+            snprintf(json_path, 1025, "%s/%s", new_path, json_name);
             internals_name_list[internals]->d_name[strlen(internals_name_list[internals]->d_name) - 5] = '\0';
             snprintf(spec_name, 1024, "%s//%s", name_list[n]->d_name, internals_name_list[internals]->d_name);
             /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
@@ -201,30 +200,29 @@ dictp user_json_dict(char *path) {
     return json_dict;
 }
 
-
 void
 prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
-            dictp json_dict, Match **matches, float *result_vector, int *y, bool mode, bool is_user) {
+            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool mode, bool is_user) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
     for (int i = p_start; i < p_end; i++) {
         x = random ? ur_get(ur) : i;
-        json1 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec1);
+        json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
         if (mode) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
         if (is_user == 0) {
-            spec1 = sts_get(X, (*matches)[x].spec1);
+            spec1 = sts_get(X, (*pairs)[x].spec1);
         }
-        json2 = (JSON_ENTITY **) dict_get(json_dict, (*matches)[x].spec2);
+        json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
         if (mode) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
         if (is_user == 0) {
-            spec2 = sts_get(X, (*matches)[x].spec2);
+            spec2 = sts_get(X, (*pairs)[x].spec2);
         }
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
@@ -235,56 +233,23 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
     }
 }
 
-Match *shuffle_dataset(Match *matches, int dataset_size) {
+Pair *shuffle_dataset(Pair *pairs, int dataset_size) {
     URand ur = NULL;
-    Match *shuffle_matches = malloc(dataset_size * sizeof(struct match));
+    Pair *shuffle_pairs = malloc(dataset_size * sizeof(struct pair));
     int x = 0;
     ur_create(&ur, 0, dataset_size - 1);
     for (int i = 0; i < dataset_size; i++) {
         x = ur_get(ur);
-        shuffle_matches[i] = matches[x];
+        shuffle_pairs[i] = pairs[x];
     }
-    return shuffle_matches;
-}
-
-Match *split(Match *matches, setp json_train_keys, int train_set_sz, int test_set_sz, int dataset_sz, URand ur) {
-    int x = 0;
-    Match *sorted_matches = malloc(dataset_sz * sizeof(struct match));
-    /* Split the dataset to TRAIN, TEST & VALIDATION sets */
-    for (int i = 0; i < train_set_sz; i++) {
-        x = ur_get(ur);
-        /* Collect randomly half of the dataset for the training */
-        matches[x].type = TRAIN;
-        if (!set_in(json_train_keys, matches[x].spec1)) {
-            set_put(json_train_keys, matches[x].spec1);
-        }
-        if (!set_in(json_train_keys, matches[x].spec2)) {
-            set_put(json_train_keys, matches[x].spec2);
-        }
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
-
-    /* Collect randomly the test set */
-    for (int i = train_set_sz; i < test_set_sz; i++) {
-        x = ur_get(ur);
-        matches[x].type = TEST;
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
-
-    /* Collect whats left to be the validation set */
-    for (int i = test_set_sz; i < dataset_sz; i++) {
-        x = ur_get(ur);
-        matches[x].type = VALIDATION;
-        memcpy(&sorted_matches[i], &matches[x], sizeof(struct match));
-    }
-    return sorted_matches;
+    return shuffle_pairs;
 }
 
 float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     float max_loss = 0;
     /* Calculate max_loss */
     for (int i = 0; i < offset; i++) {
-        losses[i] = logloss(y_pred[i], y[i]);
+        losses[i] = lr_loss(y_pred[i], y[i]);
         if (i == 0) {
             max_loss = losses[i];
         } else {
@@ -296,77 +261,99 @@ float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     return max_loss;
 }
 
-void merge_set(Match *set, int set_sz, URand ur_train, int similar_set_sz, Match *similar_matches_train,
-               Match *different_matches_train) {
+void merge_set(Pair *set, int set_sz, int similar_set_sz, Pair *similar_pairs_train,
+               Pair *different_pairs_train) {
+    URand ur = NULL;
     int rand_i = 0;
+    ur_create(&ur, 0, set_sz - 1);
     for (int i = 0; i < set_sz; i++) {
-        rand_i = ur_get(ur_train);
+        rand_i = ur_get(ur);
         if (i < similar_set_sz) {
-            set[rand_i] = similar_matches_train[i];
+            set[rand_i] = similar_pairs_train[i];
         } else {
-            set[rand_i] = different_matches_train[i - similar_set_sz];
+            set[rand_i] = different_pairs_train[i - similar_set_sz];
         }
     }
+    ur_destroy(&ur);
 }
 
-int main(int argc, char *argv[]) {
-    char json_website[128], json_num[128], json_path[280], *entry = NULL;
-    int dataset_size = 0, chunks = 0, train_set_size = 0, test_set_size = 0;
-    int user_dataset_size = 0, q = 0;
-    float max_losses[epochs], *losses = NULL, *y_pred = NULL, *result_vec = NULL, *result_vec_test = NULL, *result_vec_user = NULL;
-    float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    int *y_test = NULL, *y_val = NULL, y[batch_size], *y_user = NULL;
-    int similar_sz = 0, different_sz = 0;
-    int similar_train_set_sz = 0, similar_test_set_sz = 0, similar_val_set_sz = 0;
-    int different_train_set_sz = 0, different_test_set_sz = 0, different_val_set_sz = 0;
-    int train_sz = 0, test_sz = 0, val_sz = 0;
+void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int different_sz,
+           int *train_sz, Pair **train_set,
+           int *test_sz, Pair **test_set,
+           int *val_sz, Pair **val_set) {
+    Pair *similar_pairs_train = NULL,
+            *similar_pairs_test = NULL,
+            *similar_pairs_val = NULL,
+            *different_pairs_train = NULL,
+            *different_pairs_test = NULL,
+            *different_pairs_val = NULL;
+    int similar_train_set_sz = 0, similar_test_set_sz = 0, similar_val_set_sz = 0, different_train_set_sz = 0,
+            different_test_set_sz = 0, different_val_set_sz = 0;
 
-    bool mode;
-    LogReg *model = NULL;
-    LogReg models[epochs];
-    Options options = {NULL, NULL, NULL, NULL, NULL, NULL};
-    URand ur_dataset = NULL, ur_mini_batch = NULL, ur_train = NULL, ur_test = NULL, ur_val = NULL;
+    /* calculate similar set sizes */
+    similar_train_set_sz = (similar_sz / 2) % 2 ? (int) (similar_sz / 2 - 1) : (int) (similar_sz / 2);
+    similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
+    similar_val_set_sz = similar_test_set_sz;
+
+    similar_pairs_train = malloc(2 * similar_train_set_sz * sizeof(Pair));
+    similar_pairs_test = malloc(similar_test_set_sz * sizeof(Pair));
+    similar_pairs_val = malloc(similar_val_set_sz * sizeof(Pair));
+
+    memcpy(similar_pairs_train, similar_pairs, similar_train_set_sz * sizeof(Pair));
+    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
+    memcpy(similar_pairs_test, similar_pairs + similar_train_set_sz, similar_test_set_sz * sizeof(Pair));
+    memcpy(similar_pairs_val, similar_pairs + similar_train_set_sz + similar_test_set_sz,
+           similar_val_set_sz * sizeof(Pair));
+
+    /* calculate different set sizes */
+    different_train_set_sz = (different_sz / 2) % 2 ? (int) (different_sz / 2 - 1) : (int) (different_sz / 2);
+    different_test_set_sz = (different_sz - different_train_set_sz) / 2;
+    different_val_set_sz = different_test_set_sz;
+
+    different_pairs_train = malloc(different_train_set_sz * sizeof(Pair));
+    different_pairs_test = malloc(different_test_set_sz * sizeof(Pair));
+    different_pairs_val = malloc(different_val_set_sz * sizeof(Pair));
+
+    memcpy(different_pairs_train, different_pairs, different_train_set_sz * sizeof(Pair));
+    memcpy(different_pairs_test, different_pairs + different_train_set_sz, different_test_set_sz * sizeof(Pair));
+    memcpy(different_pairs_val, different_pairs + different_train_set_sz + different_test_set_sz,
+           different_val_set_sz * sizeof(Pair));
+
+    /*create the whole train set, test set and val set*/
+    *train_sz = similar_train_set_sz + different_train_set_sz;
+    *test_sz = similar_test_set_sz + different_test_set_sz;
+    *val_sz = similar_val_set_sz + different_val_set_sz;
+
+    *train_set = malloc(*train_sz * sizeof(Pair));
+    *test_set = malloc(*test_sz * sizeof(Pair));
+    *val_set = malloc(*val_sz * sizeof(Pair));
+
+    /* merge the train, test & val sets */
+    merge_set(*train_set, *train_sz, similar_train_set_sz, similar_pairs_train, different_pairs_train);
+    merge_set(*test_set, *test_sz, similar_test_set_sz, similar_pairs_train, different_pairs_train);
+    merge_set(*val_set, *val_sz, similar_val_set_sz, similar_pairs_train, different_pairs_train);
+
+    free(different_pairs_train);
+    free(different_pairs_test);
+    free(different_pairs_val);
+    free(similar_pairs_train);
+    free(similar_pairs_test);
+    free(similar_pairs_val);
+}
+
+void init_json_dict(STS *X, dictp *json_dict, char *dataset_dir) {
     ulong i_state = 0;
-    setp json_train_keys = NULL;
-    STS *X = NULL;
-    dictp json_dict = NULL;
-    ML ml = NULL;
-    JSON_ENTITY **json = NULL;
-    Match *matches = NULL,
-            *similar_matches = NULL,
-            *similar_matches_train = NULL,
-            *similar_matches_test = NULL,
-            *similar_matches_val = NULL,
-            *different_matches = NULL,
-            *different_matches_train = NULL,
-            *different_matches_test = NULL,
-            *different_matches_val = NULL,
-            *train_set = NULL,
-            *test_set = NULL,
-            *val_set = NULL,
-            *user_matches = NULL,
-            *sorted_matches = NULL;
-
-    /* parse arguments*/
-    read_options(argc, argv, &options);
-
-    mode = !strcmp(options.vec_mode, "tfidf");
-
-    /* initialize an STS dataset X*/
-    X = init_sts_dataset_X(options.dataset_dir);
+    char json_path[280], json_website[128], json_num[128], *entry = NULL;
 
     /* create json hashtable*/
-    json_dict = dict_new3(128, sizeof(JSON_ENTITY *), X->dict->htab->buf_cap);
-    dict_config(json_dict,
+    *json_dict = dict_new3(128, sizeof(JSON_ENTITY *), X->dict->htab->buf_cap);
+    dict_config(*json_dict,
                 DICT_CONF_HASH_FUNC, djb2_str,
                 DICT_CONF_KEY_CPY, strncpy,
                 DICT_CONF_CMP, strncmp,
                 DICT_CONF_KEY_SZ_F, str_sz,
                 DICT_CONF_DONE
     );
-
-    /* iterate in dataset X in order to get the path for each json file*/
-    i_state = 0;
 
     /* create json hash table using dataset X */
     DICT_FOREACH_ENTRY(entry, X->dict, &i_state, X->dict->htab->buf_load) {
@@ -375,93 +362,19 @@ int main(int argc, char *argv[]) {
         sscanf(entry, "%[^/]//%[^/]", json_website, json_num);
 
         /* Constructing the path*/
-        snprintf(json_path, 280, "%s/%s/%s.json", options.dataset_dir, json_website, json_num);
+        snprintf(json_path, 280, "%s/%s/%s.json", dataset_dir, json_website, json_num);
 
         /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
         JSON_ENTITY *ent = json_parse_file(json_path);
 
         /* Putting this JSON_ENTITY in 'json_dict' hashtable*/
-        dict_put(json_dict, entry, &ent);
+        dict_put(*json_dict, entry, &ent);
     }
+}
 
-    /* read labelled_dataset_path file*/
-    read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
-
-    /* read labelled dataset csv*/
-    read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
-
-    /* init similar matches */
-    chunks = 0;
-    init_similar_matches(stdout, X, &similar_matches, &chunks, &similar_sz);
-
-    /* init different matches*/
-    chunks = 0;
-    init_different_matches(stdout, X, &different_matches, &chunks, &different_sz);
-
-    /* calculate similar set sizes */
-    similar_train_set_sz = (similar_sz / 2) % 2 ? (int) (similar_sz / 2 - 1) : (int) (similar_sz / 2);
-    similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
-    similar_val_set_sz = similar_test_set_sz;
-
-    similar_matches_train = malloc(2 * similar_train_set_sz * sizeof(Match));
-    similar_matches_test = malloc(similar_test_set_sz * sizeof(Match));
-    similar_matches_val = malloc(similar_val_set_sz * sizeof(Match));
-
-    memcpy(similar_matches_train, similar_matches, similar_train_set_sz * sizeof(Match));
-    memcpy(similar_matches_train + similar_train_set_sz, similar_matches, similar_train_set_sz * sizeof(Match));
-    memcpy(similar_matches_test, similar_matches + similar_train_set_sz, similar_test_set_sz * sizeof(Match));
-    memcpy(similar_matches_val, similar_matches + similar_train_set_sz + similar_test_set_sz,
-           similar_val_set_sz * sizeof(Match));
-
-    /* calculate different set sizes */
-    different_train_set_sz = (different_sz / 2) % 2 ? (int) (different_sz / 2 - 1) : (int) (different_sz / 2);
-    different_test_set_sz = (different_sz - different_train_set_sz) / 2;
-    different_val_set_sz = different_test_set_sz;
-
-    different_matches_train = malloc(different_train_set_sz * sizeof(Match));
-    different_matches_test = malloc(different_test_set_sz * sizeof(Match));
-    different_matches_val = malloc(different_val_set_sz * sizeof(Match));
-
-    memcpy(different_matches_train, different_matches, different_train_set_sz * sizeof(Match));
-    memcpy(different_matches_test, different_matches + different_train_set_sz, different_test_set_sz * sizeof(Match));
-    memcpy(different_matches_val, different_matches + different_train_set_sz + different_test_set_sz,
-           different_val_set_sz * sizeof(Match));
-
-    /*create the whole train set, test set and val set*/
-    train_sz = similar_train_set_sz + different_train_set_sz;
-    test_sz = similar_test_set_sz + different_test_set_sz;
-    val_sz = similar_val_set_sz + different_val_set_sz;
-
-    train_set = malloc(train_sz * sizeof(Match));
-    test_set = malloc(test_sz * sizeof(Match));
-    val_set = malloc(val_sz * sizeof(Match));
-
-    ur_create(&ur_train, 0, train_sz - 1);
-    ur_create(&ur_test, 0, test_sz - 1);
-    ur_create(&ur_val, 0, val_sz - 1);
-
-    /* merge the train, test & val sets */
-    merge_set(train_set, train_sz, ur_train, similar_train_set_sz, similar_matches_train, different_matches_train);
-    merge_set(test_set, test_sz, ur_test, similar_test_set_sz, similar_matches_train, different_matches_train);
-    merge_set(val_set, val_sz, ur_val, similar_val_set_sz, similar_matches_train, different_matches_train);
-
-    /**************************************************** Training ****************************************************/
-
-    /* Create ml object */
-    ml_create(&ml, options.stop_words_path, json_dict->htab->buf_load);
-
-    /* iterate in json hashtable and get the JSON_ENTITY for each json to tokenize it */
-    i_state = 0;
-
-    // train_set_size = (dataset_size / 2) % 2 ? (int) (dataset_size / 2 - 1) : (int) (dataset_size / 2);
-    // test_set_size = train_set_size + (dataset_size - train_set_size) / 2;
-    y_test = malloc(test_sz * sizeof(int));
-    losses = malloc(test_sz * sizeof(float));
-
-    // ur_create(&ur_dataset, 0, dataset_size - 1);
-
-    json_train_keys = set_new(128);
-    dict_config(json_train_keys,
+void init_json_train_set(setp *json_train_keys, int train_sz, Pair *train_set) {
+    *json_train_keys = set_new(128);
+    dict_config(*json_train_keys,
                 DICT_CONF_CMP, (ht_cmp_func) strncmp,
                 DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
                 DICT_CONF_HASH_FUNC, djb2_str,
@@ -469,58 +382,73 @@ int main(int argc, char *argv[]) {
                 DICT_CONF_DONE
     );
 
-
-    /*Add jsons to vocab*/
+    /*Add jsons to vocab */
     for (int i = 0; i < train_sz; i++) {
-        /* Collect randomly half of the dataset for the training */
-        // matches[x].type = TRAIN;
-        set_put(json_train_keys, train_set[i].spec1);
-        set_put(json_train_keys, train_set[i].spec2);
+        set_put(*json_train_keys, train_set[i].spec1);
+        set_put(*json_train_keys, train_set[i].spec2);
     }
+}
 
-    /* shuffle the dataset */
-    // Match *shuffled_dataset = shuffle_dataset(matches, dataset_size);
-
-    /* split and sort dataset into sorted matches array */
-    // sorted_matches = split(shuffled_dataset, json_train_keys, train_set_size, test_set_size, dataset_size, ur_dataset);
-
-    i_state = 0;
+void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
+    ulong i_state = 0;
+    char *entry = NULL;
+    JSON_ENTITY **json = NULL;
     HSET_FOREACH_ENTRY(entry, json_train_keys, &i_state, json_train_keys->htab->buf_load) {
-        // printf("%s\n", (char*)k);
         json = (JSON_ENTITY **) dict_get(json_dict, entry);
-        ml_tokenize_json(ml, *json);
+        if (json != NULL) {
+            ml_tokenize_json(ml, *json);
+        }
+    }
+}
+
+void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int user_dataset_size,
+                          float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
+    int *y_user = malloc(user_dataset_size * sizeof(float));
+    float *result_vec_user = NULL, *y_pred = NULL;
+    /* Read user dataset */
+    read_user_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
+    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    dictp user_dataset_dict = user_json_dict(json_path);
+    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+                user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
+
+    /* Predict user dataset */
+    y_pred = lr_predict(model, result_vec_user, user_dataset_size);
+
+    for (int i = 0; i < user_dataset_size; i++) {
+        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
     }
 
-    if (mode) {
-        ml_idf_remove(ml);
-    }
+    dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+}
 
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
-    result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
-    result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
-    float *result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
-
+LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
+                    dictp json_dict, int mode, Pair *test_set, int test_sz
+) {
     /* initialize the model */
-    model = logreg_new(ml_bow_sz(ml), learning_rate);
+    LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
+    LogReg models[epochs];
+    URand ur_mini_batch = NULL;
 
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_sz - 1);
-
-    /************************************************ Epochs loop ****************************************************/
-
+    float max_losses[epochs], *y_pred = NULL;
+    int q = 0;
+    int y[batch_size];
+    int *y_test = malloc(test_sz * sizeof(int));
+    float *losses = malloc(test_sz * sizeof(float));
+    float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
     for (int e = 0; e < epochs; e++) {
-
         for (int j = 0; j < train_sz / batch_size; j++) {
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
-            train(model, result_vec, y, batch_size);
+            lr_train(model, result_vec, y, batch_size);
         }
-
         prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &test_set, result_vec_test, y_test, mode, 0);
 
-        y_pred = predict(model, result_vec_test, test_sz);
+        y_pred = lr_predict(model, result_vec_test, test_sz);
 
         /* Calculate the max losses value & save into max_losses array*/
         max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
@@ -542,11 +470,90 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
-
         ur_reset(ur_mini_batch);
     }
+    /* Destroy unique random object */
+    ur_destroy(&ur_mini_batch);
+    free(result_vec);
+    free(result_vec_test);
+    free(losses);
+    free(y_test);
+    return model;
+}
 
-    /******************************************************************************************************************/
+int main(int argc, char *argv[]) {
+    float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+    int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
+    int user_dataset_size = 0, chunks = 0;
+    Pair *train_set = NULL, *test_set = NULL, *val_set = NULL, *different_pairs = NULL, *similar_pairs = NULL;
+    LogReg *model = NULL;
+    dictp json_dict = NULL;
+    setp json_train_keys = NULL;
+    Pair *user_pairs = NULL;
+    ML ml = NULL;
+
+    Options options = {NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL
+    };
+
+    /* parse arguments*/
+    read_options(argc, argv, &options);
+
+    /* initialize mode {tfidf|bow}*/
+    bool mode = !strcmp(options.vec_mode, "tfidf");
+
+    /* initialize an STS dataset X*/
+    STS *X = init_sts_dataset_X(options.dataset_dir);
+
+    /* iterate in dataset X in order to get the path for each json file*/
+    init_json_dict(X, &json_dict, options.dataset_dir);
+
+    /* read labelled_dataset_path file*/
+    read_labelled_dataset_csv(X, options.labelled_dataset_path, "1");
+
+    /* read labelled dataset csv*/
+    read_labelled_dataset_csv(X, options.labelled_dataset_path, "0");
+
+    /* init similar matches */
+    chunks = 0;
+    init_similar_pairs(stdout, X, &similar_pairs, &chunks, &similar_sz);
+
+    /* init different matches*/
+    chunks = 0;
+    init_different_pairs(stdout, X, &different_pairs, &chunks, &different_sz);
+
+    /* split and sort dataset into sorted matches array */
+    split(similar_pairs, different_pairs, similar_sz, different_sz, &train_sz, &train_set, &test_sz, &test_set, &val_sz,
+          &val_set);
+
+    /******************************************* Prepare For Training *************************************************/
+
+    /* Create ml object */
+    ml_create(&ml, options.stop_words_path, json_dict->htab->buf_load);
+
+    /* initialize json train set */
+    init_json_train_set(&json_train_keys, train_sz, train_set);
+
+    /* tokenize json train set to init bag of words dict*/
+    tokenize_json_train_set(json_train_keys, ml, json_dict);
+
+    if (mode) {
+        ml_idf_remove(ml);
+    }
+
+    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+
+    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
+
+    /*********************************************** Training *********************************************************/
+
+    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
+
     y_val = malloc(val_sz * sizeof(int));
 
     prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
@@ -555,55 +562,41 @@ int main(int argc, char *argv[]) {
     /**************************************************** Predict ****************************************************/
 
     /* Predict validation set */
-    y_pred = predict(model, result_vec_val, val_sz);
+    y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
         printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
                val_set[i].relation, y_pred[i]);
     }
 
     /* calculate F1 score */
-    float *y_pred1 = malloc(val_sz * sizeof(float));
-    float *y1 = malloc(val_sz * sizeof(float));
-    for (int i = 0; i < val_sz; i++) {
-        if (y_pred[i] < 0.5) {
-            y_pred1[i] = 0.0;
-        } else {
-            y_pred1[i] = 1.0;
-        }
-        if (y_val[i] == 0) {
-            y1[i] = 0.0;
-        } else {
-            y1[i] = 1.0;
-        }
-    }
+    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
-    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y1, y_pred1, val_sz));
+    /******************************************** Predict User Dataset ************************************************/
 
-    /* Read user dataset */
-    read_user_dataset_csv(options.user_dataset_file, &user_matches, &user_dataset_size);
-    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
-    dictp user_dataset_dict = user_json_dict(options.json_path);
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                user_dataset_dict, &user_matches, result_vec_user, y_user, mode, 1);
+    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, user_dataset_size,
+                         bow_vector_1, bow_vector_2, user_pairs, model, X);
 
-    /* Predict user dataset */
-    y_pred = predict(model, result_vec_test, user_dataset_size);
+    /******************************************************************************************************************/
 
-    for (int i = 0; i < user_dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_matches[i].spec1, user_matches[i].spec2, y_pred[i]);
-    }
-    free(losses);
     free(bow_vector_1);
     free(bow_vector_2);
 
-    /* Destroy unique random objects */
-    ur_destroy(&ur_mini_batch);
+    free(result_vec_val);
 
-    /* Destroy STS dataset X */
-    sts_destroy(X);
+    free(similar_pairs);
+    free(different_pairs);
+
+    free(train_set);
+    free(test_set);
+    free(val_set);
+
+    ml_destroy(&ml);
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
+
+    /* Destroy STS dataset X */
+    sts_destroy(X);
 
     return 0;
 }
