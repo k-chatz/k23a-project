@@ -1,13 +1,13 @@
 #include "../include/logreg.h"
 
 LogReg *lr_new(int weights_len, float learning_rate) {
-    srand(12345);
+    unsigned int seed = 12345;
     LogReg *out = malloc(sizeof(*out));
     out->weights_len = weights_len;
     out->weights = malloc(weights_len * sizeof(float));
     for (int i = 0; i < weights_len; i++)
-        out->weights[i] = ((float) rand()) / RAND_MAX;
-    out->bias = ((float) rand()) / RAND_MAX;
+        out->weights[i] = ((float) rand_r(&seed)) / RAND_MAX;
+    out->bias = ((float) rand_r(&seed)) / RAND_MAX;
     out->learning_rate = learning_rate;
     return out;
 }
