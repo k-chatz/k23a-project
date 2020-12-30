@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 10
+#define epochs 3
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -427,6 +427,9 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
     }
 
     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+
+    free(y_user);
+    free(y_pred);
 }
 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
@@ -600,7 +603,11 @@ int main(int argc, char *argv[]) {
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
-
+    set_free(json_train_keys);
+    free(model->weights);
+    free(model);
+    free(user_pairs);
+    free(y_pred);
     /* Destroy STS dataset X */
     sts_destroy(X);
 
