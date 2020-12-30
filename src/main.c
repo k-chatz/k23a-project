@@ -11,8 +11,8 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 10
-#define batch_size 2000
+#define epochs 100
+#define batch_size 2600
 #define learning_rate 0.0001
 
 typedef struct options {
