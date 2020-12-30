@@ -81,11 +81,11 @@ void read_labelled_dataset_csv(STS *dataset_X, char *labelled_dataset, char *fla
     fclose(fp);
 }
 
-void read_user_dataset_csv(char *user_dataset_file, Pair **pairs, int *counter) {
-    assert(user_dataset_file != NULL);
+void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pairs, int *counter) {
+    assert(user_labelled_dataset_file != NULL);
     assert(*pairs == NULL);
     assert(*counter == 0);
-    FILE *fp = fopen(user_dataset_file, "r");
+    FILE *fp = fopen(user_labelled_dataset_file, "r");
     char left_spec_id[50], right_spec_id[50];
     //skip first row
     fseek(fp, 27, SEEK_SET);
@@ -295,12 +295,12 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
-    similar_pairs_train = malloc(2 * similar_train_set_sz * sizeof(Pair));
+    similar_pairs_train = malloc(similar_train_set_sz * sizeof(Pair));
     similar_pairs_test = malloc(similar_test_set_sz * sizeof(Pair));
     similar_pairs_val = malloc(similar_val_set_sz * sizeof(Pair));
 
     memcpy(similar_pairs_train, similar_pairs, similar_train_set_sz * sizeof(Pair));
-    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
+//    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
     memcpy(similar_pairs_test, similar_pairs + similar_train_set_sz, similar_test_set_sz * sizeof(Pair));
     memcpy(similar_pairs_val, similar_pairs + similar_train_set_sz + similar_test_set_sz,
            similar_val_set_sz * sizeof(Pair));
@@ -406,7 +406,7 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
     int *y_user = malloc(user_dataset_size * sizeof(float));
     float *result_vec_user = NULL, *y_pred = NULL;
     /* Read user dataset */
-    read_user_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
+    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
     result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
 //    char *entry = NULL;
