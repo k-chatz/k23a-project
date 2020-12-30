@@ -43,8 +43,8 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     float *Ps = lr_predict(reg, Xs, batch_sz);
 
     /* calculate the Deltas */
-    float *Deltas = malloc(reg->weights_len * sizeof(float) + 1);
-    memset(Deltas, 0, reg->weights_len * sizeof(float) + 1);
+    float *Deltas = malloc((reg->weights_len  + 1) * sizeof(float));
+    memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
     for (int i = 0; i < batch_sz; i++) {
         int j;
         for (j = 0; j < reg->weights_len; j++) {

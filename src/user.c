@@ -142,52 +142,52 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
 }
 
 int main(int argc, char *argv[]) {
-    float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    float *result_vec_user = NULL;
-    int * y_user = NULL, user_dataset_size = 0;
-    Pair *user_pairs = NULL;
-    LogReg *model = NULL;
+//     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+//     float *result_vec_user = NULL;
+//     int * y_user = NULL, user_dataset_size = 0;
+//     Pair *user_pairs = NULL;
+//     LogReg *model = NULL;
 
-    Options options = {NULL, NULL,};
+//     Options options = {NULL, NULL,};
 
-    /* parse arguments*/
-    read_options(argc, argv, &options);
+//     /* parse arguments*/
+//     read_options(argc, argv, &options);
 
-    //todo: read model from binary file
+//     //todo: read model from binary file
 
-    y_user = malloc(user_dataset_size * sizeof(float));
+//     y_user = malloc(user_dataset_size * sizeof(float));
 
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+//     bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+//     bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    /* Read user dataset */
-    read_user_labelled_dataset_csv(options.user_labelled_dataset_path, &user_pairs, &user_dataset_size);
+//     /* Read user dataset */
+//     read_user_labelled_dataset_csv(options.user_labelled_dataset_path, &user_pairs, &user_dataset_size);
 
-    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
-    dictp user_dataset_dict = user_json_dict(options.user_dataset_dir);
+//     result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+//     dictp user_dataset_dict = user_json_dict(options.user_dataset_dir);
 
-//    char *entry = NULL;
-//    ulong i_state = 0;
-//    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
-//        printf("[%s]\n", entry);
-//        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
-//        json_print_value(*json);
-//    }
+// //    char *entry = NULL;
+// //    ulong i_state = 0;
+// //    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
+// //        printf("[%s]\n", entry);
+// //        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
+// //        json_print_value(*json);
+// //    }
 
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);
+//     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+//                 user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);
 
-    /* Predict user dataset */
-    y_pred = lr_predict(model, result_vec_user, user_dataset_size);
+//     /* Predict user dataset */
+//     y_pred = lr_predict(model, result_vec_user, user_dataset_size);
 
-    for (int i = 0; i < user_dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
-    }
+//     for (int i = 0; i < user_dataset_size; i++) {
+//         printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
+//     }
 
-    dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+//     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
 
-    ml_destroy(&ml);
+//     ml_destroy(&ml);
 
     return 0;
 }
