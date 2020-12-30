@@ -19,26 +19,26 @@ void logreg_test(void) {
     int batch_num = 2;
 
     /* overfit; just to see if it works */
-    LogReg *reg = logreg_new(2, 0.0001);
+    LogReg *reg = lr_new(2, 0.0001);
     int epochs = 30000;
 
     for (int i = 0; i < epochs; i++) {
         for (int j = 0; j < batch_num; j++) {
             int batch = rand() % 4;
-            float maxDelta = train(reg, &Xs[2 * batch], &Ys[batch], batch_sz);
+            float maxDelta = lr_train(reg, &Xs[2 * batch], &Ys[batch], batch_sz);
             TEST_CHECK(maxDelta > 0);
         }
     }
 
     printf("\nrunning some predictions on our data:\n");
-    float *Ps = predict(reg, Xs, 5);
+    float *Ps = lr_predict(reg, Xs, 5);
 
     for (int i = 0; i < 5; i++) {
         printf("prediction: %f, actual: %d\n", Ps[i], Ys[i]);
     }
 
     free(Ps);
-    logreg_free(reg);
+    lr_free(reg);
 }
 
 TEST_LIST = {

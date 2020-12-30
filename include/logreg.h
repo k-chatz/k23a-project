@@ -11,18 +11,18 @@ struct {
     float learning_rate;
 } LogReg;
 
-LogReg *logreg_new(int weights_len, float learning_rate);
+LogReg *lr_new(int weights_len, float learning_rate);
 
-void logreg_free(LogReg *reg);
+void lr_free(LogReg *reg);
 
-float sigmoid(float x);
+float lr_sigmoid(float x);
 
-float sigmoid_grad(float x);
+float lr_sigmoid_grad(float x);
 
-float logloss(float p, bool y);
+float lr_loss(float p, bool y);
 
-float predict_once(LogReg *reg, float *X);
+float lr_predict_one(LogReg *reg, float *X);
 
-float *predict(LogReg *reg, float *Xs, int batch_sz);
+float *lr_predict(LogReg *reg, float *Xs, int batch_sz);
 
-float train(LogReg *reg, float *Xs, int *Ys, int batch_sz);
+float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz);

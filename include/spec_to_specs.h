@@ -30,19 +30,19 @@ typedef struct {
     dictp dict;
 } STS;
 
-enum match_type {
+enum pair_type {
     NAT,
     TRAIN,
     TEST,
     VALIDATION
 };
 
-typedef struct match {
+typedef struct pair {
     char *spec1;
     char *spec2;
     int relation;
-    enum match_type type;
-} Match;
+    enum pair_type type;
+} Pair;
 
 /*!
   @brief STS hashtable entry.
@@ -146,13 +146,11 @@ void print_sts_dot(FILE *file, STS *sts, bool verbose);
 
   @returns void
 */
-void init_similar_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter);
+void init_similar_pairs(FILE *file, STS *sts, Pair **pairs, int *chunks, int *counter);
 
-void init_different_matches(FILE *file, STS *sts, Match **matches, int *chunks, int *counter);
-
+void init_different_pairs(FILE *file, STS *sts, Pair **pairs, int *chunks, int *counter);
 
 void print_sts_similar(FILE *file, STS *sts);
-
 
 void print_sts_diff(FILE *file, STS *sts);
 
