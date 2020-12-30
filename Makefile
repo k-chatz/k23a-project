@@ -10,7 +10,7 @@ LFLAGS	= -lm -pg
 
 .PHONY: tests all clean githooks docs phony
 
-all: tests project
+all: tests project user
 
 objs/%.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
@@ -25,6 +25,9 @@ objs/%.o: %.c
 ##################################################
 
 project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o)
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
+user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################

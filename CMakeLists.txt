@@ -95,6 +95,20 @@ add_executable(k23a_project
         src/logreg.c
         )
 
+#user
+add_executable(k23a_project_user
+        src/user.c
+        src/spec_to_specs.c
+        src/hash.c
+        src/json_parser.c
+        src/lists.c
+        src/ml.c
+        src/tokenizer.c
+        src/logreg.c
+        src/unique_rand.c
+        )
+
+
 target_link_libraries(k23a_project_general_tests m)
 target_link_libraries(k23a_project_json_parser_tests m)
 target_link_libraries(k23a_project_lists_tests m)
