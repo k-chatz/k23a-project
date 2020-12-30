@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 100
+#define epochs 500
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -568,8 +568,11 @@ int main(int argc, char *argv[]) {
                val_set[i].relation, y_pred[i]);
     }
 
+        /* calculate F1 score */
+    
+
     /* calculate F1 score */
-    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
+    printf("\nf1 score: %f\n\n", ml_f1_score(y_val, y_pred, val_sz));
 
     /******************************************** Predict User Dataset ************************************************/
 
@@ -577,6 +580,8 @@ int main(int argc, char *argv[]) {
                          bow_vector_1, bow_vector_2, user_pairs, model, X);
 
     /******************************************************************************************************************/
+
+    
 
     free(bow_vector_1);
     free(bow_vector_2);

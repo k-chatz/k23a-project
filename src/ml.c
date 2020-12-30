@@ -270,23 +270,45 @@ int get_removed_words_num(ML ml) {
     return ml->removed_words_num;
 }
 
-float ml_f1_score(const float *y, const float *y_pred, int y_size) {
+float ml_f1_score(float *y, float *y_pred, int y_size) {
     float true_pos = 0.0, true_neg = 0.0, false_pos = 0.0, false_neg = 0.0;
     float precision, recall;
+
+    float *y_pred1 = malloc(y_size * sizeof(float));
+    float *y1 = malloc(y_size * sizeof(float));
     for (int i = 0; i < y_size; i++) {
-        if (y[i] == 1 && y_pred[i] >= 0.5) {
+        if (y_pred[i] < 0.5) {
+            y_pred1[i] = 0.0;
+        } else {
+            y_pred1[i] = 1.0;
+        }
+        if (y[i] == 0) {
+            y1[i] = 0.0;
+        } else {
+            y1[i] = 1.0;
+        }
+    }
+
+
+    for (int i = 0; i < y_size; i++) {
+        if (y1[i] == 1 && y_pred1[i] == 1) {
             true_pos++;
-        } else if (y[i] == 0 && y_pred[i] < 0.5) {
+        } else if (y1[i] == 0 && y_pred1[i] == 0) {
             true_neg++;
-        } else if (y[i] == 1 && y_pred[i] < 0.5) {
+        } else if (y1[i] == 1 && y_pred1[i] == 0) {
             false_neg++;
-        } else if (y[i] == 0 && y_pred[i] >= 0.5) { //else
+        } else if (y1[i] == 0 && y_pred1[i] == 1) { //else
             false_pos++;
         }
     }
-    if (((true_pos + false_pos) == 0) || ((true_pos + false_neg) == 0)) return 0;
+
     precision = true_pos / (true_pos + false_pos);
     recall = true_pos / (true_pos + false_neg);
+
+
+    free(y_pred1);
+    free(y1);
+
     return 2 * precision * recall / (precision + recall);
 }
 

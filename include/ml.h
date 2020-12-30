@@ -28,7 +28,7 @@ void set_removed_words_num(ML ml, int c);
 
 int get_removed_words_num(ML ml);
 
-float ml_f1_score(const float *y, const float *y_pred, int y_size);
+float ml_f1_score(float *y, float *y_pred, int y_size);
 
 void print_bow_dict(ML ml);
 
