@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 1
+#define epochs 10
 #define batch_size 2000
 #define learning_rate 0.0001
 
