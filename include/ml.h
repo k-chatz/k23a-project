@@ -1,12 +1,12 @@
-#ifndef __ML_H__
-#define __ML_H__
+#ifndef ML_H
+#define ML_H
 
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 
 typedef struct ml *ML;
 
-bool ml_create(ML *ht, const char *sw_file, int load);
+bool ml_create(ML *ml, const char *sw_file, int load);
 
 void ml_destroy(ML *ml);
 
@@ -24,14 +24,18 @@ void ml_tfidf(ML ml, float *bow_vector, int wc);
 
 void ml_idf_remove(ML ml);
 
-void set_removed_words_num(ML ml, int c);
+void ml_set_removed_words_num(ML ml, int c);
 
-int get_removed_words_num(ML ml);
+int ml_get_removed_words_num(ML ml);
 
 float ml_f1_score(float *y, float *y_pred, int y_size);
 
-void print_bow_dict(ML ml);
+void ml_init_vocabulary(ML ml, FILE *fp);
 
-void print_vector(ML ml, float *vector);
+void ml_export_vocabulary(ML ml, char *path);
+
+void ml_print_vocabulary(ML ml, FILE *fp);
+
+void ml_print_vector(ML ml, float *vector);
 
 #endif
