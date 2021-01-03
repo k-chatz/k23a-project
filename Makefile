@@ -85,6 +85,7 @@ docs:
 	doxygen Doxyfile
 
 clean:
+	-rm user
 	-rm project
 	-rm -rf deps $(OUT)
 	-rm -f tests-bin/*
