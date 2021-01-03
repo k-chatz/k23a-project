@@ -7,8 +7,10 @@
 #include "../include/unique_rand.h"
 
 typedef struct options {
-    char *user_labelled_dataset_path;
-    char *user_dataset_dir;
+    char *user_json_files_path;
+    char *csv_pairs;
+    char *vocabulary;
+    char *model;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -19,11 +21,19 @@ void read_options(int argc, char **argv, Options *o) {
         optVal = argv[i + 1];
         if (strcmp(opt, "-dir") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                o->user_labelled_dataset_path = optVal;
+                o->user_json_files_path = optVal;
             }
         } else if (strcmp(opt, "-csv") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                o->user_dataset_dir = optVal;
+                o->csv_pairs = optVal;
+            }
+        } else if (strcmp(opt, "-vocabulary") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                o->vocabulary = optVal;
+            }
+        } else if (strcmp(opt, "-model") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                o->model = optVal;
             }
         }
     }
@@ -142,52 +152,61 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
 }
 
 int main(int argc, char *argv[]) {
-//     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-//     float *result_vec_user = NULL;
-//     int * y_user = NULL, user_dataset_size = 0;
-//     Pair *user_pairs = NULL;
-//     LogReg *model = NULL;
+    float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+    float *result_vec_user = NULL;
+    int *y_user = NULL, user_dataset_size = 0;
+    char *entry = NULL;
+    FILE *fp = NULL;
+    Pair *user_pairs = NULL;
+    LogReg *model = NULL;
+    ML ml = NULL;
+    Options options = {NULL, NULL,};
 
-//     Options options = {NULL, NULL,};
+    /* parse arguments*/
+    read_options(argc, argv, &options);
 
-//     /* parse arguments*/
-//     read_options(argc, argv, &options);
+    ml_create(&ml, NULL, 0);
 
-//     //todo: read model from binary file
+    /* init vocabulary*/
+    fp = fopen(options.vocabulary, "r");
+    ml_init_vocabulary(ml, fp);
+    fclose(fp);
 
-//     y_user = malloc(user_dataset_size * sizeof(float));
+    /* init model*/
+    fp = fopen(options.model, "r");
+    model = lr_new_from_file(fp);
+    fclose(fp);
 
-//     bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+    y_user = malloc(user_dataset_size * sizeof(float));
 
-//     bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-//     /* Read user dataset */
-//     read_user_labelled_dataset_csv(options.user_labelled_dataset_path, &user_pairs, &user_dataset_size);
+    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-//     result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
-//     dictp user_dataset_dict = user_json_dict(options.user_dataset_dir);
+    /* Read user dataset */
+    read_user_labelled_dataset_csv(options.csv_pairs, &user_pairs, &user_dataset_size);
 
-// //    char *entry = NULL;
-// //    ulong i_state = 0;
-// //    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
-// //        printf("[%s]\n", entry);
-// //        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
-// //        json_print_value(*json);
-// //    }
+    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
 
-//     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-//                 user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);
+    ulong i_state = 0;
+    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
+        printf("[%s]\n", entry);
+    }
 
-//     /* Predict user dataset */
-//     y_pred = lr_predict(model, result_vec_user, user_dataset_size);
+    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
+                user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);
 
-//     for (int i = 0; i < user_dataset_size; i++) {
-//         printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
-//     }
+    /* Predict user dataset */
+    y_pred = lr_predict(model, result_vec_user, user_dataset_size);
 
-//     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+    for (int i = 0; i < user_dataset_size; i++) {
+        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
+    }
 
-//     ml_destroy(&ml);
+    dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+
+    ml_destroy(&ml);
 
     return 0;
 }
