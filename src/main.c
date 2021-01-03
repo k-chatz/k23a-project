@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 10
+#define epochs 600
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -414,13 +414,6 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
     int *y_user = malloc(*user_dataset_size * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
 
-//    char *entry = NULL;
-//    ulong i_state = 0;
-//    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
-//        printf("[%s]\n", entry);
-//        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
-//        json_print_value(*json);
-//    }
     prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
 
@@ -460,65 +453,17 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
     float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
 
-
-
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_sz / batch_size; j++) {
-
-
 
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             lr_train(model, result_vec, y, batch_size);
         }
 
-
-
         prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &test_set, result_vec_test, y_test, mode, 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         y_pred = lr_predict(model, result_vec_test, test_sz);
 
@@ -627,12 +572,14 @@ int main(int argc, char *argv[]) {
 
     model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
 
+    //TODO: export model into file
+
+    /**************************************************** Predict ****************************************************/
+
     y_val = malloc(val_sz * sizeof(int));
 
     prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
                 result_vec_val, y_val, mode, 0);
-
-    /**************************************************** Predict ****************************************************/
 
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
@@ -663,7 +610,6 @@ int main(int argc, char *argv[]) {
     free(test_set);
     free(val_set);
 
-
     ml_destroy(&ml);
 
     /* Destroy json dict */
@@ -671,9 +617,6 @@ int main(int argc, char *argv[]) {
     set_free(json_train_keys);
     free(model->weights);
     free(model);
-
-
-    
     free(y_pred);
     free(y_val);
     /* Destroy STS dataset X */
