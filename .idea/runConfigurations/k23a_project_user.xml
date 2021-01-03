@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="k23a_project_user" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-dir $PROJECT_DIR$/resources/user_json_files -csv $PROJECT_DIR$/resources/user_dataset.csv" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k23a_project" TARGET_NAME="k23a_project_user" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k23a_project" RUN_TARGET_NAME="k23a_project_user">
+  <configuration default="false" name="k23a_project_user" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-dir $PROJECT_DIR$/resources/user_json_files -csv $PROJECT_DIR$/resources/user_dataset.csv -vocabulary $PROJECT_DIR$/resources/vocabulary.csv -model $PROJECT_DIR$/resources/model.csv" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k23a_project" TARGET_NAME="k23a_project_user" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k23a_project" RUN_TARGET_NAME="k23a_project_user">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>
