@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 600
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -22,6 +22,7 @@ typedef struct options {
     char *user_dataset_file;
     char *vec_mode;
     char *json_path;
+    char *export_path;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -53,6 +54,10 @@ void read_options(int argc, char **argv, Options *o) {
         } else if (strcmp(opt, "-jd") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->json_path = optVal;
+            }
+        } else if (strcmp(opt, "-ex") == 0) {
+            if (optVal != NULL && optVal[0] != '-') {
+                o->export_path = optVal;
             }
         }
     }
@@ -91,7 +96,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*pairs) = realloc(*pairs, (*counter + 1) * sizeof(struct pair));
-        assert(*pairs!=NULL);
+        assert(*pairs != NULL);
         //fprintf(stdout, "Save to pairs array: %s, %s\n", left_spec_id, right_spec_id);
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
@@ -406,7 +411,7 @@ void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
 
 void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
                           float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
-    
+
     float *result_vec_user = NULL, *y_pred = NULL;
     /* Read user dataset */
     read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, user_dataset_size);
@@ -414,7 +419,7 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
     int *y_user = malloc(*user_dataset_size * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
 
-    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
 
     /* Predict user dataset */
@@ -426,7 +431,7 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
 
     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
 
-    for(int i = 0; i < *user_dataset_size; i++){
+    for (int i = 0; i < *user_dataset_size; i++) {
         free(user_pairs[i].spec1);
         free(user_pairs[i].spec2);
     }
@@ -515,6 +520,7 @@ int main(int argc, char *argv[]) {
                        NULL,
                        NULL,
                        NULL,
+                       NULL,
                        NULL
     };
 
@@ -560,67 +566,70 @@ int main(int argc, char *argv[]) {
     tokenize_json_train_set(json_train_keys, ml, json_dict);
 
     if (mode) {
-        ml_idf_remove(ml);
+       ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
 
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+    /* export vocabulary into csv file */
+    ml_export_vocabulary(ml, options.export_path);
 
-    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
-
-    /*********************************************** Training *********************************************************/
-
-    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
-
-    //TODO: export model into file
-
-    /**************************************************** Predict ****************************************************/
-
-    y_val = malloc(val_sz * sizeof(int));
-
-    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
-                result_vec_val, y_val, mode, 0);
-
-    /* Predict validation set */
-    y_pred = lr_predict(model, result_vec_val, val_sz);
-    for (int i = 0; i < val_sz; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
-               val_set[i].relation, y_pred[i]);
-    }
-
-    /* calculate F1 score */
-    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
-
-    /******************************************** Predict User Dataset ************************************************/
-
-    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
-                         bow_vector_1, bow_vector_2, user_pairs, model, X);
-
-    /******************************************************************************************************************/
-
-    free(bow_vector_1);
-    free(bow_vector_2);
-
-    free(result_vec_val);
-
-    free(similar_pairs);
-    free(different_pairs);
-
-    free(train_set);
-    free(test_set);
-    free(val_set);
-
-    ml_destroy(&ml);
-
-    /* Destroy json dict */
-    dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
-    set_free(json_train_keys);
-    free(model->weights);
-    free(model);
-    free(y_pred);
-    free(y_val);
-    /* Destroy STS dataset X */
-    sts_destroy(X);
+//    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+//    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+//
+//    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
+//
+//    /*********************************************** Training *********************************************************/
+//
+//    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
+//
+//    lr_export_model(model, options.export_path);
+//
+//    /**************************************************** Predict ****************************************************/
+//
+//    y_val = malloc(val_sz * sizeof(int));
+//
+//    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
+//                result_vec_val, y_val, mode, 0);
+//
+//    /* Predict validation set */
+//    y_pred = lr_predict(model, result_vec_val, val_sz);
+//    for (int i = 0; i < val_sz; i++) {
+//        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
+//               val_set[i].relation, y_pred[i]);
+//    }
+//
+//    /* calculate F1 score */
+//    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
+//
+//    /******************************************** Predict User Dataset ************************************************/
+//
+//    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
+//                         bow_vector_1, bow_vector_2, user_pairs, model, X);
+//
+//    /******************************************************************************************************************/
+//
+//    free(bow_vector_1);
+//    free(bow_vector_2);
+//
+//    free(result_vec_val);
+//
+//    free(similar_pairs);
+//    free(different_pairs);
+//
+//    free(train_set);
+//    free(test_set);
+//    free(val_set);
+//
+//    ml_destroy(&ml);
+//
+//    /* Destroy json dict */
+//    dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
+//    set_free(json_train_keys);
+//    free(model->weights);
+//    free(model);
+//    free(y_pred);
+//    free(y_val);
+//    /* Destroy STS dataset X */
+//    sts_destroy(X);
 
     return 0;
 }

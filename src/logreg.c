@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <assert.h>
+
 #include "../include/logreg.h"
 
 LogReg *lr_new(int weights_len, float learning_rate) {
@@ -10,6 +13,42 @@ LogReg *lr_new(int weights_len, float learning_rate) {
     out->bias = ((float) rand_r(&seed)) / RAND_MAX;
     out->learning_rate = learning_rate;
     return out;
+}
+
+LogReg *lr_new_from_file(FILE *fp) {
+    int weights_len = 0;
+    float bias, learning_rate, *weights = NULL;
+    char buf[10];
+    fgets(buf, 10, fp);
+    learning_rate = atof(buf);
+    fgets(buf, 10, fp);
+    bias = atof(buf);
+    fgets(buf, 10, fp);
+    weights_len = atof(buf);
+    weights = malloc(weights_len * sizeof(float));
+    for (int i = 0; i < weights_len; ++i) {
+        fgets(buf, 10, fp);
+        weights[i] = atof(buf); //from file
+    }
+
+    //create model
+    LogReg *model = lr_new(weights_len, learning_rate);
+    model->bias = bias;
+    model->weights = weights;
+    memcpy(model->weights, weights, weights_len);
+    return model;
+}
+
+void lr_export_model(LogReg *reg, char *path) {
+    char filepath[100];
+    snprintf(filepath, 100, "%s/%s", path, "model.csv");
+    FILE *fp = fopen(filepath, "w+");
+    assert(fp != NULL);
+    fprintf(fp, "%f\n%f\n%d\n", reg->learning_rate, reg->bias, reg->weights_len);
+    for (int i = 0; i < reg->weights_len; ++i) {
+        fprintf(fp, "%f\n", reg->weights[i]);
+    }
+    fclose(fp);
 }
 
 void lr_free(LogReg *reg) {
@@ -43,7 +82,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     float *Ps = lr_predict(reg, Xs, batch_sz);
 
     /* calculate the Deltas */
-    float *Deltas = malloc((reg->weights_len  + 1) * sizeof(float));
+    float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
     memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
     for (int i = 0; i < batch_sz; i++) {
         int j;
