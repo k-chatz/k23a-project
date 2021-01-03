@@ -91,6 +91,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*pairs) = realloc(*pairs, (*counter + 1) * sizeof(struct pair));
+        assert(*pairs!=NULL);
         //fprintf(stdout, "Save to pairs array: %s, %s\n", left_spec_id, right_spec_id);
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
@@ -401,13 +402,14 @@ void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
     }
 }
 
-void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int user_dataset_size,
+void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
                           float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
-    int *y_user = malloc(user_dataset_size * sizeof(float));
+    
     float *result_vec_user = NULL, *y_pred = NULL;
     /* Read user dataset */
-    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
-    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, user_dataset_size);
+    result_vec_user = malloc(*user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    int *y_user = malloc(*user_dataset_size * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
 //    char *entry = NULL;
 //    ulong i_state = 0;
@@ -416,20 +418,26 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
 //        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
 //        json_print_value(*json);
 //    }
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
 
     /* Predict user dataset */
-    y_pred = lr_predict(model, result_vec_user, user_dataset_size);
+    y_pred = lr_predict(model, result_vec_user, *user_dataset_size);
 
-    for (int i = 0; i < user_dataset_size; i++) {
+    for (int i = 0; i < *user_dataset_size; i++) {
         printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
     }
 
     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
 
+    for(int i = 0; i < *user_dataset_size; i++){
+        free(user_pairs[i].spec1);
+        free(user_pairs[i].spec2);
+    }
+    free(user_pairs);
     free(y_user);
     free(y_pred);
+    free(result_vec_user);
 }
 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
@@ -488,6 +496,7 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     free(result_vec_test);
     free(losses);
     free(y_test);
+    free(y_pred);
     return model;
 }
 
@@ -582,7 +591,7 @@ int main(int argc, char *argv[]) {
 
     /******************************************** Predict User Dataset ************************************************/
 
-    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, user_dataset_size,
+    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
                          bow_vector_1, bow_vector_2, user_pairs, model, X);
 
     /******************************************************************************************************************/
@@ -599,6 +608,7 @@ int main(int argc, char *argv[]) {
     free(test_set);
     free(val_set);
 
+
     ml_destroy(&ml);
 
     /* Destroy json dict */
@@ -606,8 +616,11 @@ int main(int argc, char *argv[]) {
     set_free(json_train_keys);
     free(model->weights);
     free(model);
-    free(user_pairs);
+
+
+    
     free(y_pred);
+    free(y_val);
     /* Destroy STS dataset X */
     sts_destroy(X);
 
