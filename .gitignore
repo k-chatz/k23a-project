@@ -187,3 +187,6 @@ objs/*
 
 tests-bin/*
 !tests-bin/.gitkeep
+
+resources/model.csv
+resources/vocabulary.csv
