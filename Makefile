@@ -5,7 +5,7 @@ vpath	 %_tests   tests-bin
 
 CC	= gcc
 CFLAGS	= -g3 -Wall -DMAKEFILE
-LFLAGS	= -lm -pg
+LFLAGS	= -lm
 
 
 .PHONY: tests all clean githooks docs phony
@@ -24,10 +24,10 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o)
+user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################
@@ -85,6 +85,7 @@ docs:
 	doxygen Doxyfile
 
 clean:
+	-rm user
 	-rm project
 	-rm -rf deps $(OUT)
 	-rm -f tests-bin/*

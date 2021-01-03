@@ -177,6 +177,7 @@ TAGS
 # End of https://www.toptal.com/developers/gitignore/api/c,clion,vscode
 
 project
+user
 html/
 docs/
 .ccls-cache/

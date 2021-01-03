@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 1
+#define epochs 10
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -91,6 +91,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*pairs) = realloc(*pairs, (*counter + 1) * sizeof(struct pair));
+        assert(*pairs!=NULL);
         //fprintf(stdout, "Save to pairs array: %s, %s\n", left_spec_id, right_spec_id);
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
@@ -201,35 +202,37 @@ dictp user_json_dict(char *path) {
 }
 
 void
-prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
-            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool mode, bool is_user) {
+prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
+            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool tfidf, bool is_user) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
-    for (int i = p_start; i < p_end; i++) {
+
+    for (int i = start; i < end; i++) {
+
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
-        if (mode) {
+        if (tfidf) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
-        if (is_user == 0) {
-            spec1 = sts_get(X, (*pairs)[x].spec1);
-        }
+
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
-        if (mode) {
+        if (tfidf) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
-        if (is_user == 0) {
-            spec2 = sts_get(X, (*pairs)[x].spec2);
-        }
+
         for (int c = 0; c < ml_bow_sz(ml); c++) {
-            result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+            result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
+
         if (is_user == 0) {
-            y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
+            spec1 = sts_get(X, (*pairs)[x].spec1);
+            spec2 = sts_get(X, (*pairs)[x].spec2);
+            y[i - start] = (findRoot(X, spec1) == findRoot(X, spec2));
         }
+
     }
 }
 
@@ -401,14 +404,16 @@ void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
     }
 }
 
-void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int user_dataset_size,
+void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
                           float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
-    int *y_user = malloc(user_dataset_size * sizeof(float));
+    
     float *result_vec_user = NULL, *y_pred = NULL;
     /* Read user dataset */
-    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, &user_dataset_size);
-    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, user_dataset_size);
+    result_vec_user = malloc(*user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    int *y_user = malloc(*user_dataset_size * sizeof(float));
     dictp user_dataset_dict = user_json_dict(json_path);
+
 //    char *entry = NULL;
 //    ulong i_state = 0;
 //    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
@@ -416,22 +421,30 @@ void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML
 //        JSON_ENTITY **json = (JSON_ENTITY **) (entry + user_dataset_dict->htab->key_sz);
 //        json_print_value(*json);
 //    }
-    prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
+    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
 
     /* Predict user dataset */
-    y_pred = lr_predict(model, result_vec_user, user_dataset_size);
+    y_pred = lr_predict(model, result_vec_user, *user_dataset_size);
 
-    for (int i = 0; i < user_dataset_size; i++) {
+    for (int i = 0; i < *user_dataset_size; i++) {
         printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
     }
 
     dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
+
+    for(int i = 0; i < *user_dataset_size; i++){
+        free(user_pairs[i].spec1);
+        free(user_pairs[i].spec2);
+    }
+    free(user_pairs);
+    free(y_user);
+    free(y_pred);
+    free(result_vec_user);
 }
 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
-                    dictp json_dict, int mode, Pair *test_set, int test_sz
-) {
+                    dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
     LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
     LogReg models[epochs];
@@ -446,14 +459,66 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     float *losses = malloc(test_sz * sizeof(float));
     float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
     float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
+
+
+
     for (int e = 0; e < epochs; e++) {
         for (int j = 0; j < train_sz / batch_size; j++) {
+
+
+
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             lr_train(model, result_vec, y, batch_size);
         }
+
+
+
         prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
                     &test_set, result_vec_test, y_test, mode, 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         y_pred = lr_predict(model, result_vec_test, test_sz);
 
@@ -479,12 +544,14 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         }
         ur_reset(ur_mini_batch);
     }
+
     /* Destroy unique random object */
     ur_destroy(&ur_mini_batch);
     free(result_vec);
     free(result_vec_test);
     free(losses);
     free(y_test);
+    free(y_pred);
     return model;
 }
 
@@ -579,7 +646,7 @@ int main(int argc, char *argv[]) {
 
     /******************************************** Predict User Dataset ************************************************/
 
-    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, user_dataset_size,
+    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
                          bow_vector_1, bow_vector_2, user_pairs, model, X);
 
     /******************************************************************************************************************/
@@ -596,11 +663,19 @@ int main(int argc, char *argv[]) {
     free(test_set);
     free(val_set);
 
+
     ml_destroy(&ml);
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
+    set_free(json_train_keys);
+    free(model->weights);
+    free(model);
 
+
+    
+    free(y_pred);
+    free(y_val);
     /* Destroy STS dataset X */
     sts_destroy(X);
 

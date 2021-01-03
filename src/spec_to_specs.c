@@ -78,7 +78,7 @@ void free_spec_list_node(StrList *node) {
 static void destroy_spec(SpecEntry *spec) {
     free(spec->id);
     ll_free(spec->similar, (llfree_f) free);
-    ll_free(spec->different, (llfree_f) free_spec_list_node);
+    ll_free(spec->different, (llfree_f) free);
 }
 
 void sts_destroy(STS *sts) {
@@ -161,7 +161,7 @@ int sts_diff(STS *sts, char *id1, char *id2) {
 
     if (spec1->different == NULL) {
         spec1->different = malloc(sizeof(StrList));
-        spec1->different->data = strdup(spec2->id);
+        spec1->different->data = spec2->id;
         spec1->different->next = NULL;
         spec1->different_tail = spec1->different;
         spec1->different_len = 1;
@@ -174,7 +174,7 @@ int sts_diff(STS *sts, char *id1, char *id2) {
 
     if (spec2->different == NULL) {
         spec2->different = malloc(sizeof(StrList));
-        spec2->different->data = strdup(spec1->id);
+        spec2->different->data = spec1->id;
         spec2->different->next = NULL;
         spec2->different_tail = spec2->different;
         spec2->different_len = 1;
