@@ -87,6 +87,7 @@ add_executable(k23a_project
         src/main.c
         src/lists.c
         src/hash.c
+        src/hset.c
         src/unique_rand.c
         src/json_parser.c
         src/spec_to_specs.c
