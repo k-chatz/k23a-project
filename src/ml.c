@@ -210,7 +210,7 @@ dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
         word = (Word *) dict_get(ml->vocabulary_bow_dict, entry);
         if (word == NULL) {
             /* does not exist in dict */
-            Word w = {0, 1, 0};
+            Word w = {ml->vocabulary_bow_dict->htab->buf_load, 1,0};
             dict_put(ml->vocabulary_bow_dict, entry, &w);
         } else {
             /* It exists, just up the count */
