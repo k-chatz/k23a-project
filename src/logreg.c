@@ -16,27 +16,31 @@ LogReg *lr_new(int weights_len, float learning_rate) {
 }
 
 LogReg *lr_new_from_file(FILE *fp) {
-    int weights_len = 0;
-    float bias, learning_rate, *weights = NULL;
     char buf[10];
+    LogReg *model = lr_new(0, 0);
     fgets(buf, 10, fp);
-    learning_rate = atof(buf);
+    model->learning_rate = atof(buf);
     fgets(buf, 10, fp);
-    bias = atof(buf);
+    model->bias = atof(buf);
     fgets(buf, 10, fp);
-    weights_len = atof(buf);
-    weights = malloc(weights_len * sizeof(float));
-    for (int i = 0; i < weights_len; ++i) {
+    model->weights_len = atof(buf);
+    model->weights = malloc(model->weights_len * sizeof(float));
+    for (int i = 0; i < model->weights_len; ++i) {
         fgets(buf, 10, fp);
-        weights[i] = atof(buf); //from file
+        model->weights[i] = atof(buf);
     }
-
-    //create model
-    LogReg *model = lr_new(weights_len, learning_rate);
-    model->bias = bias;
-    model->weights = weights;
-    memcpy(model->weights, weights, weights_len);
     return model;
+}
+
+void lr_cpy(LogReg **dst, LogReg *src) {
+    *dst = lr_new(0, 0);
+    (*dst)->learning_rate = src->learning_rate;
+    (*dst)->bias = src->bias;
+    (*dst)->weights_len = src->weights_len;
+    (*dst)->weights = malloc(src->weights_len * sizeof(float));
+    for (int i = 0; i < src->weights_len; ++i) {
+        (*dst)->weights[i] = src->weights[i];
+    }
 }
 
 void lr_export_model(LogReg *reg, char *path) {

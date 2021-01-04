@@ -18,6 +18,8 @@ LogReg *lr_new(int weights_len, float learning_rate);
 
 LogReg *lr_new_from_file(FILE *fp);
 
+void lr_cpy(LogReg **dst, LogReg *src);
+
 void lr_export_model(LogReg *reg, char * path);
 
 void lr_init_model(LogReg log, FILE *fp);
