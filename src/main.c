@@ -297,12 +297,12 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
-    similar_pairs_train = malloc(similar_train_set_sz * sizeof(Pair));
+    similar_pairs_train = malloc(2 * similar_train_set_sz * sizeof(Pair));
     similar_pairs_test = malloc(similar_test_set_sz * sizeof(Pair));
     similar_pairs_val = malloc(similar_val_set_sz * sizeof(Pair));
 
     memcpy(similar_pairs_train, similar_pairs, similar_train_set_sz * sizeof(Pair));
-//    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
+    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
     memcpy(similar_pairs_test, similar_pairs + similar_train_set_sz, similar_test_set_sz * sizeof(Pair));
     memcpy(similar_pairs_val, similar_pairs + similar_train_set_sz + similar_test_set_sz,
            similar_val_set_sz * sizeof(Pair));
@@ -322,7 +322,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
            different_val_set_sz * sizeof(Pair));
 
     /*create the whole train set, test set and val set*/
-    *train_sz = similar_train_set_sz + different_train_set_sz;
+    *train_sz = 2 * similar_train_set_sz + different_train_set_sz;
     *test_sz = similar_test_set_sz + different_test_set_sz;
     *val_sz = similar_val_set_sz + different_val_set_sz;
 
@@ -331,7 +331,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     *val_set = malloc(*val_sz * sizeof(Pair));
 
     /* merge the train, test & val sets */
-    merge_set(*train_set, *train_sz, similar_train_set_sz, similar_pairs_train, different_pairs_train);
+    merge_set(*train_set, *train_sz, 2 * similar_train_set_sz, similar_pairs_train, different_pairs_train);
     merge_set(*test_set, *test_sz, similar_test_set_sz, similar_pairs_train, different_pairs_train);
     merge_set(*val_set, *val_sz, similar_val_set_sz, similar_pairs_train, different_pairs_train);
 
@@ -419,10 +419,10 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                 if (json_val) {
                     if (json_val->type == JSON_STRING) {
                         sentence = json_to_string(json_val);
-                        ml_cleanup_sentence(ml, sentence);
 
                         /* tokenize sentence & put tokens in json_bow_set */
                         sentence = strdup(sentence);
+                        ml_cleanup_sentence(ml, sentence);
                         for (token = strtok_r(sentence, " ", &rest);
                              token != NULL; token = strtok_r(NULL, " ", &rest)) {
                             set_put(json_bow_set, token);
