@@ -152,10 +152,9 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
 }
 
 int main(int argc, char *argv[]) {
-    float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+    float *y_pred = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     float *result_vec_user = NULL;
     int *y_user = NULL, user_dataset_size = 0;
-    char *entry = NULL;
     FILE *fp = NULL;
     Pair *user_pairs = NULL;
     LogReg *model = NULL;
@@ -188,8 +187,6 @@ int main(int argc, char *argv[]) {
 
     result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
     dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
-
-    ulong i_state = 0;
 
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);

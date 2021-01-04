@@ -19,9 +19,7 @@ typedef struct options {
     char *dataset_dir;
     char *labelled_dataset_path;
     char *stop_words_path;
-    char *user_dataset_file;
     char *vec_mode;
-    char *json_path;
     char *export_path;
 } Options;
 
@@ -43,17 +41,9 @@ void read_options(int argc, char **argv, Options *o) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->stop_words_path = optVal;
             }
-        } else if (strcmp(opt, "-ds") == 0) {
-            if (optVal != NULL && optVal[0] != '-') {
-                o->user_dataset_file = optVal;
-            }
         } else if (strcmp(opt, "-m") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->vec_mode = optVal;
-            }
-        } else if (strcmp(opt, "-jd") == 0) {
-            if (optVal != NULL && optVal[0] != '-') {
-                o->json_path = optVal;
             }
         } else if (strcmp(opt, "-ex") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
@@ -444,38 +434,6 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
     dict_free(json_bow_set, NULL);
 }
 
-void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
-                          float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
-
-    float *result_vec_user = NULL, *y_pred = NULL;
-    /* Read user dataset */
-    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, user_dataset_size);
-    result_vec_user = malloc(*user_dataset_size * ml_bow_sz(ml) * sizeof(float));
-    int *y_user = malloc(*user_dataset_size * sizeof(float));
-    dictp user_dataset_dict = user_json_dict(json_path);
-
-    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
-                user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
-
-    /* Predict user dataset */
-    y_pred = lr_predict(model, result_vec_user, *user_dataset_size);
-
-    for (int i = 0; i < *user_dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
-    }
-
-    dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
-
-    for (int i = 0; i < *user_dataset_size; i++) {
-        free(user_pairs[i].spec1);
-        free(user_pairs[i].spec2);
-    }
-    free(user_pairs);
-    free(y_user);
-    free(y_pred);
-    free(result_vec_user);
-}
-
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
                     dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
@@ -544,16 +502,13 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
 int main(int argc, char *argv[]) {
     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
-    int user_dataset_size = 0, chunks = 0;
+    int chunks = 0;
     Pair *train_set = NULL, *test_set = NULL, *val_set = NULL, *different_pairs = NULL, *similar_pairs = NULL;
     LogReg *model = NULL;
     dictp json_dict = NULL;
     setp train_json_files_set = NULL;
-    Pair *user_pairs = NULL;
     ML ml = NULL;
     Options options = {NULL,
-                       NULL,
-                       NULL,
                        NULL,
                        NULL,
                        NULL,
@@ -639,13 +594,6 @@ int main(int argc, char *argv[]) {
 
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
-
-    /******************************************** Predict User Dataset ************************************************/
-
-    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
-                         bow_vector_1, bow_vector_2, user_pairs, model, X);
-
-    /******************************************************************************************************************/
 
     free(bow_vector_1);
     free(bow_vector_2);
