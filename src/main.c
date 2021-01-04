@@ -209,17 +209,20 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
         if (tfidf) {
-            ml_tfidf(ml, bow_vector_1, wc);
+            ml_tf(ml, bow_vector_1, wc);
+            ml_idf(ml, bow_vector_1);
         }
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
         if (tfidf) {
-            ml_tfidf(ml, bow_vector_2, wc);
+            ml_tf(ml, bow_vector_2, wc);
+            ml_idf(ml, bow_vector_2);
         }
+        
+        for (int c = 0; c < ml->vocabulary_bow_dict->htab->buf_load; c++) {
+            result_vector[(i - start) * ml->vocabulary_bow_dict->htab->buf_load + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
 
-        for (int c = 0; c < ml_bow_sz(ml); c++) {
-            result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
 
         if (is_user == 0) {
@@ -437,7 +440,7 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
                     dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
-    LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
+    LogReg *model = lr_new(ml->vocabulary_bow_dict->htab->buf_load, learning_rate);
     LogReg *models[epochs];
     URand ur_mini_batch = NULL;
 
@@ -450,14 +453,20 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
-    float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
-    float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec = malloc(batch_size * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    float *result_vec_test = malloc(test_sz * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
     int e = 0;
     for (e = 0; e < epochs; e++) {
         for (int j = 0; j < train_sz / batch_size; j++) {
 
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
+
+
+            for(int i = 0 ; i < batch_size * ml->vocabulary_bow_dict->htab->buf_load ; i++){
+                printf("[%f] ", result_vec[i]);
+            }
+            putchar('\n');
 
             lr_train(model, result_vec, y, batch_size);
         }
@@ -576,10 +585,10 @@ int main(int argc, char *argv[]) {
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
 
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
+    bow_vector_1 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    bow_vector_2 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
 
-    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
+    result_vec_val = malloc(val_sz * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
 
     /*********************************************** Training *********************************************************/
 
