@@ -397,16 +397,51 @@ void init_json_train_set(setp *json_train_keys, int train_sz, Pair *train_set) {
     }
 }
 
-void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
+void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) {
     ulong i_state = 0;
-    char *entry = NULL;
+    char *entry = NULL, *sentence = NULL, *token = NULL, *rest = NULL;
     JSON_ENTITY **json = NULL;
-    HSET_FOREACH_ENTRY(entry, json_train_keys, &i_state, json_train_keys->htab->buf_load) {
+    StringList *json_keys = NULL;
+    setp json_bow_set;
+    json_bow_set = set_new(10);
+    dict_config(json_bow_set,
+                DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE);
+
+    /* foreach json file */
+    HSET_FOREACH_ENTRY(entry, train_json_files_set, &i_state, train_json_files_set->htab->buf_load) {
         json = (JSON_ENTITY **) dict_get(json_dict, entry);
         if (json != NULL) {
-            ml_tokenize_json(ml, *json);
+
+            /* put distinct words in json_set */
+            json_keys = json_get_obj_keys(*json);
+
+            /* foreach json key*/
+            LL_FOREACH(json_key, json_keys) {
+                JSON_ENTITY *json_val = json_get(*json, json_key->data);
+                if (json_val) {
+                    if (json_val->type == JSON_STRING) {
+                        sentence = json_to_string(json_val);
+                        ml_cleanup_sentence(ml, sentence);
+
+                        /* tokenize sentence & put tokens in json_bow_set */
+                        sentence = strdup(sentence);
+                        for (token = strtok_r(sentence, " ", &rest);
+                             token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                            set_put(json_bow_set, token);
+                        }
+                        free(sentence);
+                    }
+                }
+            }
+            ml_init_vocabulary_from_json_bow_set(ml, json_bow_set);
         }
     }
+
+    dict_free(json_bow_set, NULL);
 }
 
 void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
@@ -561,10 +596,12 @@ int main(int argc, char *argv[]) {
     ml_create(&ml, options.stop_words_path, json_dict->htab->buf_load);
 
     /* initialize json train set */
-    init_json_train_set(&json_train_keys, train_sz, train_set);
+    init_json_train_set(&train_json_files_set, train_sz, train_set);
 
     /* tokenize json train set to init bag of words dict*/
-    tokenize_json_train_set(json_train_keys, ml, json_dict);
+    tokenize_json_train_set(ml, train_json_files_set, json_dict);
+
+    //todo: init idf ?
 
     if (mode) {
        ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
