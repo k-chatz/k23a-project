@@ -214,7 +214,8 @@ void ml_tfidf(ML ml, float *bow_vector, int wc) {
 void ml_idf_remove(ML ml) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, ml_bow_sz(ml)) {
+    int end = ml_bow_sz(ml);
+    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, end) {
         Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
         if (w->idf > 9.85) {

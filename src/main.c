@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 2
+#define epochs 100
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -452,8 +452,8 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     float *losses = malloc(test_sz * sizeof(float));
     float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
     float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
-
-    for (int e = 0; e < epochs; e++) {
+    int e = 0;
+    for (e = 0; e < epochs; e++) {
         for (int j = 0; j < train_sz / batch_size; j++) {
 
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
@@ -506,6 +506,7 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     free(result_vec_test);
     free(losses);
     free(y_test);
+    printf("\ntotal epochs: %d\n", e);
     return model;
 }
 
@@ -565,8 +566,6 @@ int main(int argc, char *argv[]) {
 
     /* tokenize json train set to init bag of words dict*/
     tokenize_json_train_set(ml, train_json_files_set, json_dict);
-
-    //todo: init idf ?
 
     if (mode) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
