@@ -32,7 +32,7 @@ dictp ml_create_bow_dict() {
     return bow_dict;
 }
 
-dictp ml_stop_words(ML ml, const char * sw_file) {
+dictp ml_stop_words(ML ml, const char *sw_file) {
     char *stop_word, comma;
     assert(ml != NULL);
     FILE *fp = fopen(sw_file, "r");
@@ -205,15 +205,17 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) 
 void ml_idf_remove(ML ml) {
     char *entry = NULL;
     ulong iterate_state = 0;
+    int c = 0;
     int end = ml->vocabulary_bow_dict->htab->buf_load;
     DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, end) {
         Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
         if (w->idf > 9.85) {
             dict_del(ml->vocabulary_bow_dict, entry);
+            c++;
             continue;
         }
-        w->position = (int) i;
+        w->position = (int) (i - c);
     }
 }
 

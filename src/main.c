@@ -219,9 +219,10 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
             ml_tf(ml, bow_vector_2, wc);
             ml_idf(ml, bow_vector_2);
         }
-        
+
         for (int c = 0; c < ml->vocabulary_bow_dict->htab->buf_load; c++) {
-            result_vector[(i - start) * ml->vocabulary_bow_dict->htab->buf_load + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+            result_vector[(i - start) * ml->vocabulary_bow_dict->htab->buf_load + c] = fabs(
+                    (bow_vector_1[c] - bow_vector_2[c]));
 
         }
 
@@ -462,12 +463,6 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
 
-
-            for(int i = 0 ; i < batch_size * ml->vocabulary_bow_dict->htab->buf_load ; i++){
-                printf("[%f] ", result_vec[i]);
-            }
-            putchar('\n');
-
             lr_train(model, result_vec, y, batch_size);
         }
 
@@ -579,8 +574,6 @@ int main(int argc, char *argv[]) {
     if (mode) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
-
-    ml_print_vocabulary(ml, stdout);
 
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
