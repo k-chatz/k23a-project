@@ -4,9 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
         {
-            "name": "project",  
+            "name": "project tfidf large",  
             "type": "cppdbg",
             "request": "launch",
             "preLaunchTask": "Build Make",
@@ -22,6 +21,102 @@
                 "resources",
                 "-m",
                 "tfidf"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project tfidf medium",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_medium_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "tfidf"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project bow large",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_medium_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "bow"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project bow large",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_large_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "bow"
 
             ],
             "stopAtEntry": false,
