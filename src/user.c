@@ -96,33 +96,30 @@ dictp user_json_dict(char *path) {
 
 void
 prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
-            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool mode, bool is_user) {
+            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool mode) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
     for (int i = p_start; i < p_end; i++) {
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
+        //json_print_value(*json2);
+        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, true);
         if (mode) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
-        if (is_user == 0) {
-            spec1 = sts_get(X, (*pairs)[x].spec1);
-        }
+//        printf("\njson1: %s, bow_vector_1: \n", (*pairs)[x].spec1);
+//        ml_print_vector(ml, bow_vector_1);
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
+        //json_print_value(*json2);
+        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, true);
         if (mode) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
-        if (is_user == 0) {
-            spec2 = sts_get(X, (*pairs)[x].spec2);
-        }
+//        printf("\njson2: %s, bow_vector_1: \n", (*pairs)[x].spec2);
+//        ml_print_vector(ml, bow_vector_2);
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
-        }
-        if (is_user == 0) {
-            y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
         }
     }
 }
@@ -189,7 +186,10 @@ int main(int argc, char *argv[]) {
     dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
 
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
-                user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);
+                user_dataset_dict, &user_pairs, result_vec_user, y_user, false);
+//    for (int c = 0; c < ml_bow_sz(ml); c++) {
+//        result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+//    }
 
     /* Predict user dataset */
     y_pred = lr_predict(model, result_vec_user, user_dataset_size);

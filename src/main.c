@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 100
+#define epochs 1000
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -207,13 +207,13 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
 
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
+        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
         if (tfidf) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
+        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
         if (tfidf) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
@@ -594,7 +594,7 @@ int main(int argc, char *argv[]) {
     y_val = malloc(val_sz * sizeof(int));
 
     prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
-                result_vec_val, y_val, mode, 0);
+                result_vec_val, y_val, mode, 1);
 
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
