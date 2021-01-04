@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 100
+#define epochs 2
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -441,6 +441,8 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     LogReg *models[epochs];
     URand ur_mini_batch = NULL;
 
+    memset(models, 0, sizeof(LogReg *) * epochs);
+
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_sz - 1);
     float max_losses[epochs], *y_pred = NULL;
@@ -468,8 +470,11 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         /* Calculate the max losses value & save into max_losses array*/
         max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
 
+        free(y_pred);
+
         /* Copy model & max losses*/
         lr_cpy(&models[e], model);
+
 
         /* Check if the last five max losses are ascending */
         if (e > 3) {
@@ -489,13 +494,18 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         ur_reset(ur_mini_batch);
     }
 
+    for (int i = 0; i < epochs; ++i) {
+        if (models[i] != NULL && models[i] != model) {
+            lr_free(models[i]);
+        }
+    }
+
     /* Destroy unique random object */
     ur_destroy(&ur_mini_batch);
     free(result_vec);
     free(result_vec_test);
     free(losses);
     free(y_test);
-    free(y_pred);
     return model;
 }
 
@@ -612,11 +622,7 @@ int main(int argc, char *argv[]) {
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
     set_free(train_json_files_set);
-    free(model->weights);
-
-    //todo: destroy all models array
-    // free(model);
-
+    lr_free(model);
     free(y_pred);
     free(y_val);
     /* Destroy STS dataset X */
