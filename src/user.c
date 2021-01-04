@@ -105,8 +105,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
         if (mode) {
-            ml_tf(ml, bow_vector_1, wc);
-            ml_idf(ml, bow_vector_1);
+            ml_tfidf(ml, bow_vector_1, wc);
         }
         if (is_user == 0) {
             spec1 = sts_get(X, (*pairs)[x].spec1);
@@ -114,14 +113,13 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
         if (mode) {
-            ml_tf(ml, bow_vector_1, wc);
-            ml_idf(ml, bow_vector_1);
+            ml_tfidf(ml, bow_vector_2, wc);
         }
         if (is_user == 0) {
             spec2 = sts_get(X, (*pairs)[x].spec2);
         }
-        for (int c = 0; c < ml->vocabulary_bow_dict->htab->buf_load; c++) {
-            result_vector[(i - p_start) * ml->vocabulary_bow_dict->htab->buf_load + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+        for (int c = 0; c < ml_bow_sz(ml); c++) {
+            result_vector[(i - p_start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
         if (is_user == 0) {
             y[i - p_start] = (findRoot(X, spec1) == findRoot(X, spec2));
@@ -180,14 +178,14 @@ int main(int argc, char *argv[]) {
 
     y_user = malloc(user_dataset_size * sizeof(float));
 
-    bow_vector_1 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    bow_vector_2 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
     /* Read user dataset */
     read_user_labelled_dataset_csv(options.csv_pairs, &user_pairs, &user_dataset_size);
 
-    result_vec_user = malloc(user_dataset_size * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
     dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
 
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,

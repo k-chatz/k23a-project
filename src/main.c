@@ -209,21 +209,17 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
         if (tfidf) {
-            ml_tf(ml, bow_vector_1, wc);
-            ml_idf(ml, bow_vector_1);
+            ml_tfidf(ml, bow_vector_1, wc);
         }
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
         if (tfidf) {
-            ml_tf(ml, bow_vector_2, wc);
-            ml_idf(ml, bow_vector_2);
+            ml_tfidf(ml, bow_vector_2, wc);
         }
 
-        for (int c = 0; c < ml->vocabulary_bow_dict->htab->buf_load; c++) {
-            result_vector[(i - start) * ml->vocabulary_bow_dict->htab->buf_load + c] = fabs(
-                    (bow_vector_1[c] - bow_vector_2[c]));
-
+        for (int c = 0; c < ml_bow_sz(ml); c++) {
+            result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
 
         if (is_user == 0) {
@@ -297,12 +293,12 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
-    similar_pairs_train = malloc(2 * similar_train_set_sz * sizeof(Pair));
+    similar_pairs_train = malloc(similar_train_set_sz * sizeof(Pair));
     similar_pairs_test = malloc(similar_test_set_sz * sizeof(Pair));
     similar_pairs_val = malloc(similar_val_set_sz * sizeof(Pair));
 
     memcpy(similar_pairs_train, similar_pairs, similar_train_set_sz * sizeof(Pair));
-    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
+//    memcpy(similar_pairs_train + similar_train_set_sz, similar_pairs, similar_train_set_sz * sizeof(Pair));
     memcpy(similar_pairs_test, similar_pairs + similar_train_set_sz, similar_test_set_sz * sizeof(Pair));
     memcpy(similar_pairs_val, similar_pairs + similar_train_set_sz + similar_test_set_sz,
            similar_val_set_sz * sizeof(Pair));
@@ -322,7 +318,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
            different_val_set_sz * sizeof(Pair));
 
     /*create the whole train set, test set and val set*/
-    *train_sz = 2 * similar_train_set_sz + different_train_set_sz;
+    *train_sz = similar_train_set_sz + different_train_set_sz;
     *test_sz = similar_test_set_sz + different_test_set_sz;
     *val_sz = similar_val_set_sz + different_val_set_sz;
 
@@ -331,7 +327,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
     *val_set = malloc(*val_sz * sizeof(Pair));
 
     /* merge the train, test & val sets */
-    merge_set(*train_set, *train_sz, 2 * similar_train_set_sz, similar_pairs_train, different_pairs_train);
+    merge_set(*train_set, *train_sz, similar_train_set_sz, similar_pairs_train, different_pairs_train);
     merge_set(*test_set, *test_sz, similar_test_set_sz, similar_pairs_train, different_pairs_train);
     merge_set(*val_set, *val_sz, similar_val_set_sz, similar_pairs_train, different_pairs_train);
 
@@ -419,10 +415,10 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                 if (json_val) {
                     if (json_val->type == JSON_STRING) {
                         sentence = json_to_string(json_val);
+                        ml_cleanup_sentence(ml, sentence);
 
                         /* tokenize sentence & put tokens in json_bow_set */
                         sentence = strdup(sentence);
-                        ml_cleanup_sentence(ml, sentence);
                         for (token = strtok_r(sentence, " ", &rest);
                              token != NULL; token = strtok_r(NULL, " ", &rest)) {
                             set_put(json_bow_set, token);
@@ -441,7 +437,7 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
                     dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
-    LogReg *model = lr_new(ml->vocabulary_bow_dict->htab->buf_load, learning_rate);
+    LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
     LogReg *models[epochs];
     URand ur_mini_batch = NULL;
 
@@ -454,8 +450,8 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
-    float *result_vec = malloc(batch_size * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
-    float *result_vec_test = malloc(test_sz * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
     int e = 0;
     for (e = 0; e < epochs; e++) {
         for (int j = 0; j < train_sz / batch_size; j++) {
@@ -571,17 +567,21 @@ int main(int argc, char *argv[]) {
     /* tokenize json train set to init bag of words dict*/
     tokenize_json_train_set(ml, train_json_files_set, json_dict);
 
+    //todo: init idf ?
+
     if (mode) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
 
+
+
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
 
-    bow_vector_1 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
-    bow_vector_2 = malloc(ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
+    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    result_vec_val = malloc(val_sz * ml->vocabulary_bow_dict->htab->buf_load * sizeof(float));
+    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
 
     /*********************************************** Training *********************************************************/
 
