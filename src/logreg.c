@@ -16,17 +16,17 @@ LogReg *lr_new(int weights_len, float learning_rate) {
 }
 
 LogReg *lr_new_from_file(FILE *fp) {
-    char buf[10];
+    char buf[32];
     LogReg *model = lr_new(0, 0);
-    fgets(buf, 10, fp);
+    fgets(buf, 32, fp);
     model->learning_rate = atof(buf);
-    fgets(buf, 10, fp);
+    fgets(buf, 32, fp);
     model->bias = atof(buf);
-    fgets(buf, 10, fp);
+    fgets(buf, 32, fp);
     model->weights_len = atof(buf);
     model->weights = malloc(model->weights_len * sizeof(float));
     for (int i = 0; i < model->weights_len; ++i) {
-        fgets(buf, 10, fp);
+        fgets(buf, 32, fp);
         model->weights[i] = atof(buf);
     }
     return model;
