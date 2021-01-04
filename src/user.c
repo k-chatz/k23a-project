@@ -190,9 +190,6 @@ int main(int argc, char *argv[]) {
     dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
 
     ulong i_state = 0;
-    HSET_FOREACH_ENTRY(entry, user_dataset_dict, &i_state, user_dataset_dict->htab->buf_load) {
-        printf("[%s]\n", entry);
-    }
 
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
                 user_dataset_dict, &user_pairs, result_vec_user, y_user, false, 1);

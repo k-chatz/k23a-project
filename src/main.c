@@ -548,7 +548,7 @@ int main(int argc, char *argv[]) {
     Pair *train_set = NULL, *test_set = NULL, *val_set = NULL, *different_pairs = NULL, *similar_pairs = NULL;
     LogReg *model = NULL;
     dictp json_dict = NULL;
-    setp json_train_keys = NULL;
+    setp train_json_files_set = NULL;
     Pair *user_pairs = NULL;
     ML ml = NULL;
     Options options = {NULL,
@@ -604,8 +604,10 @@ int main(int argc, char *argv[]) {
     //todo: init idf ?
 
     if (mode) {
-       ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
+        ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
+
+    ml_print_vocabulary(ml, stdout);
 
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
@@ -661,7 +663,7 @@ int main(int argc, char *argv[]) {
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
-    set_free(json_train_keys);
+    set_free(train_json_files_set);
     free(model->weights);
 
     //todo: destroy all models array
