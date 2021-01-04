@@ -38,7 +38,7 @@ dictp ml_create_bow_dict() {
     return bow_dict;
 }
 
-dictp ml_stop_words(ML ml, const char * sw_file) {
+dictp ml_stop_words(ML ml, const char *sw_file) {
     char *stop_word, comma;
     assert(ml != NULL);
     FILE *fp = fopen(sw_file, "r");
@@ -183,7 +183,7 @@ dictp ml_init_vocabulary_from_json_bow_set(ML ml, setp json_bow_set) {
     return ml->vocabulary_bow_dict;
 }
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) {
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, bool is_user) {
     StringList *json_keys = json_get_obj_keys(json);
     int capacity = ml_bow_sz(ml);
     memset(bow_vector, 0, capacity * sizeof(float));
@@ -193,6 +193,9 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) 
         if (cur_ent->type == JSON_STRING) {
             char *value = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
+            if(is_user){
+                ml_cleanup_sentence(ml, value);
+            }
             for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
                 Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
                 if (w == NULL) {

@@ -16,7 +16,7 @@ void ml_cleanup_sentence(ML ml, char *input);
 
 dictp ml_init_vocabulary_from_json_bow_set(ML ml, setp json_bow_set);
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc);
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, bool is_user);
 
 void ml_tfidf(ML ml, float *bow_vector, int wc);
 
