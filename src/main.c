@@ -11,10 +11,14 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 100
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
 
+#define RED  "\x1B[31m"
+#define B_RED  "\x1B[1m\x1B[31m"
+#define B_GREEN  "\x1B[1m\x1B[32m"
+#define RESET  "\x1B[0m"
 typedef struct options {
     char *dataset_dir;
     char *labelled_dataset_path;
@@ -599,8 +603,11 @@ int main(int argc, char *argv[]) {
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
-               val_set[i].relation, y_pred[i]);
+     if(val_set[i].relation){
+        printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2, val_set[i].relation, y_pred[i]);
+     }else{
+        printf(B_RED"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2, val_set[i].relation, y_pred[i]);
+     }
         // if (i==2) break;
     }
 
