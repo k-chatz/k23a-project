@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "user main val set",  
             "type": "cppdbg",
@@ -14,11 +15,11 @@
                 "-dir",
                 "Datasets/camera_specs/2013_camera_specs",
                 "-csv",
-                "resources/validation_set.csv",
+                "resources/datasets/validation_set.csv",
                 "-vocabulary",
-                "resources/vocabulary.csv",
+                "resources/vocabs/vocabulary.csv",
                 "-model",
-                "resources/model.csv"
+                "resources/models/model.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -43,11 +44,11 @@
                 "-dir",
                 "Datasets/camera_specs/2013_camera_specs",
                 "-csv",
-                "resources/user_dataset.csv",
+                "resources/datasets/user_dataset.csv",
                 "-vocabulary",
-                "resources/vocabulary.csv",
+                "resources/vocabs/vocabulary.csv",
                 "-model",
-                "resources/model.csv"
+                "resources/models/model_tfidf_100e.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
