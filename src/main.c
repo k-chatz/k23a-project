@@ -455,6 +455,7 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
     int e = 0;
     for (e = 0; e < epochs; e++) {
+        printf("epoch: %d\n", e);
         for (int j = 0; j < train_sz / batch_size; j++) {
 
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
