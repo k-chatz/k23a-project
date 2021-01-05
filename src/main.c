@@ -11,17 +11,20 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 600
+#define epochs 20
 #define batch_size 2000
 #define learning_rate 0.0001
 
+#define RED  "\x1B[31m"
+#define B_RED  "\x1B[1m\x1B[31m"
+#define B_GREEN  "\x1B[1m\x1B[32m"
+#define RESET  "\x1B[0m"
 typedef struct options {
     char *dataset_dir;
     char *labelled_dataset_path;
     char *stop_words_path;
-    char *user_dataset_file;
     char *vec_mode;
-    char *json_path;
+    char *export_path;
 } Options;
 
 void read_options(int argc, char **argv, Options *o) {
@@ -42,17 +45,13 @@ void read_options(int argc, char **argv, Options *o) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->stop_words_path = optVal;
             }
-        } else if (strcmp(opt, "-ds") == 0) {
-            if (optVal != NULL && optVal[0] != '-') {
-                o->user_dataset_file = optVal;
-            }
         } else if (strcmp(opt, "-m") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
                 o->vec_mode = optVal;
             }
-        } else if (strcmp(opt, "-jd") == 0) {
+        } else if (strcmp(opt, "-ex") == 0) {
             if (optVal != NULL && optVal[0] != '-') {
-                o->json_path = optVal;
+                o->export_path = optVal;
             }
         }
     }
@@ -91,7 +90,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
     fseek(fp, 27, SEEK_SET);
     while (fscanf(fp, "%[^,],%s\n", left_spec_id, right_spec_id) != EOF) {
         (*pairs) = realloc(*pairs, (*counter + 1) * sizeof(struct pair));
-        assert(*pairs!=NULL);
+        assert(*pairs != NULL);
         //fprintf(stdout, "Save to pairs array: %s, %s\n", left_spec_id, right_spec_id);
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
@@ -212,13 +211,13 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
 
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc);
+        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
         if (tfidf) {
             ml_tfidf(ml, bow_vector_1, wc);
         }
 
         json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc);
+        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
         if (tfidf) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
@@ -392,68 +391,106 @@ void init_json_train_set(setp *json_train_keys, int train_sz, Pair *train_set) {
     }
 }
 
-void tokenize_json_train_set(setp json_train_keys, ML ml, dictp json_dict) {
+void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) {
     ulong i_state = 0;
-    char *entry = NULL;
+    char *entry = NULL, *sentence = NULL, *token = NULL, *rest = NULL;
     JSON_ENTITY **json = NULL;
-    HSET_FOREACH_ENTRY(entry, json_train_keys, &i_state, json_train_keys->htab->buf_load) {
+    StringList *json_keys = NULL;
+    setp json_bow_set;
+    json_bow_set = set_new(10);
+    dict_config(json_bow_set,
+                DICT_CONF_CMP, (ht_cmp_func) strncmp,
+                DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE);
+
+    /* foreach json file */
+    HSET_FOREACH_ENTRY(entry, train_json_files_set, &i_state, train_json_files_set->htab->buf_load) {
         json = (JSON_ENTITY **) dict_get(json_dict, entry);
         if (json != NULL) {
-            ml_tokenize_json(ml, *json);
+
+            /* put distinct words in json_set */
+            json_keys = json_get_obj_keys(*json);
+
+            /* foreach json key*/
+            LL_FOREACH(json_key, json_keys) {
+                JSON_ENTITY *json_val = json_get(*json, json_key->data);
+                if (json_val) {
+                    if (json_val->type == JSON_STRING) {
+                        sentence = json_to_string(json_val);
+                        sentence = strdup(sentence);
+                        ml_cleanup_sentence(ml, sentence);
+
+                        /* tokenize sentence & put tokens in json_bow_set */
+
+                        for (token = strtok_r(sentence, " ", &rest);
+                             token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                            set_put(json_bow_set, token);
+                        }
+                        free(sentence);
+                    }
+                }
+            }
+            ml_init_vocabulary_from_json_bow_set(ml, json_bow_set);
         }
     }
+
+    dict_free(json_bow_set, NULL);
 }
 
-void predict_user_dataset(char *user_dataset_file, char *json_path, int mode, ML ml, int *user_dataset_size,
-                          float *bow_vector_1, float *bow_vector_2, Pair *user_pairs, LogReg *model, STS *X) {
-    
-    float *result_vec_user = NULL, *y_pred = NULL;
-    /* Read user dataset */
-    read_user_labelled_dataset_csv(user_dataset_file, &user_pairs, user_dataset_size);
-    result_vec_user = malloc(*user_dataset_size * ml_bow_sz(ml) * sizeof(float));
-    int *y_user = malloc(*user_dataset_size * sizeof(float));
-    dictp user_dataset_dict = user_json_dict(json_path);
-
-    prepare_set(0, *user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, X, ml,
-                user_dataset_dict, &user_pairs, result_vec_user, y_user, mode, 1);
-
-    /* Predict user dataset */
-    y_pred = lr_predict(model, result_vec_user, *user_dataset_size);
-
-    for (int i = 0; i < *user_dataset_size; i++) {
-        printf("spec1: %s, spec2: %s, y_pred:%f\n", user_pairs[i].spec1, user_pairs[i].spec2, y_pred[i]);
+bool check_local_maximum(int epoch, const float *max_losses) {
+    int q = 0;
+    if (epoch > 3) {
+        q = epoch;
+        while (q >= epoch - 4) {
+            if (max_losses[q] < max_losses[q - 1]) {
+                break;
+            }
+            q--;
+        }
+        if (epoch - q == 5) {
+            return true;
+        }
     }
+    return false;
+}
 
-    dict_free(user_dataset_dict, (void (*)(void *)) free_json_ht_ent);
-
-    for(int i = 0; i < *user_dataset_size; i++){
-        free(user_pairs[i].spec1);
-        free(user_pairs[i].spec2);
+bool check_weigths(LogReg *model, float e) {
+    float wt = 0;
+    float wt1 = 0;
+    float w = 0;
+    for (int i = 1; i < model->weights_len; ++i) {
+        wt = model->weights[i - 1];
+        wt1 = model->weights[i];
+        w = wt1 - wt;
+        if (w < e) {
+            return true;
+        }
     }
-    free(user_pairs);
-    free(y_user);
-    free(y_pred);
-    free(result_vec_user);
+    return false;
 }
 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
                     dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
     LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
-    LogReg models[epochs];
+    LogReg *models[epochs];
     URand ur_mini_batch = NULL;
+
+    memset(models, 0, sizeof(LogReg *) * epochs);
 
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_sz - 1);
     float max_losses[epochs], *y_pred = NULL;
-    int q = 0;
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
     float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
     float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
-
-    for (int e = 0; e < epochs; e++) {
+    int e = 0;
+    for (e = 0; e < epochs; e++) {
+        printf("epoch: %d\n", e);
         for (int j = 0; j < train_sz / batch_size; j++) {
 
             prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
@@ -470,24 +507,30 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         /* Calculate the max losses value & save into max_losses array*/
         max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
 
+        free(y_pred);
+
         /* Copy model & max losses*/
-        memcpy(&models[e], model, sizeof(LogReg));
+        lr_cpy(&models[e], model);
+
+//        /* Check if the last five max losses are ascending */
+//        if (check_local_maximum(e, max_losses)) {
+//            model = models[e - 4];
+//            break;
+//        }
 
         /* Check if the last five max losses are ascending */
-        if (e > 3) {
-            q = e;
-            while (q >= e - 4) {
-                if (max_losses[q] < max_losses[q - 1]) {
-                    break;
-                }
-                q--;
-            }
-            if (e - q == 5) {
-                model = &models[e - 4];
-                break;
-            }
+        if (check_weigths(model,  -5)) {
+            model = models[e - 4];
+            break;
         }
+
         ur_reset(ur_mini_batch);
+    }
+
+    for (int i = 0; i < epochs; ++i) {
+        if (models[i] != NULL && models[i] != model) {
+            lr_free(models[i]);
+        }
     }
 
     /* Destroy unique random object */
@@ -496,22 +539,20 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     free(result_vec_test);
     free(losses);
     free(y_test);
-    free(y_pred);
+    printf("\ntotal epochs: %d\n", e);
     return model;
 }
 
 int main(int argc, char *argv[]) {
     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
-    int user_dataset_size = 0, chunks = 0;
+    int chunks = 0;
     Pair *train_set = NULL, *test_set = NULL, *val_set = NULL, *different_pairs = NULL, *similar_pairs = NULL;
     LogReg *model = NULL;
     dictp json_dict = NULL;
-    setp json_train_keys = NULL;
-    Pair *user_pairs = NULL;
+    setp train_json_files_set = NULL;
     ML ml = NULL;
     Options options = {NULL,
-                       NULL,
                        NULL,
                        NULL,
                        NULL,
@@ -522,7 +563,7 @@ int main(int argc, char *argv[]) {
     read_options(argc, argv, &options);
 
     /* initialize mode {tfidf|bow}*/
-    bool mode = !strcmp(options.vec_mode, "tfidf");
+    bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -554,14 +595,19 @@ int main(int argc, char *argv[]) {
     ml_create(&ml, options.stop_words_path, json_dict->htab->buf_load);
 
     /* initialize json train set */
-    init_json_train_set(&json_train_keys, train_sz, train_set);
+    init_json_train_set(&train_json_files_set, train_sz, train_set);
 
     /* tokenize json train set to init bag of words dict*/
-    tokenize_json_train_set(json_train_keys, ml, json_dict);
+    tokenize_json_train_set(ml, train_json_files_set, json_dict);
 
-    if (mode) {
-        ml_idf_remove(ml);
+    //todo: init idf ?
+
+    if (tfidf) {
+        ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
+
+    /* export vocabulary into csv file */
+    ml_export_vocabulary(ml, options.export_path);
 
     bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
     bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
@@ -570,33 +616,32 @@ int main(int argc, char *argv[]) {
 
     /*********************************************** Training *********************************************************/
 
-    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
+    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, tfidf, test_set, test_sz);
 
-    //TODO: export model into file
+    lr_export_model(model, !tfidf, options.export_path);
 
     /**************************************************** Predict ****************************************************/
 
     y_val = malloc(val_sz * sizeof(int));
 
-    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
-                result_vec_val, y_val, mode, 0);
+    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, NULL, ml, json_dict, &val_set,
+                result_vec_val, y_val, tfidf, 1);
 
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
-               val_set[i].relation, y_pred[i]);
+        if (val_set[i].relation) {
+            printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        } else {
+            printf(B_RED"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        }
+        // if (i==2) break;
     }
 
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
-
-    /******************************************** Predict User Dataset ************************************************/
-
-    predict_user_dataset(options.user_dataset_file, options.json_path, mode, ml, &user_dataset_size,
-                         bow_vector_1, bow_vector_2, user_pairs, model, X);
-
-    /******************************************************************************************************************/
 
     free(bow_vector_1);
     free(bow_vector_2);
@@ -614,9 +659,8 @@ int main(int argc, char *argv[]) {
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
-    set_free(json_train_keys);
-    free(model->weights);
-    free(model);
+    set_free(train_json_files_set);
+    lr_free(model);
     free(y_pred);
     free(y_val);
     /* Destroy STS dataset X */

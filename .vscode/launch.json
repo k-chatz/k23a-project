@@ -6,7 +6,65 @@
     "configurations": [
 
         {
-            "name": "project",  
+            "name": "user main val set",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/user",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "resources/datasets/validation_set.csv",
+                "-vocabulary",
+                "resources/vocabs/vocabulary.csv",
+                "-model",
+                "resources/models/model.csv"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "user main",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/user",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "resources/datasets/user_dataset.csv",
+                "-vocabulary",
+                "resources/vocabs/vocabulary.csv",
+                "-model",
+                "resources/models/model_tfidf_100e.csv"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project tfidf large",  
             "type": "cppdbg",
             "request": "launch",
             "preLaunchTask": "Build Make",
@@ -18,12 +76,107 @@
                 "Datasets/sigmod_large_labelled_dataset.csv",
                 "-sw",
                 "resources/unwanted-words.txt",
-                "-ds",
-                "resources/user_dataset.csv",
-                "-jd",
-                "resources/user_json_files",
+                "-ex",
+                "resources",
                 "-m",
                 "tfidf"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project tfidf medium",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_medium_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "tfidf"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project bow medium",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_medium_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "bow"
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "project bow large",  
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build Make",
+            "program": "${workspaceFolder}/project",
+            "args": [
+                "-dir",
+                "Datasets/camera_specs/2013_camera_specs",
+                "-csv",
+                "Datasets/sigmod_large_labelled_dataset.csv",
+                "-sw",
+                "resources/unwanted-words.txt",
+                "-ex",
+                "resources",
+                "-m",
+                "bow"
+
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -9,12 +9,9 @@
 #include "../include/ml.h"
 
 struct ml {
-    dictp bow_dict;
+    dictp vocabulary_bow_dict;
     dictp stopwords;
-    setp json_set;
-    const char *sw_file;
     int json_ht_load;
-    int removed_words_num;
 };
 
 typedef struct word {
@@ -24,10 +21,6 @@ typedef struct word {
 } Word;
 
 /***Private functions***/
-
-setp ml_create_json_set() {
-    return set_new(10);
-}
 
 dictp ml_create_bow_dict() {
     /* clang-format off */
@@ -45,10 +38,10 @@ dictp ml_create_bow_dict() {
     return bow_dict;
 }
 
-dictp ml_stop_words(ML ml) {
+dictp ml_stop_words(ML ml, const char *sw_file) {
     char *stop_word, comma;
     assert(ml != NULL);
-    FILE *fp = fopen(ml->sw_file, "r");
+    FILE *fp = fopen(sw_file, "r");
     assert(fp != NULL);
     /* clang-format off */
     /* @formatter:off */
@@ -120,8 +113,8 @@ void ml_tf(ML ml, float *bow_vector, int wc) {
 void ml_idf(ML ml, float *bow_vector) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
-        Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
+    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, ml_bow_sz(ml)) {
+        Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         bow_vector[w->position] = bow_vector[w->position] * w->idf;
     }
 }
@@ -130,27 +123,20 @@ void ml_idf(ML ml, float *bow_vector) {
 
 bool ml_create(ML *ml, const char *sw_file, int load) {
     assert(*ml == NULL);
-    assert(sw_file != NULL);
     *ml = (ML) malloc(sizeof(struct ml));
     if ((*ml) != NULL) {
-        (*ml)->sw_file = sw_file;
-        (*ml)->bow_dict = ml_create_bow_dict();
-        dict_config((*ml)->bow_dict,
+        (*ml)->vocabulary_bow_dict = ml_create_bow_dict();
+        dict_config((*ml)->vocabulary_bow_dict,
                     DICT_CONF_CMP, (ht_cmp_func) strncmp,
                     DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
                     DICT_CONF_HASH_FUNC, djb2_str,
                     DICT_CONF_KEY_SZ_F, str_sz,
                     DICT_CONF_DONE);
-        (*ml)->json_set = ml_create_json_set();
-        dict_config((*ml)->json_set,
-                    DICT_CONF_CMP, (ht_cmp_func) strncmp,
-                    DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
-                    DICT_CONF_HASH_FUNC, djb2_str,
-                    DICT_CONF_KEY_SZ_F, str_sz,
-                    DICT_CONF_DONE);
-        (*ml)->stopwords = ml_stop_words(*ml);
-        (*ml)->json_ht_load = load;
-        (*ml)->removed_words_num = 0;
+        (*ml)->stopwords = NULL;
+        if (sw_file) {
+            (*ml)->stopwords = ml_stop_words(*ml, sw_file);
+            (*ml)->json_ht_load = load;
+        }
         return true;
     }
     return false;
@@ -158,69 +144,46 @@ bool ml_create(ML *ml, const char *sw_file, int load) {
 
 void ml_destroy(ML *ml) {
     assert(*ml != NULL);
-    dict_free((*ml)->bow_dict, NULL);
-    dict_free((*ml)->stopwords, NULL);
-    dict_free((*ml)->json_set, NULL);
+    dict_free((*ml)->vocabulary_bow_dict, NULL);
+    if ((*ml)->stopwords != NULL) {
+        dict_free((*ml)->stopwords, NULL);
+    }
     free(*ml);
 }
 
 ulong ml_bow_sz(ML ml) {
-    return ml->bow_dict->htab->buf_load;
+    return ml->vocabulary_bow_dict->htab->buf_load;
 }
 
-void ml_str_cleanup(ML ml, char *input) {
+void ml_cleanup_sentence(ML ml, char *input) {
     ml_rm_punct_and_upper_case(ml, input);
     ml_rm_stop_words(ml, input);
     ml_rm_digits(ml, input);
 }
 
-dictp ml_bag_of_words(ML ml, char *input) {
-    char *token, *rest = NULL;
-    char *buf = strdup(input);
-    for (token = strtok_r(buf, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-        if (!set_in(ml->json_set, token)) {
-            set_put(ml->json_set, token);
-        }
-    }
-    free(buf);
-    return ml->bow_dict;
-}
-
-dictp ml_tokenize_json(ML ml, JSON_ENTITY *json) {
-    char *entry, *x = NULL;
-    ulong i_start = 0;
+dictp ml_init_vocabulary_from_json_bow_set(ML ml, setp json_bow_set) {
+    char *entry;
     Word *word = NULL;
-    StringList *json_keys = json_get_obj_keys(json);
-
-    /* put distinct words in json_set */
-    LL_FOREACH(json_key, json_keys) {
-        JSON_ENTITY *cur_ent = json_get(json, json_key->data);
-        if (cur_ent->type == JSON_STRING) {
-            x = json_to_string(cur_ent);
-            ml_str_cleanup(ml, x);
-            ml_bag_of_words(ml, x);
-        }
-    }
-
+    ulong i_start = 0;
     /* Iterate set */
     i_start = 0;
-    HSET_FOREACH_ENTRY(entry, ml->json_set, &i_start, ml->json_set->htab->buf_load) {
-        word = (Word *) dict_get(ml->bow_dict, entry);
+    HSET_FOREACH_ENTRY(entry, json_bow_set, &i_start, json_bow_set->htab->buf_load) {
+        word = (Word *) dict_get(ml->vocabulary_bow_dict, entry);
         if (word == NULL) {
             /* does not exist in dict */
-            Word w = {0, 1, 0};
-            dict_put(ml->bow_dict, entry, &w);
+            Word w = {ml_bow_sz(ml), 1, 0};
+            dict_put(ml->vocabulary_bow_dict, entry, &w);
         } else {
             /* It exists, just up the count */
             word->count++;
         }
         /* erase x from set */
-        dict_del(ml->json_set, entry);
+        dict_del(json_bow_set, entry);
     }
-    return ml->bow_dict;
+    return ml->vocabulary_bow_dict;
 }
 
-float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) {
+float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, bool is_user) {
     StringList *json_keys = json_get_obj_keys(json);
     int capacity = ml_bow_sz(ml);
     memset(bow_vector, 0, capacity * sizeof(float));
@@ -228,16 +191,19 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc) 
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *value = json_to_string(cur_ent);
+            char *sentence = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
-            for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                Word *w = (Word *) dict_get(ml->bow_dict, token);
+            sentence = strdup(sentence);
+            ml_cleanup_sentence(ml, sentence);
+            for (token = strtok_r(sentence, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
+                Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
                 if (w == NULL) {
                     continue;
                 }
                 bow_vector[w->position] += 1.0;
                 (*wc)++;
             }
+            free(sentence);
         }
     }
     return bow_vector;
@@ -251,23 +217,18 @@ void ml_tfidf(ML ml, float *bow_vector, int wc) {
 void ml_idf_remove(ML ml) {
     char *entry = NULL;
     ulong iterate_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &iterate_state, ml->bow_dict->htab->buf_load) {
-        Word *w = (Word *) (entry + ml->bow_dict->htab->key_sz);
+    int end = ml_bow_sz(ml);
+    int c = 0;
+    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, end) {
+        Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
         if (w->idf > 9.85) {
-            dict_del(ml->bow_dict, entry);
+            dict_del(ml->vocabulary_bow_dict, entry);
+            c++;
             continue;
         }
-        w->position = (int) i;
+        w->position = (int) (i - c);
     }
-}
-
-void set_removed_words_num(ML ml, int c) {
-    ml->removed_words_num = c;
-}
-
-int get_removed_words_num(ML ml) {
-    return ml->removed_words_num;
 }
 
 float ml_f1_score(float *y, float *y_pred, int y_size) {
@@ -312,15 +273,46 @@ float ml_f1_score(float *y, float *y_pred, int y_size) {
     return 2 * precision * recall / (precision + recall);
 }
 
-void print_bow_dict(ML ml) {
-    char *entry = NULL;
-    ulong i_state = 0;
-    DICT_FOREACH_ENTRY(entry, ml->bow_dict, &i_state, ml->bow_dict->htab->buf_load) {
-        printf("[%s]\n", entry);
+void ml_init_vocabulary(ML ml, FILE *fp) {
+    char key[50];
+    int pos = 0, count = 0;
+    float idf = 0;
+    char pos_str[50], count_str[50];
+    //skip first row
+    fseek(fp, 17, SEEK_SET);
+    while (fscanf(fp, "%[^,],%[^,],%[^,],%f\n", key, pos_str, count_str, &idf) != EOF) {
+        pos = (int) strtol(pos_str, NULL, 10);
+        count = (int) strtol(count_str, NULL, 10);
+        Word w = {pos, count, idf};
+        dict_put(ml->vocabulary_bow_dict, key, &w);
     }
 }
 
-void print_vector(ML ml, float *vector) {
+void ml_export_vocabulary(ML ml, char *path) {
+    char filepath[100];
+    char *entry = NULL;
+    ulong i_state = 0;
+    snprintf(filepath, 100, "%s/%s", path, "vocabulary.csv");
+    FILE *fp = fopen(filepath, "w+");
+    assert(fp != NULL);
+    fprintf(fp, "key,pos,count,idf\n");
+    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &i_state, ml_bow_sz(ml)) {
+        Word *w = dict_get(ml->vocabulary_bow_dict, entry);
+        fprintf(fp, "%s,%d,%d,%f\n", entry, w->position, w->count, w->idf);
+    }
+    fclose(fp);
+}
+
+void ml_print_vocabulary(ML ml, FILE *fp) {
+    char *entry = NULL;
+    ulong i_state = 0;
+    DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &i_state, ml_bow_sz(ml)) {
+        Word *w = dict_get(ml->vocabulary_bow_dict, entry);
+        fprintf(fp, "%s,%d,%d,%f\n", entry, w->position, w->count, w->idf);
+    }
+}
+
+void ml_print_vector(ML ml, float *vector) {
     printf("[");
     for (int i = 0; i < ml_bow_sz(ml); i++) {
         if (vector[i]) {
