@@ -191,12 +191,11 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, 
     LL_FOREACH(json_key, json_keys) {
         JSON_ENTITY *cur_ent = json_get(json, json_key->data);
         if (cur_ent->type == JSON_STRING) {
-            char *value = json_to_string(cur_ent);
+            char *sentence = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
-            if(is_user){
-                ml_cleanup_sentence(ml, value);
-            }
-            for (token = strtok_r(value, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
+            sentence = strdup(sentence);
+            ml_cleanup_sentence(ml, sentence);
+            for (token = strtok_r(sentence, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
                 Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
                 if (w == NULL) {
                     continue;
@@ -204,6 +203,7 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, 
                 bow_vector[w->position] += 1.0;
                 (*wc)++;
             }
+            free(sentence);
         }
     }
     return bow_vector;

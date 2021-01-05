@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 3
+#define epochs 100
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -415,10 +415,11 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                 if (json_val) {
                     if (json_val->type == JSON_STRING) {
                         sentence = json_to_string(json_val);
+                        sentence = strdup(sentence);
                         ml_cleanup_sentence(ml, sentence);
 
                         /* tokenize sentence & put tokens in json_bow_set */
-                        sentence = strdup(sentence);
+                        
                         for (token = strtok_r(sentence, " ", &rest);
                              token != NULL; token = strtok_r(NULL, " ", &rest)) {
                             set_put(json_bow_set, token);
@@ -476,20 +477,20 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         lr_cpy(&models[e], model);
 
 
-        /* Check if the last five max losses are ascending */
-        if (e > 3) {
-            q = e;
-            while (q >= e - 4) {
-                if (max_losses[q] < max_losses[q - 1]) {
-                    break;
-                }
-                q--;
-            }
-            if (e - q == 5) {
-                model = models[e - 4];
-                break;
-            }
-        }
+        // /* Check if the last five max losses are ascending */
+        // if (e > 3) {
+        //     q = e;
+        //     while (q >= e - 4) {
+        //         if (max_losses[q] < max_losses[q - 1]) {
+        //             break;
+        //         }
+        //         q--;
+        //     }
+        //     if (e - q == 5) {
+        //         model = models[e - 4];
+        //         break;
+        //     }
+        // }
 
         ur_reset(ur_mini_batch);
     }
@@ -591,7 +592,7 @@ int main(int argc, char *argv[]) {
 
     y_val = malloc(val_sz * sizeof(int));
 
-    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
+    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, NULL, ml, json_dict, &val_set,
                 result_vec_val, y_val, tfidf, 1);
 
     /* Predict validation set */
@@ -599,7 +600,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < val_sz; i++) {
         printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
                val_set[i].relation, y_pred[i]);
-        break;
+        // if (i==2) break;
     }
 
     /* calculate F1 score */
