@@ -15,9 +15,11 @@ LogReg *lr_new(int weights_len, float learning_rate) {
     return out;
 }
 
-LogReg *lr_new_from_file(FILE *fp) {
+LogReg *lr_new_from_file(FILE *fp, bool *bow) {
     char buf[32];
     LogReg *model = lr_new(0, 0);
+    fgets(buf, 32, fp);
+    *bow = strcmp(buf, "bow") != 0;
     fgets(buf, 32, fp);
     model->learning_rate = atof(buf);
     fgets(buf, 32, fp);
@@ -43,12 +45,12 @@ void lr_cpy(LogReg **dst, LogReg *src) {
     }
 }
 
-void lr_export_model(LogReg *reg, char *path) {
+void lr_export_model(LogReg *reg, bool bow, char *path) {
     char filepath[100];
     snprintf(filepath, 100, "%s/%s", path, "model.csv");
     FILE *fp = fopen(filepath, "w+");
     assert(fp != NULL);
-    fprintf(fp, "%f\n%f\n%d\n", reg->learning_rate, reg->bias, reg->weights_len);
+    fprintf(fp, "%s\n%f\n%f\n%d\n", bow ? "bow" : "tfidf", reg->learning_rate, reg->bias, reg->weights_len);
     for (int i = 0; i < reg->weights_len; ++i) {
         fprintf(fp, "%f\n", reg->weights[i]);
     }

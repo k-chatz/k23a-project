@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 1000
+#define epochs 3
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]) {
     read_options(argc, argv, &options);
 
     /* initialize mode {tfidf|bow}*/
-    bool mode = !strcmp(options.vec_mode, "tfidf");
+    bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -569,11 +569,9 @@ int main(int argc, char *argv[]) {
 
     //todo: init idf ?
 
-    if (mode) {
+    if (tfidf) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
-
-
 
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
@@ -585,22 +583,23 @@ int main(int argc, char *argv[]) {
 
     /*********************************************** Training *********************************************************/
 
-    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, mode, test_set, test_sz);
+    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, tfidf, test_set, test_sz);
 
-    lr_export_model(model, options.export_path);
+    lr_export_model(model, !tfidf, options.export_path);
 
     /**************************************************** Predict ****************************************************/
 
     y_val = malloc(val_sz * sizeof(int));
 
     prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict, &val_set,
-                result_vec_val, y_val, mode, 1);
+                result_vec_val, y_val, tfidf, 1);
 
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
         printf("spec1: %s, spec2: %s, y: %d, y_pred:%f\n", val_set[i].spec1, val_set[i].spec2,
                val_set[i].relation, y_pred[i]);
+        break;
     }
 
     /* calculate F1 score */
