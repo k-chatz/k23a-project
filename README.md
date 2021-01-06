@@ -127,9 +127,7 @@
  
  - -vocabulary {vocabulary path} 
  
- - -model {model path
-
-}
+ - -model {model path}
 
 ### Ενδεικτική εκτέλεση προγράμματος Training
 
