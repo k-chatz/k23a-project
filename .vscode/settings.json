@@ -12,5 +12,8 @@
         "*.tcc": "c",
         "streambuf": "c"
     },
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "cSpell.words": [
+        "Qdequeue"
+    ]
 }
