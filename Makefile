@@ -38,7 +38,7 @@ user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_
 #                                                #
 ##################################################
 
-tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests ml_tests logreg_tests tokenizer_tests hset_tests)
+tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests ml_tests queue_tests logreg_tests tokenizer_tests hset_tests)
 	for test in tests-bin/*; do if [ -x $$test ]; then printf "\n\nrunning $$test...\n"; ./$$test || exit 1; fi done
 
 tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o )
@@ -60,6 +60,9 @@ tests-bin/general_tests: $(addprefix objs/, general_tests.o lists.o spec_to_spec
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/ml_tests: $(addprefix objs/, ml_tests.o json_parser.o ml.o tokenizer.o hash.o lists.o)
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
+tests-bin/queue_tests: $(addprefix objs/, queue_tests.o queue.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/tokenizer_tests: $(addprefix objs/, tokenizer_tests.o tokenizer.o hset.o hash.o)

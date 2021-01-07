@@ -1,23 +1,23 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-typedef queue_t *Queue;
+#include <stdbool.h>
 
-void QCreate(Queue *q, int buf_sz, int type_sz);
+typedef struct queue_t *Queue;
 
-void QDestroy(Queue *q);
+void queue_create(Queue *q, int buf_sz, int type_sz);
 
-int QEmpty(Queue q);
+void queue_destroy(Queue *q);
 
-int QSize(Queue q);
+int queue_is_empty(Queue q);
 
-int QFull(Queue q);
+int queue_size(Queue q);
 
-void QInitialize(Queue q);
+int queue_is_full(Queue q);
 
-bool Qenqueue(Queue q, void *item);
+bool queue_enqueue(Queue q, void *item);
 
-bool Qdequeue(Queue q, void *item);
+bool queue_dequeue(Queue q, void *item);
 
 void inspectQbyOrder(Queue q);
 
