@@ -28,22 +28,26 @@ void dequeue(void) {
     Queue queue = NULL;
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 1; i < 11; ++i) {
         TEST_CHECK(queue_enqueue(queue, &i));
     }
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 1; i < 12; ++i) {
         int x = -1;
-
-        //TEST_CHECK(queue_dequeue(queue, &x));
-        //TEST_CHECK(x == i);
+        if (i < 11) {
+            TEST_CHECK(queue_dequeue(queue, &x));
+            TEST_CHECK(x == i);
+        } else {
+            TEST_CHECK(!queue_dequeue(queue, &x));
+            TEST_CHECK(x == -1);
+        }
     }
     queue_destroy(&queue);
     TEST_CHECK(queue == NULL);
 }
 
 TEST_LIST = {
-//        {"create_and_destroy_queue", create_and_destroy_queue},
-//        {"enqueue",                  enqueue},
-//        {"dequeue",                  dequeue},
+        {"create_and_destroy_queue", create_and_destroy_queue},
+        {"enqueue",                  enqueue},
+        {"dequeue",                  dequeue},
         {NULL, NULL}
 };
