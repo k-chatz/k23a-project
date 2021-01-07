@@ -66,6 +66,12 @@ add_executable(k23a_project_ml_tests
         tests/ml_tests.c
         )
 
+#queue tests
+add_executable(k23a_project_queue_tests
+        src/queue.c
+        tests/queue_tests.c
+        )
+
 #logreg tests
 add_executable(k23a_project_logreg_tests
         src/logreg.c
@@ -86,6 +92,7 @@ add_executable(k23a_project_tokenizer_tests
 add_executable(k23a_project
         src/main.c
         src/lists.c
+        src/queue.c
         src/hash.c
         src/hset.c
         src/unique_rand.c
@@ -117,6 +124,7 @@ target_link_libraries(k23a_project_hash_tests m)
 target_link_libraries(k23a_project_hset_tests m)
 target_link_libraries(k23a_project_spec_to_specs_tests m)
 target_link_libraries(k23a_project_ml_tests m)
+target_link_libraries(k23a_project_queue_tests m)
 target_link_libraries(k23a_project_logreg_tests m)
 target_link_libraries(k23a_project_tokenizer_tests m)
 target_link_libraries(k23a_project_user m)

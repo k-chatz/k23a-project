@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 20
+#define epochs 200
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -518,11 +518,11 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
 //            break;
 //        }
 
-        /* Check if the last five max losses are ascending */
-        if (check_weigths(model,  -5)) {
-            model = models[e - 4];
-            break;
-        }
+        // /* Check if the last five max losses are ascending */
+        // if (check_weigths(model,  -5)) {
+        //     model = models[e - 4];
+        //     break;
+        // }
 
         ur_reset(ur_mini_batch);
     }

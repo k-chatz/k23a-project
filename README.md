@@ -1,159 +1,320 @@
-<h1 align="center">ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ</h1>  
 
-<p align="center">  
-  <br>  
-  <b>Entity resolution</b>  
-  <br>  
-</p>  
+<h1  align="center">ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ</h1>
 
-<p align="center">  
-  <a target="_blank" href="https://k23a-prj-auth.herokuapp.com"><strong>Documentation</strong></a>  
-  <br>  
-</p>  
+  
 
-<p align="center">  
-  <a href="https://discord.gg/nSGmntAX">  
-    <img alt="Discord" src="https://img.shields.io/discord/765286458243153950?color=7389d8&label=Discord&logo=Discord&logoColor=fff">  
-  </a>  
-</p>  
+<p  align="center">
 
-<hr>  
+<br>
+
+<b>Entity resolution</b>
+
+<br>
+
+</p>
+
+  
+
+<p  align="center">
+
+<a  target="_blank"  href="https://k23a-prj-auth.herokuapp.com"><strong>Documentation</strong></a>
+
+<br>
+
+</p>
+
+  
+
+<p  align="center">
+
+<a  href="https://discord.gg/nSGmntAX">
+
+<img  alt="Discord"  src="https://img.shields.io/discord/765286458243153950?color=7389d8&label=Discord&logo=Discord&logoColor=fff">
+
+</a>
+
+</p>
+
+  
+
+<hr>
+
+  
 
 # Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών
 
+  
+
 ### Τμήμα Πληροφορικής και Τηλεπικοινωνιών
+
+  
 
 ### Κ23Α - ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ
 
+  
+
 ### **Project - Entity resolution**
+
+  
 
 **Μέλη**:
 
+  
+
 - Θεόδωρος Χατζηιωαννίδης - 1115201600197
+
 - Βασίλειος Πουλόπουλος - 1115201600141
+
 - Κωνσταντίνος Χατζόπουλος - 1115201300202
+
+  
 
 ## Περιεχόμενα
 
-1. [PART 2](#part2)
-1. [Εισαγωγή](#intro)
-2. [Hash table](#hash_table)
-3. [List](#list)
-4. [JSON Parser](#json_parser)
-5. [Spec to specs](#spec_to_specs)
-6. [Ροή του προγράμματος](#flow)
-7. [Unit tests](#unit_tests)
-8. [Συμπεράσματα](#conclusions)
+  
 
+1.  [PART 2](#part2)
 
-<a name="part2"></a>
+1.  [Εισαγωγή](#intro)
 
+2.  [Hash table](#hash_table)
 
+3.  [List](#list)
 
-## Κλήση Προγράμματος
+4.  [JSON Parser](#json_parser)
 
-Για να εκτελεστεί το πρόγραμμα από τερματικό τρέχουμε το script 'build_and_run.sh'.
-Τα ορίσματα που δέχεται το εκτελέσιμο είναι τα εξής:
+5.  [Spec to specs](#spec_to_specs)
+
+6.  [Ροή του προγράμματος](#flow)
+
+7.  [Unit tests](#unit_tests)
+
+8.  [Συμπεράσματα](#conclusions)
+
+  
+  
+
+<a  name="part2"></a>
+
+  
+  
+  
+
+## Κλήση Προγραμμάτων
+
+  
+
+Για να εκτελεστούν τα πρόγραμμα από τερματικό τρέχουμε το script 'build_and_run.sh'.
+
+Τα ορίσματα που δέχεται το εκτελέσιμο για το training είναι τα εξής:
+
 
 - -dir { dataset X path }
-- -csv  { dataset W path }
-- -sw  { stopwords file path }
-- -ds  { user dataset W }
+
+- -csv { dataset W path }
+
+- -sw { stopwords file path }
+
 - -m { tfidf | bow }
-- -jd { user dataset X }
 
-### Ενδεικτική εκτέλεση προγράμματος
+- -ex {resources path }
 
-> ./project -dir Datasets/camera_specs/2013_camera_specs -csv Datasets/sigmod_large_labelled_dataset.csv -sw resources/unwanted-words.txt -ds resources/user_dataset.csv -m tfidf -jd resouces/user_json_files
+Τα ορίσματα που δέχεται το εκτελέσιμο για το predicting είναι τα εξής:
 
-## Έξοδος προγράμματος
+ - -dir {user dataset X path}
+ 
+ - -csv {user dataset W path}
+ 
+ - -vocabulary {vocabulary path} 
+ 
+ - -model {model path}
 
-1. **predictions** και **f1 score** για το validation set και
-2.  **predicitons** για το dataset που δίνει ο χρήστης.
+### Ενδεικτική εκτέλεση προγράμματος Training
 
-Σημείωση: Το training όπως και τα predictions για το validation set και το dataset του χρήστη γίνονται σε μια main.
+  
 
-<a name="intro"></a>
+>./project \
+-dir Datasets/camera_specs/2013_camera_specs \
+-csv Datasets/sigmod_large_labelled_dataset.csv \
+-sw resources/unwanted-words.txt \
+-m bow \
+-ex resources
+
+
+
+
+### Ενδεικτική εκτέλεση προγράμματος Predicting
+
+   
+
+>  ./user -dir resources/user_json_files \
+     -csv resources/user_dataset.csv \
+     -vocabulary resources/vocabulary.csv \
+     -model resources/model.csv
+
+## Έξοδος προγράμματος Training
+
+  
+
+ **predictions** και **f1 score** για το validation set
+
+
+## Έξοδος προγράμματος Training
+
+  **predicitons** για το dataset που δίνει ο χρήστης.
+
+  
+
+**Σημείωση**: Για να περάσουμε το model και το vocabulary από το ένα πρόγραμμα στο άλλο, τα γράψαμε σε αρχεία.
+
+  
+
+<a  name="intro"></a>
+
+  
 
 ## Εισαγωγή
 
-Στόχος της άσκησης είναι να δημιουργήσουμε κλίκες γράφων από αγγελίες με τα ίδια προϊόντα σε διάφορα site. Για την  
+  
+
+Στόχος της άσκησης είναι να δημιουργήσουμε κλίκες γράφων από αγγελίες με τα ίδια προϊόντα σε διάφορα site. Για την
+
 υλοποίηση χρειάστηκε να δημιουργήσουμε τις παρακάτω δομές δεδομένων:
 
-- **hash table**:
-- **list**
+  
+
+-  **hash table**:
+
+-  **list**
+
+  
 
 Επίσης, υλοποιήσαμε έναν json parser ώστε να συλλέξουμε τα δεδομένα των αγγελιών από τα json αρχεία.
 
-Επιπλέον, για τον έλεγχο ορθότητας του κώδικα, χρησιμοποιήσαμε τη βιβλιοθήκη **acutest.h** όπου δέχεται μια λίστα από  
+  
+
+Επιπλέον, για τον έλεγχο ορθότητας του κώδικα, χρησιμοποιήσαμε τη βιβλιοθήκη **acutest.h** όπου δέχεται μια λίστα από
+
 κατάλληλες συναρτήσεις (tests) που γράψαμε.
 
-<a name="hash_table"></a>
+  
+
+<a  name="hash_table"></a>
+
+  
 
 ## Hash table
 
+  
+
 ![hash table](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/hash.png?token=AMOC6IZ2FVNF77KBO6EZCBK7Z7ZWC)
+
+  
 
 Για την υλοποίηση του hash table, χρησιμοποιήσαμε generic **open addressing hash table** με **random probing**.
 
-Πιο συγκεκριμένα, δεσμεύουμε ένα κομμάτι μνήμης το οποίο χωρίζεται σε μκρότερα ίσα μέρη ώστε στα οποία αποθηκεύονται οι  
+  
+
+Πιο συγκεκριμένα, δεσμεύουμε ένα κομμάτι μνήμης το οποίο χωρίζεται σε μκρότερα ίσα μέρη ώστε στα οποία αποθηκεύονται οι
+
 πληροφορίες του κάθε **spec**.
 
-Αφού χρησιμοποιούμε random probing το κάθε spec ανάλογα με το key του, αν δε χωράει στην πρώτη θέση που θα υπολογιστεί  
-μέσω του hash function, θα ψάξει κάποια "τυχαία" θέση για να αποθηκευθεί. Το seed της random συνάρτησης είναι σταθερό,  
+  
+
+Αφού χρησιμοποιούμε random probing το κάθε spec ανάλογα με το key του, αν δε χωράει στην πρώτη θέση που θα υπολογιστεί
+
+μέσω του hash function, θα ψάξει κάποια "τυχαία" θέση για να αποθηκευθεί. Το seed της random συνάρτησης είναι σταθερό,
+
 οπότε πάντα μπορούμε να υπολογίσουμε σε ποιο σημείο της μνήμης βρίσκονται το εκάστοτε δεδομένα.
 
-Αν η μνήμη που έχουμε δεσμεύσει αρχίσει να γεμίζει θα κάνουμε **Rehashing**. Όταν θέλουμε να εισάγουμε νέα δεδομένα αλλά  
-η πληρότητα του είναι 70%, δεσμεύουμε τη διπλάσια μνήμη από πριν, ξαναμοιράζουμε τα δεδομένα στην καινούργια, μεγαλύτερη  
+  
+
+Αν η μνήμη που έχουμε δεσμεύσει αρχίσει να γεμίζει θα κάνουμε **Rehashing**. Όταν θέλουμε να εισάγουμε νέα δεδομένα αλλά
+
+η πληρότητα του είναι 70%, δεσμεύουμε τη διπλάσια μνήμη από πριν, ξαναμοιράζουμε τα δεδομένα στην καινούργια, μεγαλύτερη
+
 μνήμη και εισάγουμε τα νέα δεδομένα.
+
+  
 
 Η δομή που χρησιμοποιήσαμε για το hash table είναι η παρακάτω:
 
-```c  
-typedef struct htab_s {  
- /*! @brief hash function used to hash the keys */ ht_hash_func h; /*! @brief comparison function to compare 2 keys (default: memcmp) */ ht_cmp_func cmp; /*! @brief copying function that copies a key to the hashtable (default: * memcpy) */ ht_key_cpy_func keycpy; /*! @brief size of key in the hashtable */ size_t key_sz; /*! @brief size of val in the hashtable */ size_t val_sz; /*! @brief capacity of buf */ ulong buf_cap; /*! @brief occupied entries of buf */ ulong buf_load; /*! @brief the buffer where the entries are stored */ char buf[]; } htab_t; ```  
-<a name="list"></a>  
   
-## List  
-  
-Χρησιμοποιήσαμε μία generic **list**.  
-  
-<a name="json_parser"></a>  
-  
-## JSON Parser  
-  
-<a name="spec_to_specs"></a>  
-  
-## Spec to specs  
-  
-Ο τρόπος με τον οποίο συνδέουμε τα στοιχεία των κλικών μεταξύ τους, είναι μέσω μίας δενδρικής αναπαράστασης. Το πρώτο  
-spec που θα μπει στην κλίκα είναι ο πατέρας, ενώ τα υπόλοιπα είναι τα παιδιά του. Αν δύο κλίκες γίνουν **merge**, τότε ο  
-πατέρας της δεύτερης κλίκας πάει και αποθηκεύεται στον παππού της πρώτης. Με αυτό τον τρόπο κρατάμε το δένδρο σε χαμηλά  
-επίπεδα.  
-  
-To spec to specs είναι η δομή που χρησιμοποιούμε για το ζητούμενο της άσκησης. Στην ουσία είναι ένα hash table, στο  
-οποίο το κάθε στοιχείο που αποθηκεύεται είναι της μορφής:  
-  
-```c  
-struct SpecEntry_s {  
-    /*! @brief spec id */  
- char *id; /*! @brief Set of similar specs. */ char *parent; /*! @brief Contents of the set if this node is the representative of the set, this is the list of the elements; otherwise, this is NULL */ StrList *similar, *similar_tail; /*! @brief Length of similar */ ulong similar_len;};  
-```  
 
-Ο parent είναι ο πατέρας του spec (αν δεν είναι σε κλίκα είναι ο εαυτός του) . Η similar είναι μία λίστα στην οποία, αν  
-το spec είναι parent κάποιας κλίκας αποθηκεύονται τα ids όλης της κλίκας αλλιώς είναι NULL, ενώ το similar_tail είναι  
+```c
+
+typedef  struct htab_s {
+
+/*! @brief hash function used to hash the keys */ ht_hash_func h; /*! @brief comparison function to compare 2 keys (default: memcmp) */ ht_cmp_func cmp; /*! @brief copying function that copies a key to the hashtable (default: * memcpy) */ ht_key_cpy_func keycpy; /*! @brief size of key in the hashtable */ size_t key_sz; /*! @brief size of val in the hashtable */ size_t val_sz; /*! @brief capacity of buf */ ulong buf_cap; /*! @brief occupied entries of buf */ ulong buf_load; /*! @brief the buffer where the entries are stored */ char buf[]; } htab_t; ```
+
+<a  name="list"></a>
+
+## List
+
+Χρησιμοποιήσαμε μία generic **list**.
+
+<a  name="json_parser"></a>
+
+## JSON Parser
+
+<a  name="spec_to_specs"></a>
+
+## Spec to specs
+
+Ο τρόπος με τον οποίο συνδέουμε τα στοιχεία των κλικών μεταξύ τους, είναι μέσω μίας δενδρικής αναπαράστασης. Το πρώτο
+
+spec που θα μπει στην κλίκα είναι ο πατέρας, ενώ τα υπόλοιπα είναι τα παιδιά του. Αν δύο κλίκες γίνουν **merge**, τότε ο
+
+πατέρας της δεύτερης κλίκας πάει και αποθηκεύεται στον παππού της πρώτης. Με αυτό τον τρόπο κρατάμε το δένδρο σε χαμηλά
+
+επίπεδα.
+
+To spec to specs είναι η δομή που χρησιμοποιούμε για το ζητούμενο της άσκησης. Στην ουσία είναι ένα hash table, στο
+
+οποίο το κάθε στοιχείο που αποθηκεύεται είναι της μορφής:
+
+```c
+
+struct SpecEntry_s {
+
+/*! @brief spec id */
+
+char *id; /*! @brief Set of similar specs. */ char *parent; /*! @brief Contents of the set if this node is the representative of the set, this is the list of the elements; otherwise, this is NULL */ StrList *similar, *similar_tail; /*! @brief Length of similar */ ulong similar_len;};
+
+```
+
+  
+
+Ο parent είναι ο πατέρας του spec (αν δεν είναι σε κλίκα είναι ο εαυτός του) . Η similar είναι μία λίστα στην οποία, αν
+
+το spec είναι parent κάποιας κλίκας αποθηκεύονται τα ids όλης της κλίκας αλλιώς είναι NULL, ενώ το similar_tail είναι
+
 δείκτης στο τελευταίο στοιχείο της similar. Το similar_len είναι το μέγεθος της similar.
 
-<a name="flow"></a>
+  
+
+<a  name="flow"></a>
+
+  
 
 ## Ροή του προγράμματος
 
+  
+
 ![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I6TSAEO3RWM4E22FUK7Z7ZZS)
 
-<a name="unit_tests"></a>
+  
+
+<a  name="unit_tests"></a>
+
+  
 
 ## Unit tests
 
-<a name="conclusions"></a>
+  
+
+<a  name="conclusions"></a>
+
+  
 
 ## Συμπεράσματα
