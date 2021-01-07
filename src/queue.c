@@ -21,14 +21,9 @@ struct queue_t {
     char array[];
 };
 
-typedef struct entry {
-    u_int8_t flags;
-    char data[];
-} entry_t;
-
 void queue_create(Queue *q, int buf_sz, int type_sz) {
     assert(*q == NULL);
-    *q = (Queue) malloc(sizeof(struct queue_t) + buf_sz * (sizeof(entry_t) + type_sz));
+    *q = (Queue) malloc(sizeof(struct queue_t) + buf_sz * type_sz);
     assert(*q != NULL);
     (*q)->buf_sz = buf_sz;
     (*q)->type_sz = type_sz;
@@ -60,9 +55,28 @@ bool queue_enqueue(Queue q, void *item) {
         return false;
     else {
         q->counter++;
-        entry_t *entry = (entry_t *) &q->array[q->rear];
-        entry->flags = HT_ENTRY_FLAGS_OCCUPIED;
-        memcpy(&(entry->data), item, q->type_sz);
+
+      //  entry_t *entry = (entry_t *) &(q->array[q->rear]);
+      //  entry->flags = HT_ENTRY_FLAGS_OCCUPIED;
+
+        memcpy(  &(q->array[q->rear]), item, q->type_sz);
+
+
+        printf("\n");
+        printf("%d\n", q->array[0]);
+        printf("%d\n", q->array[1]);
+        printf("%d\n", q->array[2]);
+        printf("%d\n", q->array[3]);
+        printf("%d\n", q->array[4]);
+        printf("%d\n", q->array[5]);
+        printf("%d\n", q->array[6]);
+        printf("%d\n", q->array[7]);
+        printf("%d\n", q->array[8]);
+        printf("%d\n", q->array[9]);
+
+
+        q->rear = (q->rear + 1) % q->buf_sz;
+
     }
     return true;
 }
@@ -72,10 +86,10 @@ bool queue_dequeue(Queue q, void *item) {
         return false;
     else {
         q->counter--;
-        entry_t *entry = (entry_t *) &q->array[q->front];
-        entry->flags = HT_ENTRY_FLAGS_CLEAR;
-        memcpy(item, &entry->data, q->type_sz);
-        q->front = (q->front + 1) % q->buf_sz;
+//        entry_t *entry = (entry_t *) &q->array[q->front];
+//        entry->flags = HT_ENTRY_FLAGS_CLEAR;
+//        memcpy(item, &entry->data, q->type_sz);
+//        q->front = (q->front + 1) % q->buf_sz;
     }
     return true;
 }
