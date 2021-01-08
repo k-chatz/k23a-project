@@ -72,6 +72,13 @@ add_executable(k23a_project_queue_tests
         tests/queue_tests.c
         )
 
+#job scheduler tests
+add_executable(k23a_project_job_scheduler_tests
+        src/job_scheduler.c
+        src/queue.c
+        tests/job_scheduler_tests.c
+        )
+
 #logreg tests
 add_executable(k23a_project_logreg_tests
         src/logreg.c
@@ -124,6 +131,7 @@ target_link_libraries(k23a_project_hash_tests m)
 target_link_libraries(k23a_project_hset_tests m)
 target_link_libraries(k23a_project_spec_to_specs_tests m)
 target_link_libraries(k23a_project_ml_tests m)
+target_link_libraries(k23a_project_job_scheduler_tests m)
 target_link_libraries(k23a_project_queue_tests m)
 target_link_libraries(k23a_project_logreg_tests m)
 target_link_libraries(k23a_project_tokenizer_tests m)
