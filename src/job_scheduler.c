@@ -81,13 +81,13 @@ bool js_submit_job(JobScheduler js, Job job) {
     return true;
 }
 
-bool js_execute_all_jobs(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg) {
+bool js_execute_all_jobs(JobScheduler js) {
 
     return true;
 }
 
 
-bool js_wait_all_jobs(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg) {
+bool js_wait_all_jobs(JobScheduler js) {
 
     return true;
 }
