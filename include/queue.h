@@ -7,7 +7,7 @@ typedef struct queue_t *Queue;
 
 void queue_create(Queue *q, int buf_sz, int type_sz);
 
-void queue_destroy(Queue *q);
+void queue_destroy(Queue *q, void (*free_t)(void *));
 
 int queue_is_empty(Queue q);
 

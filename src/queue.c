@@ -27,7 +27,14 @@ void queue_create(Queue *q, int buf_sz, int type_sz) {
     memset((*q)->buffer, 0, (*q)->buf_sz * (*q)->type_sz);
 }
 
-void queue_destroy(Queue *q) {
+void queue_destroy(Queue *q, void (*free_t)(void *)) {
+    if (free_t != NULL) {
+        void *item = malloc((*q)->type_sz);
+        while (queue_dequeue(*q, item)) {
+            free_t(item);
+        }
+        free(item);
+    }
     free(*q);
     *q = NULL;
 }
@@ -63,8 +70,8 @@ bool queue_dequeue(Queue q, void *item) {
         memcpy(item, q->buffer + (q->front * q->type_sz), q->type_sz);
         memset(q->buffer + (q->front * q->type_sz), 0, q->type_sz);
         q->front = (q->front + 1) % q->buf_sz;
+        return true;
     }
-    return true;
 }
 
 void inspectQbyOrder(Queue q) {

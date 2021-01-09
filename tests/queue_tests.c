@@ -5,7 +5,7 @@ void create_and_destroy_queue(void) {
     Queue queue = NULL;
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
-    queue_destroy(&queue);
+    queue_destroy(&queue, NULL);
     TEST_CHECK(queue == NULL);
 }
 
@@ -20,7 +20,7 @@ void enqueue(void) {
             TEST_CHECK(!queue_enqueue(queue, &i));
         }
     }
-    queue_destroy(&queue);
+    queue_destroy(&queue, NULL);
     TEST_CHECK(queue == NULL);
 }
 
@@ -41,7 +41,7 @@ void dequeue(void) {
             TEST_CHECK(x == -1);
         }
     }
-    queue_destroy(&queue);
+    queue_destroy(&queue, NULL);
     TEST_CHECK(queue == NULL);
 }
 
