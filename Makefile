@@ -5,8 +5,7 @@ vpath	 %_tests   tests-bin
 
 CC	= gcc
 CFLAGS	= -g3 -Wall -DMAKEFILE
-LFLAGS	= -lm
-
+LFLAGS	= -lm -lpthread
 
 .PHONY: tests all clean githooks docs phony
 
@@ -14,7 +13,6 @@ all: tests project user
 
 objs/%.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
-
 
 ##################################################
 #                                                #
@@ -74,7 +72,6 @@ tests-bin/tokenizer_tests: $(addprefix objs/, tokenizer_tests.o tokenizer.o hset
 tests-bin/hset_tests: $(addprefix objs/, hset_tests.o hset.o hash.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-
 ##################################################
 #                                                #
 #                                                #
@@ -82,7 +79,6 @@ tests-bin/hset_tests: $(addprefix objs/, hset_tests.o hset.o hash.o)
 #                                                #
 #                                                #
 ##################################################
-
 
 githooks:
 	git config --local core.hooksPath ".githooks/"
