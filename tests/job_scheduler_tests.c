@@ -65,6 +65,10 @@ void wait_all_jobs(void) {
 }
 
 void destroy_job_scheduler(void) {
+    job_destroy(&job1);
+    job_destroy(&job2);
+    
+    
     js_destroy(&js);
     TEST_CHECK(js == NULL);
 }

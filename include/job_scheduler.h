@@ -17,6 +17,8 @@ typedef struct job {
 
 Job job_new(const pthread_attr_t *__restrict attr, void *(*start_routine)(void *), void *__restrict arg);
 
+void job_destroy(Job *job);
+
 void js_create(JobScheduler *js, int execution_threads);
 
 void js_destroy(JobScheduler *js);

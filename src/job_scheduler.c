@@ -23,6 +23,15 @@ Job job_new(const pthread_attr_t *__restrict attr, void *(*start_routine)(void *
     return job;
 }
 
+void job_destroy(Job *job){
+    assert(*job!=NULL);
+    if ((*job)->status)
+        free((*job)->status);
+
+    free(*job);
+    *job = NULL;
+}
+
 void js_create(JobScheduler *js, int execution_threads) {
     *js = malloc(sizeof(struct job_scheduler));
     assert(*js != NULL);
