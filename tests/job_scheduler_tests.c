@@ -4,15 +4,39 @@
 #include "../include/job_scheduler.h"
 
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cvar1, cvar2, count_nonzero;
+pthread_cond_t count_nonzero;
 
 unsigned count = 0;
 
 JobScheduler js = NULL;
 
-void *decrement(void *argp);
+/*** Thread functions ***/
+/*from: https://stackoverflow.com/questions/27349480/condition-variable-example-for-pthread-library*/
+void *decrement(void *argp) {
+    sleep(1);
+    pthread_mutex_lock(&mtx);
+    printf("Thread %ld: start decrement_count %d\n", pthread_self(), count);
+    while (count == 0) {
+        pthread_cond_wait(&count_nonzero, &mtx);
+    }
+    count = count - 1;
+    printf("Thread %ld: end decrement_count %d\n", pthread_self(), count);
+    pthread_mutex_unlock(&mtx);
+    return NULL;
+}
 
-void *increment(void *argp);
+void *increment(void *argp) {
+    sleep(1);
+    pthread_mutex_lock(&mtx);
+    printf("Thread %ld: start increment_count %d\n", pthread_self(), count);
+    if (count == 0) {
+        pthread_cond_signal(&count_nonzero);
+    }
+    count = count + 1;
+    printf("Thread %ld: end increment_count %d\n", pthread_self(), count);
+    pthread_mutex_unlock(&mtx);
+    return NULL;
+}
 
 void create_job_scheduler(void) {
     js_create(&js, 10);
@@ -46,31 +70,3 @@ TEST_LIST = {
         {"destroy_job_scheduler", destroy_job_scheduler},
         {NULL, NULL}
 };
-
-/*** Thread functions ***/
-/*from: https://stackoverflow.com/questions/27349480/condition-variable-example-for-pthread-library*/
-void *decrement(void *argp) {
-    sleep(1);
-    pthread_mutex_lock(&mtx);
-    printf("Thread %ld: start decrement_count %d\n", pthread_self(), count);
-    while (count == 0) {
-        pthread_cond_wait(&count_nonzero, &mtx);
-    }
-    count = count - 1;
-    printf("Thread %ld: end decrement_count %d\n", pthread_self(), count);
-    pthread_mutex_unlock(&mtx);
-    return NULL;
-}
-
-void *increment(void *argp) {
-    sleep(1);
-    pthread_mutex_lock(&mtx);
-    printf("Thread %ld: start increment_count %d\n", pthread_self(), count);
-    if (count == 0) {
-        pthread_cond_signal(&count_nonzero);
-    }
-    count = count + 1;
-    printf("Thread %ld: end increment_count %d\n", pthread_self(), count);
-    pthread_mutex_unlock(&mtx);
-    return NULL;
-}
