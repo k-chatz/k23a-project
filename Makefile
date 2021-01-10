@@ -7,6 +7,9 @@ CC	= gcc
 CFLAGS	= -g3 -Wall -DMAKEFILE
 LFLAGS	= -lm -lpthread
 
+color_rst=\033[0m       # Text Reset
+yellow=\033[0;33m       # Yellow
+
 .PHONY: tests all clean githooks docs phony
 
 all: tests project user
@@ -37,7 +40,7 @@ user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_
 ##################################################
 
 tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests ml_tests queue_tests job_scheduler_tests logreg_tests tokenizer_tests hset_tests)
-	for test in tests-bin/*; do if [ -x $$test ]; then printf "\n\nrunning $$test...\n"; ./$$test || exit 1; fi done
+	for test in tests-bin/*; do if [ -x $$test ]; then printf "${yellow}\nRunning $$test...${color_rst}\n"; ./$$test -E || exit 1; fi done
 
 tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o )
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
@@ -87,8 +90,8 @@ docs:
 	doxygen Doxyfile
 
 clean:
-	-rm user
-	-rm project
+	-rm -f user
+	-rm -f project
 	-rm -rf deps $(OUT)
 	-rm -f tests-bin/*
 	-rm -f objs/*.o
