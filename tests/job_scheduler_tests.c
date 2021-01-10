@@ -9,10 +9,12 @@ pthread_cond_t count_nonzero;
 unsigned count = 0;
 
 JobScheduler js = NULL;
+Job job1 = NULL, job2 = NULL;
 
 /*** Thread functions ***/
 /*from: https://stackoverflow.com/questions/27349480/condition-variable-example-for-pthread-library*/
 void *decrement(void *argp) {
+    int *ret = malloc(sizeof(int));
     sleep(1);
     pthread_mutex_lock(&mtx);
     printf("Thread %ld: start decrement_count %d\n", pthread_self(), count);
@@ -22,10 +24,12 @@ void *decrement(void *argp) {
     count = count - 1;
     printf("Thread %ld: end decrement_count %d\n", pthread_self(), count);
     pthread_mutex_unlock(&mtx);
-    return NULL;
+    *ret = 42;
+    pthread_exit(ret);
 }
 
 void *increment(void *argp) {
+    int *ret = malloc(sizeof(int));
     sleep(1);
     pthread_mutex_lock(&mtx);
     printf("Thread %ld: start increment_count %d\n", pthread_self(), count);
@@ -35,7 +39,8 @@ void *increment(void *argp) {
     count = count + 1;
     printf("Thread %ld: end increment_count %d\n", pthread_self(), count);
     pthread_mutex_unlock(&mtx);
-    return NULL;
+    *ret = 42;
+    pthread_exit(ret);
 }
 
 void create_job_scheduler(void) {
@@ -44,8 +49,8 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-    TEST_CHECK(js_submit_job(js, NULL, increment, NULL));
-    TEST_CHECK(js_submit_job(js, NULL, decrement, NULL));
+    TEST_CHECK(js_submit_job(js, (job1 = job_new(NULL, increment, NULL))));
+    TEST_CHECK(js_submit_job(js, (job2 = job_new(NULL, decrement, NULL))));
 }
 
 void execute_all_jobs(void) {
@@ -54,6 +59,8 @@ void execute_all_jobs(void) {
 
 void wait_all_jobs(void) {
     TEST_CHECK(js_wait_all_jobs(js));
+    printf("\njob1:[%d]\n", *((int *) job1->status));
+    printf("\njob2:[%d]\n", *((int *) job2->status));
     TEST_CHECK(count == 0);
 }
 
