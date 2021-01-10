@@ -15,26 +15,26 @@ void *decrement(void *argp);
 void *increment(void *argp);
 
 void create_job_scheduler(void) {
-    js_create(&js, 0);
+    js_create(&js, 10);
     TEST_CHECK(js != NULL);
 }
 
 void submit_jobs(void) {
-    //TEST_CHECK(js_submit_job(js, js_create_job(increment, NULL)));
-    //TEST_CHECK(js_submit_job(js, js_create_job(decrement, NULL)));
+    TEST_CHECK(js_submit_job(js, NULL, increment, NULL));
+    TEST_CHECK(js_submit_job(js, NULL, decrement, NULL));
 }
 
 void execute_all_jobs(void) {
     TEST_CHECK(js_execute_all_jobs(js));
-    TEST_CHECK(count == 0);
 }
 
 void wait_all_jobs(void) {
     TEST_CHECK(js_wait_all_jobs(js));
+    TEST_CHECK(count == 0);
 }
 
 void destroy_job_scheduler(void) {
-    //js_destroy(&js);
+    js_destroy(&js);
     TEST_CHECK(js == NULL);
 }
 
@@ -48,7 +48,7 @@ TEST_LIST = {
 };
 
 /*** Thread functions ***/
-/*used: https://stackoverflow.com/questions/27349480/condition-variable-example-for-pthread-library*/
+/*from: https://stackoverflow.com/questions/27349480/condition-variable-example-for-pthread-library*/
 void *decrement(void *argp) {
     sleep(1);
     pthread_mutex_lock(&mtx);
@@ -70,7 +70,7 @@ void *increment(void *argp) {
         pthread_cond_signal(&count_nonzero);
     }
     count = count + 1;
-    printf("Thread %ld: ent increment_count %d\n", pthread_self(), count);
+    printf("Thread %ld: end increment_count %d\n", pthread_self(), count);
     pthread_mutex_unlock(&mtx);
     return NULL;
 }
