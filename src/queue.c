@@ -85,7 +85,6 @@ bool queue_enqueue(Queue q, void *item) {
     
     int ret = 0;
     ret += sem_wait(q->non_full);
-    
     ret += sem_wait(q->mutex); 
 
     q->counter++;
@@ -107,6 +106,11 @@ bool queue_dequeue(Queue q, void *item) {
     ret += sem_wait(q->non_empty);
     ret += sem_wait(q->mutex);
 
+    if (queue_is_empty(q)){
+        sem_post(q->mutex);
+        return false;
+    }
+        
     q->counter--;
     memcpy(item, q->buffer + (q->front * q->type_sz), q->type_sz);
     memset(q->buffer + (q->front * q->type_sz), 0, q->type_sz);
