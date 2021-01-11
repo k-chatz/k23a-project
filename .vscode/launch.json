@@ -6,6 +6,7 @@
     "configurations": [
 
 
+
         {
             "name": "user main val set",  
             "type": "cppdbg",
@@ -217,6 +218,26 @@
             "request": "launch",
            
             "program": "${workspaceFolder}/tests-bin/job_scheduler_tests",
+            "args": ["-E"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Queue Tests",  
+            "type": "cppdbg",
+            "request": "launch",
+           
+            "program": "${workspaceFolder}/tests-bin/queue_tests",
             "args": ["-E"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
