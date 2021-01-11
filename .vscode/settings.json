@@ -10,7 +10,12 @@
         "iterator": "c",
         "string_view": "c",
         "*.tcc": "c",
-        "streambuf": "c"
+        "streambuf": "c",
+        "fstream": "c",
+        "istream": "c",
+        "functional": "c",
+        "type_traits": "c",
+        "tuple": "c"
     },
     "cmake.configureOnOpen": true,
     "cSpell.words": [

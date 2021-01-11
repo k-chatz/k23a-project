@@ -70,10 +70,10 @@ void destroy_job_scheduler(void) {
 }
 
 TEST_LIST = {
-        {"create_job_scheduler",  create_job_scheduler},
-        {"submit_jobs",           submit_jobs},
-        {"execute_all_jobs",      execute_all_jobs},
-        {"wait_all_jobs",         wait_all_jobs},
-        {"destroy_job_scheduler", destroy_job_scheduler},
+        // {"create_job_scheduler",  create_job_scheduler},
+        // {"submit_jobs",           submit_jobs},
+        // {"execute_all_jobs",      execute_all_jobs},
+        // {"wait_all_jobs",         wait_all_jobs},
+        // {"destroy_job_scheduler", destroy_job_scheduler},
         {NULL, NULL}
 };

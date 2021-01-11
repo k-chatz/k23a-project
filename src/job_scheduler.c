@@ -54,7 +54,8 @@ bool js_submit_job(JobScheduler js, const pthread_attr_t *__restrict attr, void 
         js->jobs[js->submit_counter]->attr = attr;
         js->jobs[js->submit_counter]->start_routine = start_routine;
         js->jobs[js->submit_counter]->arg = arg;
-        return queue_enqueue(js->waiting_queue, &js->jobs[js->submit_counter++]);
+        queue_enqueue(js->waiting_queue, &js->jobs[js->submit_counter++]);
+        return true;
     }
 }
 
