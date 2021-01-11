@@ -8,6 +8,7 @@
 
 struct job_scheduler {
     int execution_threads;
+    pthread_t *tids;
     Queue waiting_queue;
     Queue running_queue;
     Job *jobs;
@@ -33,6 +34,16 @@ void job_destroy(Job *job) {
     *job = NULL;
 }
 
+void *thread(void *arg) {
+
+    while(1){
+        
+
+
+    }
+
+}
+
 void js_create(JobScheduler *js, int execution_threads) {
     *js = malloc(sizeof(struct job_scheduler));
     assert(*js != NULL);
@@ -40,23 +51,20 @@ void js_create(JobScheduler *js, int execution_threads) {
     queue_create(&(*js)->waiting_queue, execution_threads, sizeof(Job));
     queue_create(&(*js)->running_queue, execution_threads, sizeof(Job));
     (*js)->jobs = malloc(execution_threads * sizeof(Job));
+    
+    (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     for (int i = 0; i < execution_threads; i++) {
-        (*js)->jobs[i] = job_new();
+        pthread_create(&(*js)->tids[i], NULL, thread, NULL);
     }
     (*js)->submit_counter = 0;
 }
 
 bool js_submit_job(JobScheduler js, const pthread_attr_t *__restrict attr, void *(*start_routine)(void *),
                    void *__restrict arg) {
-    if (queue_is_full(js->waiting_queue)) {
-        return false;
-    } else {
         js->jobs[js->submit_counter]->attr = attr;
         js->jobs[js->submit_counter]->start_routine = start_routine;
         js->jobs[js->submit_counter]->arg = arg;
-        queue_enqueue(js->waiting_queue, &js->jobs[js->submit_counter++]);
-        return true;
-    }
+        return queue_enqueue(js->waiting_queue, &js->jobs[js->submit_counter++]);
 }
 
 bool js_execute_all_jobs(JobScheduler js) {
@@ -80,7 +88,6 @@ bool js_wait_all_jobs(JobScheduler js, Job **jobs) {
     *jobs = js->jobs;
     return ret;
 }
-
 
 void js_destroy(JobScheduler *js) {
     queue_destroy(&(*js)->waiting_queue, NULL);
