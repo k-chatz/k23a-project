@@ -28,8 +28,6 @@ void queue_create(Queue *q, int buf_sz, int type_sz) {
     (*q)->counter = 0;
     (*q)->front = 0;
     (*q)->rear = 0;
-    
-    
     (*q)->mutex = malloc(sizeof(sem_t));
     if (!(*q)->mutex){
         exit(-1);
@@ -50,7 +48,6 @@ void queue_create(Queue *q, int buf_sz, int type_sz) {
     }
     err = sem_init((*q)->non_full, 0, buf_sz);
     if (err) exit(-1);
-
     memset((*q)->buffer, 0, (*q)->buf_sz * (*q)->type_sz);
 }
 
@@ -79,47 +76,27 @@ int queue_is_full(Queue q) {
 }
 
 bool queue_enqueue(Queue q, void *item) {
-    // if (queue_is_full(q))
-    //     return false;
-    // else {
-    
     int ret = 0;
     ret += sem_wait(q->non_full);
-    ret += sem_wait(q->mutex); 
-
+    ret += sem_wait(q->mutex);
     q->counter++;
     memcpy(q->buffer + (q->rear * q->type_sz), item, q->type_sz);
     q->rear = (q->rear + 1) % q->buf_sz;
-
     ret += sem_post(q->mutex);
     ret += sem_post(q->non_empty);
-    // }
     return !ret;
 }
 
 bool queue_dequeue(Queue q, void *item) {
-    // if (queue_is_empty(q))
-    //     return false;
-    // else {
     int ret = 0;
-    
     ret += sem_wait(q->non_empty);
     ret += sem_wait(q->mutex);
-
-    if (queue_is_empty(q)){
-        sem_post(q->mutex);
-        return false;
-    }
-        
     q->counter--;
     memcpy(item, q->buffer + (q->front * q->type_sz), q->type_sz);
     memset(q->buffer + (q->front * q->type_sz), 0, q->type_sz);
     q->front = (q->front + 1) % q->buf_sz;
-
     ret += sem_post(q->mutex);
     ret += sem_post(q->non_full);
-        // return true;
-    // }
     return !ret;
 }
 

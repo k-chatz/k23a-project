@@ -3,7 +3,7 @@
 #include "../include/acutest.h"
 #include "../include/queue.h"
 
-
+Queue q = NULL;
 
 void create_and_destroy_queue(void) {
     Queue queue = NULL;
@@ -40,45 +40,52 @@ void dequeue(void) {
     TEST_CHECK(queue == NULL);
 }
 
-void * thread_b(void * arg){
-    Queue q = (Queue) arg;
+void *queue_producer_f(void *arg) {
     int i = 0;
-    printf("Started thread b\n");
-    queue_dequeue(q, &i);    
-    printf("thread_b: dequeue done, %d\n", i);
+    sleep(rand() % 10 + 1);
+    // printf("\nStarted queue_producer_f\n");
+    queue_enqueue(q, &i);
+    // printf("\nthread_c: dequeue done, %d\n", i);
+    return NULL;
 }
 
-void *thread_c(void * arg){
-    Queue q = (Queue) arg;
+void *queue_consumer_f(void *arg) {
     int i = 0;
-    printf("Started thread c\n");
-    queue_dequeue(q, &i);    
-    printf("thread_c: dequeue done, %d\n", i);
+    sleep(rand() % 10 + 1);
+    // printf("\nStarted queue_consumer_f\n");
+    queue_dequeue(q, &i);
+    // printf("\nthread_b: dequeue done, %d\n", i);
+    return NULL;
 }
 
-
-void critical_section(void){
-    Queue queue1 = NULL;
-    pthread_t t_b, t_c;
-    void *ret_b, *ret_c;
-    queue_create(&queue1, 10, sizeof(int));
-    TEST_CHECK(queue1 != NULL);
-    pthread_create(t_b, NULL, thread_b, &queue1);
-    pthread_create(t_c, NULL, thread_c, &queue1);
-
-    sleep(5);
-    printf("Woke up from sleep.\n");
-    int i = 1;
-    queue_enqueue(queue1, &i);
-    printf("enqueueing if %d done!\n", i);
-    pthread_join(t_b, ret_b);
-    pthread_join(t_c, ret_c);
+void queue_blocking(void) {
+    pthread_t t_a, t_b, t_c, t_d, t_e, t_f, t_g;
+    pthread_t t_1, t_2;
+    queue_create(&q, 5, sizeof(int));
+    TEST_CHECK(q != NULL);
+    pthread_create(&t_a, NULL, queue_producer_f, NULL);
+    pthread_create(&t_b, NULL, queue_producer_f, NULL);
+    pthread_create(&t_c, NULL, queue_producer_f, NULL);
+    pthread_create(&t_d, NULL, queue_producer_f, NULL);
+    pthread_create(&t_e, NULL, queue_producer_f, NULL);
+    pthread_create(&t_f, NULL, queue_producer_f, NULL);
+    pthread_create(&t_g, NULL, queue_producer_f, NULL);
+    pthread_create(&t_1, NULL, queue_consumer_f, NULL);
+    pthread_create(&t_2, NULL, queue_consumer_f, NULL);
+    pthread_join(t_a, NULL);
+    pthread_join(t_b, NULL);
+    pthread_join(t_c, NULL);
+    pthread_join(t_d, NULL);
+    pthread_join(t_e, NULL);
+    pthread_join(t_f, NULL);
+    pthread_join(t_g, NULL);
+    pthread_join(t_1, NULL);
 }
 
 TEST_LIST = {
         {"create_and_destroy_queue", create_and_destroy_queue},
         {"enqueue",                  enqueue},
         {"dequeue",                  dequeue},
-        {"critical_section", critical_section},
+        {"queue_blocking",           queue_blocking},
         {NULL, NULL}
 };
