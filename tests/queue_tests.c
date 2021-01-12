@@ -13,7 +13,7 @@ void create_and_destroy_queue(void) {
     TEST_CHECK(queue == NULL);
 }
 
-void enqueue(void) {
+void enqueue_test(void) {
     Queue queue = NULL;
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
@@ -24,7 +24,7 @@ void enqueue(void) {
     TEST_CHECK(queue == NULL);
 }
 
-void dequeue(void) {
+void dequeue_test(void) {
     Queue queue = NULL;
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
@@ -84,8 +84,8 @@ void queue_blocking(void) {
 
 TEST_LIST = {
         {"create_and_destroy_queue", create_and_destroy_queue},
-        {"enqueue",                  enqueue},
-        {"dequeue",                  dequeue},
+        {"enqueue",                  enqueue_test},
+        {"dequeue",                  dequeue_test},
         {"queue_blocking",           queue_blocking},
         {NULL, NULL}
 };

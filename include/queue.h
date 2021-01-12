@@ -9,11 +9,11 @@ void queue_create(Queue *q, int buf_sz, int type_sz);
 
 void queue_destroy(Queue *q, void (*free_t)(void *));
 
-int queue_is_empty(Queue q);
+bool queue_is_empty(Queue q, bool sync);
 
 int queue_size(Queue q);
 
-int queue_is_full(Queue q);
+bool queue_is_full(Queue q, bool sync);
 
 bool queue_enqueue(Queue q, void *item);
 
