@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     /* Read user dataset */
     read_user_labelled_dataset_csv(options.csv_pairs, &user_pairs, &user_dataset_size);
 
-    result_vec_user = malloc(user_dataset_size * ml_bow_sz(ml) * sizeof(float));
+    result_vec_user = malloc(user_dataset_size * 2 * ml_bow_sz(ml) * sizeof(float));
     dictp user_dataset_dict = user_json_dict(options.user_json_files_path);
 
     prepare_set(0, user_dataset_size, bow_vector_1, bow_vector_2, false, NULL, NULL, ml,
