@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 200
+#define epochs 2
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -221,9 +221,19 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         if (tfidf) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
+        float * concat_vec = malloc(ml_bow_sz(ml) * sizeof(float*)); 
+        for (int c = 0; c < 2 * ml_bow_sz(ml); c++) {
+            if (c < ml_bow_sz(ml)){
+                concat_vec[c] = bow_vector_1[c];
+            }
+            else {
+                concat_vec[c] = bow_vector_2[c - ml_bow_sz(ml)];
+            }
+        }
 
-        for (int c = 0; c < ml_bow_sz(ml); c++) {
-            result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+
+        for (int c = 0; c < 2 * ml_bow_sz(ml); c++) {
+            result_vector[(i - start) * 2 * ml_bow_sz(ml) + c] = concat_vec[c];           
         }
 
         if (is_user == 0) {
@@ -293,7 +303,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
             different_test_set_sz = 0, different_val_set_sz = 0;
 
     /* calculate similar set sizes */
-    similar_train_set_sz = (similar_sz / 2) % 2 ? (int) (similar_sz / 2 - 1) : (int) (similar_sz / 2);
+    similar_train_set_sz = (similar_sz * 6 / 10) % 2 ? (int) (similar_sz * 6 / 10 - 1) : (int) (similar_sz * 6 / 10);
     similar_test_set_sz = (similar_sz - similar_train_set_sz) / 2;
     similar_val_set_sz = similar_test_set_sz;
 
@@ -308,7 +318,7 @@ void split(Pair *similar_pairs, Pair *different_pairs, int similar_sz, int diffe
            similar_val_set_sz * sizeof(Pair));
 
     /* calculate different set sizes */
-    different_train_set_sz = (different_sz / 2) % 2 ? (int) (different_sz / 2 - 1) : (int) (different_sz / 2);
+    different_train_set_sz = (different_sz * 6 / 10) % 2 ? (int) (different_sz * 6 / 10 - 1) : (int) (different_sz * 6 / 10);
     different_test_set_sz = (different_sz - different_train_set_sz) / 2;
     different_val_set_sz = different_test_set_sz;
 
@@ -474,7 +484,7 @@ bool check_weigths(LogReg *model, float e) {
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
                     dictp json_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
-    LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
+    LogReg *model = lr_new(2 * ml_bow_sz(ml), learning_rate);
     LogReg *models[epochs];
     URand ur_mini_batch = NULL;
 
@@ -486,8 +496,8 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
-    float *result_vec = malloc(batch_size * ml_bow_sz(ml) * sizeof(float));
-    float *result_vec_test = malloc(test_sz * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec = malloc(batch_size * 2 * ml_bow_sz(ml) * sizeof(float));
+    float *result_vec_test = malloc(test_sz * 2 * ml_bow_sz(ml) * sizeof(float));
     int e = 0;
     for (e = 0; e < epochs; e++) {
         printf("epoch: %d\n", e);
@@ -612,7 +622,7 @@ int main(int argc, char *argv[]) {
     bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
     bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
+    result_vec_val = malloc(val_sz * 2 * ml_bow_sz(ml) * sizeof(float));
 
     /*********************************************** Training *********************************************************/
 
