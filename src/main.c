@@ -11,7 +11,7 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 2
+#define epochs 50
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -206,7 +206,7 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
-
+    float * concat_vec = malloc(ml_bow_sz(ml) * sizeof(float*));
     for (int i = start; i < end; i++) {
 
         x = random ? ur_get(ur) : i;
@@ -221,7 +221,7 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         if (tfidf) {
             ml_tfidf(ml, bow_vector_2, wc);
         }
-        float * concat_vec = malloc(ml_bow_sz(ml) * sizeof(float*)); 
+         
         for (int c = 0; c < 2 * ml_bow_sz(ml); c++) {
             if (c < ml_bow_sz(ml)){
                 concat_vec[c] = bow_vector_1[c];
@@ -243,6 +243,7 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         }
 
     }
+    free(concat_vec);
 }
 
 Pair *shuffle_dataset(Pair *pairs, int dataset_size) {
