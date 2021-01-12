@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/colours.h"
 #include "../include/lists.h"
 #include "../include/spec_to_specs.h"
 #include "../include/json_parser.h"
@@ -15,10 +16,6 @@
 #define batch_size 2000
 #define learning_rate 0.0001
 
-#define RED  "\x1B[31m"
-#define B_RED  "\x1B[1m\x1B[31m"
-#define B_GREEN  "\x1B[1m\x1B[32m"
-#define RESET  "\x1B[0m"
 typedef struct options {
     char *dataset_dir;
     char *labelled_dataset_path;
