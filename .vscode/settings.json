@@ -15,7 +15,10 @@
         "istream": "c",
         "functional": "c",
         "type_traits": "c",
-        "tuple": "c"
+        "tuple": "c",
+        "algorithm": "c",
+        "memory": "c",
+        "numeric": "c"
     },
     "cmake.configureOnOpen": true,
     "cSpell.words": [

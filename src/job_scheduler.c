@@ -9,14 +9,14 @@
 #include "../include/colours.h"
 #include "../include/job_scheduler.h"
 
-#define QUEUE_SIZE 1000
+#define QUEUE_SIZE 20
 
 struct job_scheduler {
     int execution_threads;
     pthread_t *tids;
     Queue waiting_queue;
     Queue running_queue;
-    bool execution;
+    bool running;
     bool exit;
     int remaining_jobs;
     pthread_cond_t condition;
@@ -39,7 +39,7 @@ void *thread(JobScheduler js) {
     while (true) {
         Job job = NULL;
         pthread_mutex_lock(&js->mutex);
-        while (!js->execution) {
+        while (!js->running) {
             printf(B_YELLOW"[%ld] waiting for an execute signal...\n"RESET, pthread_self());
             pthread_cond_wait(&js->condition, &js->mutex);
             if (js->exit) {
@@ -57,7 +57,7 @@ void *thread(JobScheduler js) {
             js->remaining_jobs--;
         } else {
             /* no more jobs */
-            js->execution = false;
+            js->running = false;
         }
     }
 }
@@ -72,7 +72,7 @@ void js_create(JobScheduler *js, int execution_threads) {
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
-    (*js)->execution = false;
+    (*js)->running = false;
     (*js)->exit = false;
     (*js)->remaining_jobs = 0;
     /* sync */
@@ -82,20 +82,31 @@ void js_create(JobScheduler *js, int execution_threads) {
 }
 
 bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg) {
-    if (queue_is_full(js->waiting_queue, true)) {
-        return false;
-    }
+
     Job job = job_new();
     job->start_routine = start_routine;
     job->arg = arg;
     job->status = NULL;
-    queue_enqueue(js->waiting_queue, &job);
+    if(js->running){
+        queue_enqueue(js->waiting_queue, &job);
+        
+        // while(js->remaining_jobs >= js->execution_threads){
+        //   sleep(1);
+        // }
+
+        pthread_cond_broadcast(&js->condition);
+    }else{
+        if (queue_is_full(js->waiting_queue, true)) {
+            return false;
+        }
+        enqueue(js->waiting_queue, &job);
+    }
     js->remaining_jobs++;
     return true;
 }
 
 bool js_execute_all_jobs(JobScheduler js) {
-    js->execution = true;
+    js->running = true;
     return !pthread_cond_broadcast(&js->condition);
 }
 
@@ -117,7 +128,7 @@ bool js_wait_all_jobs(JobScheduler js) {
         ret += pthread_join(js->tids[i], NULL);
         printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
     }
-    js->execution = false;
+    js->running = false;
     js->remaining_jobs = 0;
     return !ret;
 }
