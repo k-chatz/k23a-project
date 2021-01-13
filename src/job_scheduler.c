@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 #include "../include/queue.h"
 #include "../include/colours.h"
@@ -19,6 +20,7 @@ struct job_scheduler {
     bool wait;
     pthread_cond_t condition;
     pthread_mutex_t mutex;
+    sem_t sem_wait;
 };
 
 Job job_new() {
@@ -31,11 +33,6 @@ Job job_new() {
     return job;
 }
 
-void job_destroy(Job job) {
-    if ((job)->status)
-        free((job)->status);
-}
-
 void *thread(JobScheduler js) {
     sleep(1);
     while (true) {
@@ -43,9 +40,12 @@ void *thread(JobScheduler js) {
         pthread_mutex_lock(&js->mutex);
         while (!js->execution) {
             printf(B_YELLOW"[%ld] waiting for an execute signal...\n"RESET, pthread_self());
+
+            //sem_post(&js->sem_wait);
+
             pthread_cond_wait(&js->condition, &js->mutex);
             if (js->wait) {
-                printf(BLUE"[%ld] exiting...\n"RESET, pthread_self());
+                printf(B_BLUE"[%ld] exiting...\n"RESET, pthread_self());
                 pthread_mutex_unlock(&js->mutex);
                 pthread_exit(NULL);
             }
@@ -77,6 +77,7 @@ void js_create(JobScheduler *js, int execution_threads) {
     /* sync */
     pthread_mutex_init(&(*js)->mutex, NULL);
     pthread_cond_init(&(*js)->condition, NULL);
+    sem_init(&(*js)->sem_wait, 0, -execution_threads);
 }
 
 bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg) {
@@ -101,20 +102,33 @@ bool js_wait_all_jobs(JobScheduler js) {
     /* broadcast a stop signal */
 
     //todo: check this //////////////////////
-    js->wait = true;
-    pthread_cond_broadcast(&js->condition);
-    /////////////////////////////////////////
 
-    for (int i = 0; i < js->execution_threads; ++i) {
-        ret += pthread_join(js->tids[i], NULL);
+    /////////////////////////////////////////
+    //sem_wait(&js->sem_wait);
+
+  //  pthread_mutex_lock(&js->mutex);
+    while(!queue_is_empty(js->waiting_queue, false)){
+        sleep(2);
     }
-    js->execution = false;
+   // pthread_mutex_unlock(&js->mutex);
+    //if(queue_is_empty(js->waiting_queue, true)){
+        js->wait = true;
+        pthread_cond_broadcast(&js->condition);
+        for (int i = 0; i < js->execution_threads; ++i) {
+            printf(BLUE"[%ld] trying to join...\n"RESET, js->tids[i]);
+            ret += pthread_join(js->tids[i], NULL);
+            printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
+        }
+        js->execution = false;
+
+   // }
+//    pthread_mutex_unlock(&js->mutex);
     return !ret;
 }
 
 void js_destroy(JobScheduler *js) {
-    // queue_destroy(&(*js)->waiting_queue, (void (*)(void *)) job_destroy);
-    // queue_destroy(&(*js)->running_queue, (void (*)(void *)) job_destroy);
+    queue_destroy(&(*js)->waiting_queue, NULL);
+    queue_destroy(&(*js)->running_queue, NULL);
     free((*js)->tids);
     free(*js);
     *js = NULL;

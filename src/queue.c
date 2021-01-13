@@ -84,7 +84,7 @@ bool queue_is_empty(Queue q, const bool sync) {
     if (sync) {
         pthread_mutex_lock(&q->mutex);
     }
-    is_empty = (q->counter == 0);
+    is_empty = (q->counter <= 0);
     if (sync) {
         pthread_mutex_unlock(&q->mutex);
     }
