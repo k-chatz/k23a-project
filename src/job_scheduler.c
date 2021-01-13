@@ -9,7 +9,7 @@
 #include "../include/colours.h"
 #include "../include/job_scheduler.h"
 
-#define QUEUE_SIZE 30
+#define QUEUE_SIZE 15
 
 struct job_scheduler {
     int execution_threads;
@@ -39,10 +39,10 @@ void *thread(JobScheduler js) {
         Job job = NULL;
         pthread_mutex_lock(&js->mutex);
         while (!js->running) {
-            printf(B_YELLOW"[%ld] waiting for an execute signal...\n"RESET, pthread_self());
+            //printf(B_YELLOW"[%ld] waiting for an execute signal...\n"RESET, pthread_self());
             pthread_cond_wait(&js->condition, &js->mutex);
             if (js->exit) {
-                printf(B_BLUE"[%ld] wake up from signal & exiting...\n"RESET, pthread_self());
+                //printf(B_BLUE"[%ld] wake up from signal & exiting...\n"RESET, pthread_self());
                 pthread_mutex_unlock(&js->mutex);
                 pthread_exit(NULL);
             }
@@ -56,9 +56,9 @@ void *thread(JobScheduler js) {
         if (job != NULL) {
             queue_unblock_enqueue(js->waiting_queue);
             /* discovering a job */
-            printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
+            //printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
             job->status = (job->start_routine)(job);
-            printf(B_GREEN"[%ld] execute job %d done!\n"RESET, pthread_self(), job->job_id);
+            //printf(B_GREEN"[%ld] execute job %d done!\n"RESET, pthread_self(), job->job_id);
             js->remaining_jobs--;
         } else {
             /* no more jobs */
@@ -86,7 +86,6 @@ void js_create(JobScheduler *js, int execution_threads) {
 }
 
 bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg) {
-
     Job job = job_new();
     job->start_routine = start_routine;
     job->arg = arg;
