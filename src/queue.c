@@ -14,15 +14,12 @@ struct queue_t {
     int counter;
     int buf_sz;
     int type_sz;
-    bool abort_enqueue_signal;
-    bool abort_dequeue_signal;
     sem_t sem_mutex;
     sem_t sem_non_empty;
     sem_t sem_non_full;
     pthread_mutex_t mutex;
     pthread_cond_t cond_non_empty;
     pthread_cond_t cond_non_full;
-
     char buffer[];
 };
 
@@ -48,8 +45,6 @@ void queue_create(Queue *q, int buf_sz, int type_sz) {
     (*q)->counter = 0;
     (*q)->front = 0;
     (*q)->rear = 0;
-    (*q)->abort_enqueue_signal = false;
-    (*q)->abort_dequeue_signal = false;
     memset((*q)->buffer, 0, (*q)->buf_sz * (*q)->type_sz);
 
 //    int err = sem_init(&(*q)->sem_mutex, 0, 1);
@@ -117,10 +112,6 @@ bool queue_enqueue(Queue q, void *item) {
     ret += pthread_mutex_lock(&q->mutex);
     while (queue_is_full(q, false)) {
         ret += pthread_cond_wait(&q->cond_non_full, &q->mutex);
-        if (q->abort_enqueue_signal) {
-            q->abort_enqueue_signal = false;
-            return true;
-        }
     }
 
     /** critical section **/
@@ -141,10 +132,6 @@ bool queue_dequeue(Queue q, void *item) {
     ret += pthread_mutex_lock(&q->mutex);
     while (queue_is_empty(q, false)) {
         ret += pthread_cond_wait(&q->cond_non_empty, &q->mutex);
-        if (q->abort_dequeue_signal) {
-            q->abort_dequeue_signal = false;
-            return true;
-        }
     }
 
     /** critical section **/
@@ -158,22 +145,12 @@ bool queue_dequeue(Queue q, void *item) {
     return !ret;
 }
 
-bool queue_abort_enqueue(Queue q) {
-    if (queue_is_full(q, false)) {
-        q->abort_enqueue_signal = true;
-        pthread_cond_signal(&q->cond_non_full);
-        return true;
-    }
-    return false;
+bool queue_unblock_enqueue(Queue q) {
+    pthread_cond_signal(&q->cond_non_full);
 }
 
-bool queue_abort_dequeue(Queue q) {
-    if (queue_is_empty(q, false)) {
-        q->abort_dequeue_signal = true;
-        pthread_cond_broadcast(&q->cond_non_empty);
-        return true;
-    }
-    return false;
+bool queue_unblock_dequeue(Queue q) {
+    pthread_cond_broadcast(&q->cond_non_empty);
 }
 
 void inspectQbyOrder(Queue q) {

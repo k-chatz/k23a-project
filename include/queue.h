@@ -23,9 +23,9 @@ bool queue_enqueue(Queue q, void *item);
 
 bool queue_dequeue(Queue q, void *item);
 
-bool queue_abort_enqueue(Queue q);
+bool queue_unblock_enqueue(Queue q);
 
-bool queue_abort_dequeue(Queue q);
+bool queue_unblock_dequeue(Queue q);
 
 void inspectQbyOrder(Queue q);
 

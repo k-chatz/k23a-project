@@ -55,11 +55,11 @@ void submit_jobs(void) {
     for (int j = 0; j < 20; ++j) {
         TEST_CHECK(js_submit_job(js, (void *(*)(void *)) increment, NULL));
     }
-    sleep(5);
+    //sleep(5);
 
     /* overflow job scheduler queue */
     for (int j = 0; j < 5; ++j) {
-        TEST_CHECK(!js_submit_job(js, (void *(*)(void *)) increment, NULL));
+         TEST_CHECK(!js_submit_job(js, (void *(*)(void *)) increment, NULL));
     }
 }
 
@@ -73,7 +73,7 @@ void overflow_job_scheduler(void) {
     for (int j = 0; j < 50; ++j) {
         printf(RED"inserting job...\n"RESET);
         TEST_CHECK(js_submit_job(js, (void *(*)(void *)) increment, NULL));
-        printf(RED"inserting ok!...\n"RESET);
+        printf(RED"OK!\n"RESET);
     }
 }
 

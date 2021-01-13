@@ -15,7 +15,6 @@ struct job_scheduler {
     int execution_threads;
     pthread_t *tids;
     Queue waiting_queue;
-    Queue running_queue;
     bool running;
     bool exit;
     int remaining_jobs;
@@ -69,7 +68,6 @@ void js_create(JobScheduler *js, int execution_threads) {
     assert(*js != NULL);
     (*js)->execution_threads = execution_threads;
     queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
-    queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
     (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
@@ -89,9 +87,12 @@ bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__rest
     job->start_routine = start_routine;
     job->arg = arg;
     job->status = NULL;
+    printf(B_MAGENTA"submit job %d...\n"RESET, job->job_id);
     if(js->running){
+        printf(B_MAGENTA"oh no!, queue is full! :( waiting to enqueue job %d...\n"RESET, job->job_id);
         queue_enqueue(js->waiting_queue, &job);
-        
+        printf(B_MAGENTA"yes! job %d was successfully enqueued...\n"RESET, job->job_id);
+
         // while(js->remaining_jobs >= js->execution_threads){
         //   sleep(1);
         // }
@@ -137,7 +138,6 @@ bool js_wait_all_jobs(JobScheduler js) {
 
 void js_destroy(JobScheduler *js) {
     queue_destroy(&(*js)->waiting_queue, NULL);
-    queue_destroy(&(*js)->running_queue, NULL);
     free((*js)->tids);
     free(*js);
     *js = NULL;
