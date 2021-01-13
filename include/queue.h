@@ -5,6 +5,10 @@
 
 typedef struct queue_t *Queue;
 
+void enqueue(Queue q, void *item);
+
+void dequeue(Queue q, void *item);
+
 void queue_create(Queue *q, int buf_sz, int type_sz);
 
 void queue_destroy(Queue *q, void (*free_t)(void *));
@@ -18,6 +22,10 @@ bool queue_is_full(Queue q, bool sync);
 bool queue_enqueue(Queue q, void *item);
 
 bool queue_dequeue(Queue q, void *item);
+
+bool queue_abort_enqueue(Queue q);
+
+bool queue_abort_dequeue(Queue q);
 
 void inspectQbyOrder(Queue q);
 
