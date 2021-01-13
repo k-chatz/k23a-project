@@ -67,8 +67,10 @@ void queue_create(Queue *q, int buf_sz, int type_sz) {
 void queue_destroy(Queue *q, void (*free_t)(void *)) {
     if (free_t != NULL) {
         void *item = malloc((*q)->type_sz);
-        while (queue_dequeue(*q, item)) {
-            free_t(item);
+        if (free_t != NULL) {
+            while (queue_dequeue(*q, item)) {
+                free_t(item);
+            }
         }
         free(item);
     }
