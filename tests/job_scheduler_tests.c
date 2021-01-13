@@ -31,14 +31,16 @@ void *decrement(Job job) {
 
 void *increment(Job job) {
     int *ret = malloc(sizeof(int));
-    sleep(rand() % 15 + 1);
+    srand(time(NULL));
+    int sec = rand() % 60 + 1;
+    sleep(sec);
     pthread_mutex_lock(&mtx);
-    //printf("[%ld] start job %d (increment) %d\n", pthread_self(), job->job_id, count);
+    printf("[%ld] start job %d after %d seconds (increment) %d\n", pthread_self(), job->job_id, sec, count);
     if (count == 0) {
         pthread_cond_signal(&count_nonzero);
     }
     count = count + 1;
-    //printf("[%ld] end job %d (increment) %d\n", pthread_self(), job->job_id, count);
+    printf("[%ld] end job %d (increment) %d\n", pthread_self(), job->job_id, count);
     pthread_mutex_unlock(&mtx);
     *ret = 16;
     // pthread_exit(ret);
@@ -52,7 +54,7 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-    for (int j = 0; j < 20; ++j) {
+    for (int j = 0; j < 30; ++j) {
         TEST_CHECK(js_submit_job(js, (void *(*)(void *)) increment, NULL));
     }
     //sleep(5);
@@ -71,9 +73,9 @@ void execute_all_jobs(void) {
 
 void overflow_job_scheduler(void) {
     for (int j = 0; j < 50; ++j) {
-        printf(RED"inserting job...\n"RESET);
+        //printf(RED"inserting job...\n"RESET);
         TEST_CHECK(js_submit_job(js, (void *(*)(void *)) increment, NULL));
-        printf(RED"OK!\n"RESET);
+        //printf(RED"OK!\n"RESET);
     }
 }
 

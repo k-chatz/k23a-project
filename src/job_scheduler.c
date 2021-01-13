@@ -9,7 +9,7 @@
 #include "../include/colours.h"
 #include "../include/job_scheduler.h"
 
-#define QUEUE_SIZE 20
+#define QUEUE_SIZE 30
 
 struct job_scheduler {
     int execution_threads;
@@ -34,7 +34,7 @@ Job job_new() {
 }
 
 void *thread(JobScheduler js) {
-    sleep(1);
+    sleep(1); // wait the condition var to get triggered
     while (true) {
         Job job = NULL;
         pthread_mutex_lock(&js->mutex);
@@ -48,6 +48,9 @@ void *thread(JobScheduler js) {
             }
             js->running = true;
         }
+
+        //todo: use sem_wait instead of busy waiting, if(js->exit){....}
+
         dequeue(js->waiting_queue, &job);
         pthread_mutex_unlock(&js->mutex);
         if (job != NULL) {
@@ -55,6 +58,7 @@ void *thread(JobScheduler js) {
             /* discovering a job */
             printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
             job->status = (job->start_routine)(job);
+            printf(B_GREEN"[%ld] execute job %d done!\n"RESET, pthread_self(), job->job_id);
             js->remaining_jobs--;
         } else {
             /* no more jobs */
@@ -87,11 +91,11 @@ bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__rest
     job->start_routine = start_routine;
     job->arg = arg;
     job->status = NULL;
-    printf(B_MAGENTA"submit job %d...\n"RESET, job->job_id);
+    //printf(B_MAGENTA"submit job %d...\n"RESET, job->job_id);
     if(js->running){
-        printf(B_MAGENTA"oh no!, queue is full! :( waiting to enqueue job %d...\n"RESET, job->job_id);
+        //printf(B_MAGENTA"oh no!, queue is full! :( waiting to enqueue job %d...\n"RESET, job->job_id);
         queue_enqueue(js->waiting_queue, &job);
-        printf(B_MAGENTA"yes! job %d was successfully enqueued...\n"RESET, job->job_id);
+        //printf(B_MAGENTA"yes! job %d was successfully enqueued...\n"RESET, job->job_id);
 
         // while(js->remaining_jobs >= js->execution_threads){
         //   sleep(1);
