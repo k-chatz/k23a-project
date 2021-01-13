@@ -216,7 +216,7 @@
             "name": "Job Scheduler Tests",  
             "type": "cppdbg",
             "request": "launch",
-           
+            "preLaunchTask": "Build Make",
             "program": "${workspaceFolder}/tests-bin/job_scheduler_tests",
             "args": ["-E"],
             "stopAtEntry": false,
@@ -236,7 +236,7 @@
             "name": "Queue Tests",  
             "type": "cppdbg",
             "request": "launch",
-           
+            "preLaunchTask": "Build Make",
             "program": "${workspaceFolder}/tests-bin/queue_tests",
             "args": ["-E"],
             "stopAtEntry": false,
