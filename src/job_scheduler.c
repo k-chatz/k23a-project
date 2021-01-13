@@ -47,10 +47,12 @@ void *thread(JobScheduler js) {
                 pthread_mutex_unlock(&js->mutex);
                 pthread_exit(NULL);
             }
+            js->running = true;
         }
         dequeue(js->waiting_queue, &job);
         pthread_mutex_unlock(&js->mutex);
         if (job != NULL) {
+            queue_unblock_enqueue(js->waiting_queue);
             /* discovering a job */
             printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
             job->status = (job->start_routine)(job);
