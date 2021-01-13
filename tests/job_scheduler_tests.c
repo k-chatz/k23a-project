@@ -44,6 +44,7 @@ void *increment(Job job) {
     return NULL;
 }
 
+
 void create_job_scheduler(void) {
     js_create(&js, 10);
     TEST_CHECK(js != NULL);
@@ -53,12 +54,13 @@ void submit_jobs(void) {
     for (int j = 0; j < 20; ++j) {
         TEST_CHECK(js_submit_job(js, (void *(*)(void *)) increment, NULL));
     }
+    sleep(5);
 }
 
 void execute_all_jobs(void) {
     printf("\n");
     TEST_CHECK(js_execute_all_jobs(js));
-    //sleep(20);
+   // sleep(20);
 }
 
 void wait_all_jobs(void) {
@@ -73,10 +75,10 @@ void destroy_job_scheduler(void) {
 }
 
 TEST_LIST = {
-//        {"create_job_scheduler",  create_job_scheduler},
-//        {"submit_jobs",           submit_jobs},
-//        {"execute_all_jobs",      execute_all_jobs},
-//        {"wait_all_jobs",         wait_all_jobs},
-//        {"destroy_job_scheduler", destroy_job_scheduler},
+       {"create_job_scheduler",  create_job_scheduler},
+       {"submit_jobs",           submit_jobs},
+       {"execute_all_jobs",      execute_all_jobs},
+       {"wait_all_jobs",         wait_all_jobs},
+       {"destroy_job_scheduler", destroy_job_scheduler},
         {NULL, NULL}
 };

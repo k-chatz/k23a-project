@@ -17,7 +17,8 @@ struct job_scheduler {
     Queue waiting_queue;
     Queue running_queue;
     bool execution;
-    bool wait;
+    bool exit;
+    int remaining_jobs;
     pthread_cond_t condition;
     pthread_mutex_t mutex;
     sem_t sem_wait;
@@ -40,12 +41,9 @@ void *thread(JobScheduler js) {
         pthread_mutex_lock(&js->mutex);
         while (!js->execution) {
             printf(B_YELLOW"[%ld] waiting for an execute signal...\n"RESET, pthread_self());
-
-            //sem_post(&js->sem_wait);
-
             pthread_cond_wait(&js->condition, &js->mutex);
-            if (js->wait) {
-                printf(B_BLUE"[%ld] exiting...\n"RESET, pthread_self());
+            if (js->exit) {
+                printf(B_BLUE"[%ld] wake up from signal & exiting...\n"RESET, pthread_self());
                 pthread_mutex_unlock(&js->mutex);
                 pthread_exit(NULL);
             }
@@ -53,9 +51,12 @@ void *thread(JobScheduler js) {
         dequeue(js->waiting_queue, &job);
         pthread_mutex_unlock(&js->mutex);
         if (job != NULL) {
+            /* discovering a job */
             printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
             job->status = (job->start_routine)(job);
+            js->remaining_jobs--;
         } else {
+            /* no more jobs */
             js->execution = false;
         }
     }
@@ -72,8 +73,8 @@ void js_create(JobScheduler *js, int execution_threads) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
     (*js)->execution = false;
-    (*js)->wait = false;
-
+    (*js)->exit = false;
+    (*js)->remaining_jobs = 0;
     /* sync */
     pthread_mutex_init(&(*js)->mutex, NULL);
     pthread_cond_init(&(*js)->condition, NULL);
@@ -88,7 +89,9 @@ bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__rest
     job->start_routine = start_routine;
     job->arg = arg;
     job->status = NULL;
-    return queue_enqueue(js->waiting_queue, &job);
+    queue_enqueue(js->waiting_queue, &job);
+    js->remaining_jobs++;
+    return true;
 }
 
 bool js_execute_all_jobs(JobScheduler js) {
@@ -99,30 +102,23 @@ bool js_execute_all_jobs(JobScheduler js) {
 bool js_wait_all_jobs(JobScheduler js) {
     Job job;
     bool ret = false;
-    /* broadcast a stop signal */
 
-    //todo: check this //////////////////////
+   // sem_wait(&js->sem_wait);
 
-    /////////////////////////////////////////
-    //sem_wait(&js->sem_wait);
-
-  //  pthread_mutex_lock(&js->mutex);
-    while(!queue_is_empty(js->waiting_queue, false)){
-        sleep(2);
+    while(js->remaining_jobs > 0){
+        sleep(1);
     }
-   // pthread_mutex_unlock(&js->mutex);
-    //if(queue_is_empty(js->waiting_queue, true)){
-        js->wait = true;
-        pthread_cond_broadcast(&js->condition);
-        for (int i = 0; i < js->execution_threads; ++i) {
-            printf(BLUE"[%ld] trying to join...\n"RESET, js->tids[i]);
-            ret += pthread_join(js->tids[i], NULL);
-            printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
-        }
-        js->execution = false;
 
-   // }
-//    pthread_mutex_unlock(&js->mutex);
+    js->exit = true;
+    pthread_cond_broadcast(&js->condition);
+
+    for (int i = 0; i < js->execution_threads; ++i) {
+        printf(BLUE"[%ld] trying to join...\n"RESET, js->tids[i]);
+        ret += pthread_join(js->tids[i], NULL);
+        printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
+    }
+    js->execution = false;
+    js->remaining_jobs = 0;
     return !ret;
 }
 
