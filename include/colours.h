@@ -14,5 +14,9 @@
 #define B_MAGENTA "\x1B[1m\x1b[35m"
 #define B_CYAN   "\x1B[1m\x1b[36m"
 
+/* BACKGROUND COLOURS*/
+
+//#define BACKGROUND_ORANGE "\033[48:5:208:0m%s\033[m"
+
 /* RESET */
 #define RESET   "\x1B[0m"
