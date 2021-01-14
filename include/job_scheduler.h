@@ -14,7 +14,7 @@ typedef struct job {
     void *status;
 } *Job;
 
-Job job_new();
+Job js_create_job(void *(*start_routine)(void *), void *__restrict arg);
 
 void job_destroy(Job job);
 
@@ -22,7 +22,7 @@ void js_create(JobScheduler *js, int execution_threads);
 
 void js_destroy(JobScheduler *js);
 
-bool js_submit_job(JobScheduler js, void *(*start_routine)(void *), void *__restrict arg);
+bool js_submit_job(JobScheduler js, Job job);
 
 bool js_execute_all_jobs(JobScheduler js);
 
