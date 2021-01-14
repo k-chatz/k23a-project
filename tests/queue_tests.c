@@ -18,7 +18,7 @@ void enqueue_test(void) {
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
     for (int i = 0; i < 10; ++i) {
-        TEST_CHECK(queue_enqueue(queue, &i));
+        TEST_CHECK(queue_enqueue(queue, &i, true));
     }
     queue_destroy(&queue, NULL);
     TEST_CHECK(queue == NULL);
@@ -29,11 +29,11 @@ void dequeue_test(void) {
     queue_create(&queue, 10, sizeof(int));
     TEST_CHECK(queue != NULL);
     for (int i = 0; i < 10; ++i) {
-        TEST_CHECK(queue_enqueue(queue, &i));
+        TEST_CHECK(queue_enqueue(queue, &i, true));
     }
     for (int i = 0; i < 10; ++i) {
         int x = -1;
-        TEST_CHECK(queue_dequeue(queue, &x));
+        TEST_CHECK(queue_dequeue(queue, &x, true));
         TEST_CHECK(x == i);
     }
     queue_destroy(&queue, NULL);
@@ -44,7 +44,7 @@ void *queue_producer_f(void *arg) {
     int i = 0;
     sleep(rand() % 10 + 1);
     // printf("\nStarted queue_producer_f\n");
-    queue_enqueue(q, &i);
+    queue_enqueue(q, &i, true);
     // printf("\nthread_c: dequeue done, %d\n", i);
     return NULL;
 }
@@ -53,7 +53,7 @@ void *queue_consumer_f(void *arg) {
     int i = 0;
     sleep(rand() % 10 + 1);
     // printf("\nStarted queue_consumer_f\n");
-    queue_dequeue(q, &i);
+    queue_dequeue(q, &i, true);
     // printf("\nthread_b: dequeue done, %d\n", i);
     return NULL;
 }
