@@ -130,6 +130,8 @@ bool queue_enqueue(Queue q, void *item, bool sync) {
     } else {
         if (!queue_is_full(q, false)) {
             enqueue(q, item);
+        } else {
+            return false;
         }
     }
     return !ret;
@@ -156,6 +158,8 @@ bool queue_dequeue(Queue q, void *item, bool sync) {
     } else {
         if (!queue_is_empty(q, false)) {
             dequeue(q, item);
+        } else {
+            return false;
         }
     }
     return !ret;
