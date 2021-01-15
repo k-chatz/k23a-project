@@ -13,8 +13,8 @@
 
 #define LOCK_ pthread_mutex_lock(&js->mutex);
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex);
-#define WAIT_ pthread_cond_wait(&js->condition, &js->mutex);
-#define BROADCAST_ pthread_cond_broadcast(&js->condition);
+#define WAIT_WAKEUP_SIGNAL_ pthread_cond_wait(&js->condition_wake_up, &js->mutex);
+#define BROADCAST_WAKEUP_ pthread_cond_broadcast(&js->condition_wake_up);
 
 struct job_scheduler {
     int execution_threads;
@@ -23,7 +23,7 @@ struct job_scheduler {
     bool running;
     bool exit;
     int remaining_jobs;
-    pthread_cond_t condition;
+    pthread_cond_t condition_wake_up;
     pthread_mutex_t mutex;
     sem_t_ *semaphore;
     sem_t_ *semaphore_wait;
@@ -38,14 +38,14 @@ void *thread(JobScheduler js) {
         while (!js->running) {
             sem_post_(js->semaphore);
             //printf(B_YELLOW"[%ld] waiting for an execution signal...\n"RESET, pthread_self());
-            WAIT_
+            WAIT_WAKEUP_SIGNAL_
             //printf(B_RED"[%ld] execute signal arrives...\n"RESET, pthread_self());
         }
 
         /* waits until queue not empty */
         if (js->running && queue_is_empty(js->queue, false)) {
             //printf(YELLOW"[%ld] queue is empty, waiting for jobs...\n"RESET, pthread_self());
-            WAIT_
+            WAIT_WAKEUP_SIGNAL_
             //printf(B_RED"[%ld] wake up...\n"RESET, pthread_self());
         }
 
@@ -67,7 +67,7 @@ void *thread(JobScheduler js) {
             UNLOCK_
             //printf(B_GREEN"[%ld] starting execute job %d...\n"RESET, pthread_self(), job->job_id);
             job->status = (job->start_routine)(job);
-            printf(GREEN"[%ld] execute job %d done!\n"RESET, pthread_self(), job->job_id);
+            //printf(GREEN"[%ld] execute job %d done!\n"RESET, pthread_self(), job->job_id);
             LOCK_
             js->remaining_jobs--;
             sem_post_(js->semaphore_wait);
@@ -106,7 +106,7 @@ void js_create(JobScheduler *js, int execution_threads) {
     (*js)->semaphore = sem_init_(-execution_threads + 1);
     (*js)->semaphore_wait = sem_init_(2);
     pthread_mutex_init(&(*js)->mutex, NULL);
-    pthread_cond_init(&(*js)->condition, NULL);
+    pthread_cond_init(&(*js)->condition_wake_up, NULL);
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
@@ -120,7 +120,7 @@ bool js_submit_job(JobScheduler js, Job job) {
         js->remaining_jobs++;
         sem_decrease_(js->semaphore_wait);
         UNLOCK_
-        BROADCAST_
+        BROADCAST_WAKEUP_
     } else {
         if (queue_is_full(js->queue, true)) {
             return false;
@@ -138,7 +138,7 @@ bool js_submit_job(JobScheduler js, Job job) {
 bool js_execute_all_jobs(JobScheduler js) {
     sem_wait_(js->semaphore);
     js->running = true;
-    return !BROADCAST_;
+    return !BROADCAST_WAKEUP_;
 }
 
 /*OK*/
@@ -151,12 +151,12 @@ bool js_wait_all_jobs(JobScheduler js) {
     LOCK_;
     js->exit = true;
     UNLOCK_;
-    BROADCAST_;
+    BROADCAST_WAKEUP_;
     for (int i = 0; i < js->execution_threads; ++i) {
-        //printf("remaining jobs: %d\n", js->remaining_jobs);
-        //printf(BLUE"[%ld] trying to join...\n"RESET, js->tids[i]);
+        printf("remaining jobs: %d\n", js->remaining_jobs);
+        printf(BLUE"[%ld] trying to join...\n"RESET, js->tids[i]);
         ret += pthread_join(js->tids[i], NULL);
-        //printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
+        printf(BLUE"[%ld] join done...\n"RESET, js->tids[i]);
     }
     js->running = false;
     js->remaining_jobs = 0;

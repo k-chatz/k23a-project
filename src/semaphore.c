@@ -5,7 +5,7 @@
 
 #define LOCK_ pthread_mutex_lock(&s->mutex);
 #define UNLOCK_ pthread_mutex_unlock(&s->mutex);
-#define WAIT_ pthread_cond_wait(&s->condition, &s->mutex);
+#define WAIT_WAKEUP_SIGNAL_ pthread_cond_wait(&s->condition, &s->mutex);
 #define SIGNAL_ pthread_cond_signal(&s->condition);
 
 struct semaphore {
@@ -40,7 +40,7 @@ void sem_wait_(sem_t_ *s) {
     s->value--;
     if (s->value < 0) {
         do {
-            WAIT_
+            WAIT_WAKEUP_SIGNAL_
         } while (s->wakeups < 1);
         s->wakeups--;
     }

@@ -33,7 +33,7 @@ void *decrement(Job job) {
 void *increment(Job job) {
     int *ret = malloc(sizeof(int));
     srand(time(NULL));
-    int sec = rand() % 10 + 1;
+    int sec = rand() % 3 + 1;
     sleep(sec);
     //pthread_mutex_lock(&mtx);
     //printf("[%ld] start job %d after %d seconds (increment) %d\n", pthread_self(), job->job_id, sec, count);
@@ -48,7 +48,7 @@ void *increment(Job job) {
 }
 
 void create_job_scheduler(void) {
-    js_create(&js, 150);
+    js_create(&js, 8);
     TEST_CHECK(js != NULL);
 }
 
@@ -89,11 +89,11 @@ void destroy_job_scheduler(void) {
 }
 
 TEST_LIST = {
-//        {"create_job_scheduler",  create_job_scheduler},
-//        {"submit_jobs",           submit_jobs},
-//        {"execute_all_jobs",      execute_all_jobs},
+//        {"create_job_scheduler",   create_job_scheduler},
+//        {"submit_jobs",            submit_jobs},
+//        {"execute_all_jobs",       execute_all_jobs},
 //        {"overflow_job_scheduler", overflow_job_scheduler},
-//        {"wait_all_jobs",         wait_all_jobs},
-//        {"destroy_job_scheduler", destroy_job_scheduler},
+//        {"wait_all_jobs",          wait_all_jobs},
+//        {"destroy_job_scheduler",  destroy_job_scheduler},
         {NULL, NULL}
 };

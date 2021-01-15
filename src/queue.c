@@ -7,6 +7,13 @@
 
 #include "../include/queue.h"
 
+#define LOCK_ pthread_mutex_lock(&q->mutex);
+#define UNLOCK_ pthread_mutex_unlock(&q->mutex);
+#define WAIT_NON_FULL_SIGNAL_ pthread_cond_wait(&q->cond_non_full, &q->mutex);
+#define WAIT_NON_EMPTY_SIGNAL_ pthread_cond_wait(&q->cond_non_empty, &q->mutex);
+#define SIGNAL_NON_FULL_ pthread_cond_signal(&q->cond_non_full);
+#define SIGNAL_NON_EMPTY_ pthread_cond_signal(&q->cond_non_empty);
+
 struct queue_t {
     int front;
     int rear;
@@ -75,17 +82,13 @@ void queue_destroy(Queue *q, void (*free_t)(void *)) {
 
 bool queue_is_empty(Queue q, const bool sync) {
     bool is_empty = false;
-    //sem_wait(&q->sem_mutex);
     if (sync) {
-        pthread_mutex_lock(&q->mutex);
-        //sem_wait(&q->sem_mutex);
+        LOCK_
     }
     is_empty = (q->counter <= 0);
     if (sync) {
-        pthread_mutex_unlock(&q->mutex);
-        //sem_post(&q->sem_mutex);
+        UNLOCK_
     }
-    //sem_post(&q->sem_mutex);
     return is_empty;
 }
 
@@ -95,38 +98,28 @@ int queue_size(Queue q) {
 
 bool queue_is_full(Queue q, const bool sync) {
     bool is_full = false;
-    //sem_wait(&q->sem_mutex);
     if (sync) {
-        pthread_mutex_lock(&q->mutex);
-        //sem_wait(&q->sem_mutex);
+        LOCK_
     }
     is_full = (q->counter == q->buf_sz);
     if (sync) {
-        pthread_mutex_unlock(&q->mutex);
-        //sem_post(&q->sem_mutex);
+       UNLOCK_
     }
-    //sem_post(&q->sem_mutex);
     return is_full;
 }
 
 bool queue_enqueue(Queue q, void *item, bool sync) {
     int ret = 0;
     if (sync) {
-        //ret += sem_wait(&q->sem_non_full);
-        //ret += sem_wait(&q->sem_mutex);
-        ret += pthread_mutex_lock(&q->mutex);
+        LOCK_
         while (queue_is_full(q, false)) {
-            ret += pthread_cond_wait(&q->cond_non_full, &q->mutex);
+            WAIT_NON_FULL_SIGNAL_
         }
-
         /** critical section **/
         enqueue(q, item);
         /*********************/
-
-        ret += pthread_mutex_unlock(&q->mutex);
-        ret += pthread_cond_signal(&q->cond_non_empty);
-        //ret += sem_post(&q->sem_mutex);
-        //ret += sem_post(&q->sem_non_empty);
+        UNLOCK_
+        SIGNAL_NON_EMPTY_
     } else {
         if (!queue_is_full(q, false)) {
             enqueue(q, item);
@@ -140,21 +133,15 @@ bool queue_enqueue(Queue q, void *item, bool sync) {
 bool queue_dequeue(Queue q, void *item, bool sync) {
     int ret = 0;
     if (sync) {
-        //ret += sem_wait(&q->sem_non_empty);
-        //ret += sem_wait(&q->sem_mutex);
-        ret += pthread_mutex_lock(&q->mutex);
+        LOCK_
         while (queue_is_empty(q, false)) {
-            ret += pthread_cond_wait(&q->cond_non_empty, &q->mutex);
+            WAIT_NON_EMPTY_SIGNAL_
         }
-
         /** critical section **/
         dequeue(q, item);
         /*********************/
-
-        ret += pthread_mutex_unlock(&q->mutex);
-        ret += pthread_cond_signal(&q->cond_non_full);
-        //ret += sem_post(&q->sem_mutex);
-        //ret += sem_post(&q->sem_non_full);
+        UNLOCK_
+        SIGNAL_NON_FULL_
     } else {
         if (!queue_is_empty(q, false)) {
             dequeue(q, item);
@@ -166,13 +153,11 @@ bool queue_dequeue(Queue q, void *item, bool sync) {
 }
 
 void queue_unblock_enqueue(Queue q) {
-    pthread_cond_signal(&q->cond_non_full);
-    //sem_post(&q->sem_non_full);
+    SIGNAL_NON_FULL_
 }
 
 void queue_unblock_dequeue(Queue q) {
-    pthread_cond_broadcast(&q->cond_non_empty);
-    //sem_post(&q->sem_non_empty);
+    SIGNAL_NON_EMPTY_
 }
 
 void queue_inspect_by_order(Queue q, void *(*print_v)(void *)) {
@@ -180,7 +165,6 @@ void queue_inspect_by_order(Queue q, void *(*print_v)(void *)) {
     if (!queue_is_empty(q, false)) {
         do {
             print_v(&(q->buffer[current]));
-            printf("-");
             current = (current + 1) % q->buf_sz;
         } while (current != q->rear);
         printf("\n");
@@ -190,9 +174,7 @@ void queue_inspect_by_order(Queue q, void *(*print_v)(void *)) {
 void queue_inspect_by_array(Queue q, void *(*print_v)(void *)) {
     int i;
     for (i = 0; i < q->buf_sz; i++) {
-        //CustWriteValue(stdout, &(q->array[i]));
         print_v(&(q->buffer[i]));
-        printf("-");
     }
     printf("\n");
 }
