@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <limits.h>
 
 #include "../include/acutest.h"
 #include "../include/job_scheduler.h"
@@ -7,7 +8,7 @@
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t count_nonzero;
 
-unsigned count = 0;
+unsigned long long int count = 0;
 
 JobScheduler js = NULL;
 
@@ -34,26 +35,26 @@ void *increment(Job job) {
     int *ret = malloc(sizeof(int));
     srand(time(NULL));
     int sec = rand() % 3 + 1;
-    sleep(sec);
-    //pthread_mutex_lock(&mtx);
+    //sleep(1);
+    pthread_mutex_lock(&mtx);
     //printf("[%ld] start job %d after %d seconds (increment) %d\n", pthread_self(), job->job_id, sec, count);
     if (count == 0) {
         pthread_cond_signal(&count_nonzero);
     }
     count = count + 1;
-    printf("[%ld] end job %d (increment) %d\n", pthread_self(), job->job_id, count);
-    //pthread_mutex_unlock(&mtx);
+    //printf("[%ld] end job %d (increment) %d\n", pthread_self(), job->job_id, count);
+    pthread_mutex_unlock(&mtx);
     *ret = 16;
     return NULL;
 }
 
 void create_job_scheduler(void) {
-    js_create(&js, 8);
+    js_create(&js, 1000);
     TEST_CHECK(js != NULL);
 }
 
 void submit_jobs(void) {
-    for (int j = 0; j < 50; ++j) {
+    for (int j = 0; j < 1000; ++j) {
         Job job = js_create_job((void *(*)(void *)) increment, NULL);
         //Job job = js_create_job((void *(*)(void *)) decrement, NULL);
         TEST_CHECK(js_submit_job(js, job));
@@ -70,7 +71,8 @@ void execute_all_jobs(void) {
 }
 
 void overflow_job_scheduler(void) {
-    for (int j = 0; j < 100; ++j) {
+    //sleep(1);
+    for (int j = 0; j < 1000; ++j) {
         //printf(RED"inserting job...\n"RESET);
         Job job = js_create_job((void *(*)(void *)) increment, NULL);
         TEST_CHECK(js_submit_job(js, job));
@@ -80,6 +82,7 @@ void overflow_job_scheduler(void) {
 
 void wait_all_jobs(void) {
     TEST_CHECK(js_wait_all_jobs(js));
+    printf(UNDERLINE BOLD"count: %lld\n"RESET, count);
     //TEST_CHECK(count == 0);
 }
 

@@ -8,7 +8,7 @@ typedef struct job_scheduler *JobScheduler;
 static int job_id = 0;
 
 typedef struct job {
-    int job_id;
+    long long int job_id;
     void *(*start_routine)(void *);
     void *__restrict arg;
     void *status;

@@ -9,7 +9,7 @@
 #define SIGNAL_ pthread_cond_signal(&s->condition);
 
 struct semaphore {
-    int value, wakeups;
+    long long int value, wakeups;
     pthread_mutex_t mutex;
     pthread_cond_t condition;
 };
@@ -57,7 +57,7 @@ void sem_post_(sem_t_ *s) {
     UNLOCK_
 }
 
-int sem_get_value_(sem_t_ *s) {
+long long int sem_get_value_(sem_t_ *s) {
     LOCK_
     return s->value;
     UNLOCK_
