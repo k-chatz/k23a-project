@@ -42,7 +42,7 @@ void dequeue_test(void) {
 
 void *queue_producer_f(void *arg) {
     int i = 0;
-    sleep(rand() % 10 + 1);
+    sleep(rand() % 3 + 1);
     // printf("\nStarted queue_producer_f\n");
     queue_enqueue(q, &i, true);
     // printf("\nthread_c: dequeue done, %d\n", i);
@@ -51,7 +51,7 @@ void *queue_producer_f(void *arg) {
 
 void *queue_consumer_f(void *arg) {
     int i = 0;
-    sleep(rand() % 10 + 1);
+    sleep(rand() % 3 + 1);
     // printf("\nStarted queue_consumer_f\n");
     queue_dequeue(q, &i, true);
     // printf("\nthread_b: dequeue done, %d\n", i);
