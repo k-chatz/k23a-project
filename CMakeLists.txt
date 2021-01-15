@@ -75,6 +75,7 @@ add_executable(k23a_project_queue_tests
 add_executable(k23a_project_job_scheduler_tests
         src/job_scheduler.c
         src/queue.c
+        src/semaphore.c
         tests/job_scheduler_tests.c
         )
 

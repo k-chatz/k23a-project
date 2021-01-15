@@ -25,7 +25,7 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
@@ -63,7 +63,7 @@ tests-bin/general_tests: $(addprefix objs/, general_tests.o lists.o spec_to_spec
 tests-bin/ml_tests: $(addprefix objs/, ml_tests.o json_parser.o ml.o tokenizer.o hash.o lists.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-tests-bin/job_scheduler_tests: $(addprefix objs/, job_scheduler_tests.o job_scheduler.o queue.o)
+tests-bin/job_scheduler_tests: $(addprefix objs/, job_scheduler_tests.o job_scheduler.o queue.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/queue_tests: $(addprefix objs/, queue_tests.o queue.o)
