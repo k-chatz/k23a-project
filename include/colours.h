@@ -13,6 +13,9 @@
 #define B_BLUE   "\x1B[1m\x1b[34m"
 #define B_MAGENTA "\x1B[1m\x1b[35m"
 #define B_CYAN   "\x1B[1m\x1b[36m"
+#define WARNING "\033[93m"
+#define UNDERLINE "\033[4m"
+#define BOLD "\033[1m"
 
 /* BACKGROUND COLOURS*/
 
