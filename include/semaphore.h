@@ -9,10 +9,14 @@ void sem_decrease_(sem_t_ *s);
 
 void sem_increase_(sem_t_ *s);
 
-void sem_wait_(sem_t_ *s);
+void sem_wait_(sem_t_ *s, bool reset);
 
 void sem_post_(sem_t_ *s);
 
 long long int sem_get_value_(sem_t_ *s);
+
+void sem_set_value_(sem_t_ *s, long long int value);
+
+void sem_reset_(sem_t_ *s);
 
 #endif
