@@ -53,7 +53,7 @@ void *thread(JobScheduler js) {
             //printf(B_RED"[%ld] wake up...\n"RESET, pthread_self());
         }
         if (js->exit && queue_is_empty(js->queue, false)) {
-            //printf(B_BLUE"[%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
+            printf(B_BLUE"[%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
             UNLOCK_
             pthread_exit(NULL);
         }
