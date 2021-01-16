@@ -3,14 +3,13 @@
 #include <pthread.h>
 #include <assert.h>
 #include <unistd.h>
-#include <time.h>
 
 #include "../include/queue.h"
 #include "../include/colours.h"
 #include "../include/job_scheduler.h"
 #include "../include/semaphore.h"
 
-#define QUEUE_SIZE 1500
+#define QUEUE_SIZE 12
 
 #define LOCK_ pthread_mutex_lock(&js->mutex);
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex);
@@ -24,7 +23,6 @@ struct job_scheduler {
     Queue queue;
     bool running;
     bool exit;
-    //long long int remaining_jobs;
     pthread_cond_t condition_wake_up;
     pthread_mutex_t mutex;
     sem_t_ *sem_barrier;
@@ -55,7 +53,7 @@ void *thread(JobScheduler js) {
             //printf(B_RED"[%ld] wake up...\n"RESET, pthread_self());
         }
         if (js->exit && queue_is_empty(js->queue, false)) {
-            printf(B_BLUE"[%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
+            //printf(B_BLUE"[%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
             UNLOCK_
             pthread_exit(NULL);
         }
@@ -73,7 +71,6 @@ void *thread(JobScheduler js) {
             BROADCAST_WAKEUP_
             continue;
         }
-
         UNLOCK_
     }
 }
@@ -103,11 +100,9 @@ void js_create(JobScheduler *js, int execution_threads) {
     /* sync */
     (*js)->sem_barrier = sem_init_(-execution_threads + 1);
     (*js)->sem_jobs = sem_init_(1);
-    (*js)->sem_wakeup = sem_init_(1);
-
+    (*js)->sem_wakeup = sem_init_(-1);
     pthread_mutex_init(&(*js)->mutex, NULL);
     pthread_cond_init(&(*js)->condition_wake_up, NULL);
-
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
@@ -143,15 +138,11 @@ bool js_wait_all_jobs(JobScheduler js) {
     //BROADCAST_WAKEUP_;
     printf(RED"\nwaiting all jobs to complete...\n"RESET);
     sem_wait_(js->sem_jobs, false);
-    //printf(WARNING"all jobs completed!\n"RESET);
+    printf(WARNING"All jobs completed!\n"RESET);
     LOCK_;
     js->exit = true;
     UNLOCK_;
     sem_wait_(js->sem_barrier, true);
-    //BROADCAST_WAKEUP_;
-    //printf(WARNING"sem_barrier!\n"RESET);
-
-    //sleep(1);
     for (int i = 0; i < js->execution_threads; ++i) {
         BROADCAST_WAKEUP_;
         ret += pthread_join(js->tids[i], NULL);
