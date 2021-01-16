@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.17)
 project(k23a_project C)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
-
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
+find_package (Threads REQUIRED)
 
 include_directories(.)
 
@@ -72,6 +71,14 @@ add_executable(k23a_project_queue_tests
         tests/queue_tests.c
         )
 
+#job scheduler tests
+add_executable(k23a_project_job_scheduler_tests
+        src/job_scheduler.c
+        src/queue.c
+        src/semaphore.c
+        tests/job_scheduler_tests.c
+        )
+
 #logreg tests
 add_executable(k23a_project_logreg_tests
         src/logreg.c
@@ -116,7 +123,6 @@ add_executable(k23a_project_user
         src/unique_rand.c
         )
 
-
 target_link_libraries(k23a_project_general_tests m)
 target_link_libraries(k23a_project_json_parser_tests m)
 target_link_libraries(k23a_project_lists_tests m)
@@ -124,8 +130,23 @@ target_link_libraries(k23a_project_hash_tests m)
 target_link_libraries(k23a_project_hset_tests m)
 target_link_libraries(k23a_project_spec_to_specs_tests m)
 target_link_libraries(k23a_project_ml_tests m)
+target_link_libraries(k23a_project_job_scheduler_tests m)
 target_link_libraries(k23a_project_queue_tests m)
 target_link_libraries(k23a_project_logreg_tests m)
 target_link_libraries(k23a_project_tokenizer_tests m)
 target_link_libraries(k23a_project_user m)
 target_link_libraries(k23a_project m)
+
+target_link_libraries(k23a_project_general_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_json_parser_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_lists_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_hash_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_hset_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_spec_to_specs_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_ml_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_queue_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_job_scheduler_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_logreg_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_tokenizer_tests ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(k23a_project_user ${CMAKE_THREAD_LIBS_INIT})
