@@ -27,12 +27,12 @@ void *decrement(Job job) {
 void *increment(Job job) {
     //int sec = rand() % 2 + 1;
     //sleep(1);
-    pthread_mutex_lock(&mtx);
+    //pthread_mutex_lock(&mtx);
     if (count == 0) {
         pthread_cond_signal(&count_nonzero);
     }
     count = count + 1;
-    pthread_mutex_unlock(&mtx);
+    //pthread_mutex_unlock(&mtx);
     printf(CYAN"[%ld] job %lld, count:%lld\n"RESET, pthread_self(), job->job_id, count);
     return NULL;
 }
@@ -43,7 +43,7 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-    for (int j = 0; j < 12; ++j) {
+    for (int j = 0; j < 356; ++j) {
         Job job = js_create_job((void *(*)(void *)) increment, NULL);
         //Job job = js_create_job((void *(*)(void *)) decrement, NULL);
         TEST_CHECK(js_submit_job(js, job));

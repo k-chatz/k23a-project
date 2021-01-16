@@ -9,7 +9,7 @@
 #include "../include/job_scheduler.h"
 #include "../include/semaphore.h"
 
-#define QUEUE_SIZE 12
+#define QUEUE_SIZE 1000
 
 #define LOCK_ pthread_mutex_lock(&js->mutex);
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex);
