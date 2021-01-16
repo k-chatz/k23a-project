@@ -55,7 +55,7 @@ void execute_all_jobs(void) {
 }
 
 void overflow_job_scheduler(void) {
-    for (int j = 0; j < 178; ++j) {
+    for (int j = 0; j < 7; ++j) {
         //printf(RED"inserting job...\n"RESET);
         Job job = js_create_job((void *(*)(void *)) increment, NULL);
         TEST_CHECK(js_submit_job(js, job));
@@ -64,9 +64,10 @@ void overflow_job_scheduler(void) {
 }
 
 void wait_all_jobs(void) {
+    //sleep(1);
     TEST_CHECK(js_wait_all_jobs(js));
     printf(UNDERLINE BOLD"count: %lld\n"RESET, count);
-    TEST_CHECK(count == 190);
+    TEST_CHECK(count == 19);
 }
 
 void destroy_job_scheduler(void) {
