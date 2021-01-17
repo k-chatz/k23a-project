@@ -41,7 +41,6 @@ typedef struct pair {
     char *spec1;
     char *spec2;
     int relation;
-    enum pair_type type;
 } Pair;
 
 /*!

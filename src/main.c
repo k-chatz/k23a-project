@@ -92,7 +92,6 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
         (*pairs)[*counter].relation = -1;
-        (*pairs)[*counter].type = NAT;
         (*counter)++;
     }
     fclose(fp);
