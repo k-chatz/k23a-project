@@ -11,12 +11,13 @@ typedef struct job {
     long long int job_id;
     void *(*start_routine)(void *);
     void *__restrict arg;
+    int arg_type_sz;
     void *status;
 } *Job;
 
-Job js_create_job(void *(*start_routine)(void *), void *__restrict arg);
+Job js_create_job(void *(*start_routine)(void *), void *__restrict arg, int arg_type_sz);
 
-void job_destroy(Job job);
+void js_destroy_job(Job *job);
 
 void js_create(JobScheduler *js, int execution_threads);
 

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <string.h>
 
 #include "../include/queue.h"
 #include "../include/colours.h"
@@ -38,41 +39,29 @@ struct job_scheduler {
 
 void *thread(JobScheduler js) {
     int jobs_count = 0;
-    bool my_turn = false;
     while (true) {
         LOCK_
-        while ((!js->running && !js->exit)
-               || (!queue_size(js->queue) && !js->exit)
-               //|| (js->execution_threads > 1 && !my_turn)
-                ) {
+        while ((!js->running && !js->exit) || (!queue_size(js->queue) && !js->exit)) {
             js->ready++;
-            //printf(YELLOW"[%ld] waiting for an wakeup signal... running: %d, ready: %d, exit: %d, size: %d\n"RESET, pthread_self(), js->running, js->ready, js->exit, queue_size(js->queue));
+            //printf(YELLOW"Thread [%ld] waiting for an wakeup signal... running: %d, ready: %d, exit: %d, size: %d\n"RESET, pthread_self(), js->running, js->ready, js->exit, queue_size(js->queue));
             sem_post_(js->sem_barrier);
             WAIT_
             js->ready--;
-            my_turn = true;
-            //printf(B_RED"[%ld] wakeup signal arrives... running: %d, ready: %d, exit: %d, size: %d\n"RESET, pthread_self(), js->running, js->ready, js->exit, queue_size(js->queue));
+            //printf(B_RED"Thread [%ld] wakeup signal arrives... running: %d, ready: %d, exit: %d, size: %d\n"RESET, pthread_self(), js->running, js->ready, js->exit, queue_size(js->queue));
         }
-
         if (js->exit && !queue_size(js->queue)) {
-            printf(B_BLUE"[%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
+            printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
             UNLOCK_
             pthread_exit(NULL);
         }
-
         Job job = NULL;
         queue_dequeue(js->queue, &job, false);
         if (job != NULL) {
-            my_turn = false;
             jobs_count++;
             queue_unblock_enqueue(js->queue);
             sem_post_(js->sem_jobs);
             UNLOCK_
-
-            BROADCAST_WAKEUP_
-
             RUN_ROUTINE_;
-
             continue;
         }
         UNLOCK_
@@ -81,14 +70,22 @@ void *thread(JobScheduler js) {
 
 /***Public functions***/
 
-Job js_create_job(void *(*start_routine)(void *), void *__restrict arg) {
+Job js_create_job(void *(*start_routine)(void *), void *__restrict arg, int arg_type_sz) {
     Job job = malloc(sizeof(struct job));
     assert(job != NULL);
     job->job_id = ++job_id;
     job->start_routine = start_routine;
-    job->arg = arg;
+    job->arg = malloc(arg_type_sz);
+    job->arg_type_sz = arg_type_sz;
+    memcpy(job->arg, arg, arg_type_sz);
     job->status = NULL;
     return job;
+}
+
+void js_destroy_job(Job *job) {
+    free((*job)->arg);
+    free((*job));
+    *job = NULL;
 }
 
 void js_create(JobScheduler *js, int execution_threads) {
@@ -141,27 +138,26 @@ bool js_execute_all_jobs(JobScheduler js) {
 
 bool js_wait_all_jobs(JobScheduler js) {
     int ret = 0;
-    printf(RED"\nwaiting all jobs to complete...\n"RESET);
+    printf(RED"\nWaiting all jobs to complete...\n"RESET);
     sem_wait_(js->sem_jobs, false);
     printf(WARNING"All jobs completed!\n"RESET);
+
+    printf(RED"Waiting threads...\n"RESET);
+    sem_wait_(js->sem_barrier, false);
+    printf(WARNING"All threads are ready to join...\n"RESET);
 
     LOCK_;
     js->exit = true;
     js->running = false;
     UNLOCK_;
 
-    printf(RED"waiting threads...\n"RESET);
-    sem_wait_(js->sem_barrier, false);
-    printf(WARNING"all threads are ready to join...\n"RESET);
-
     BROADCAST_WAKEUP_
 
-    printf(RED"joining threads...\n"RESET);
+    printf(RED"Joining threads...\n"RESET);
     for (int i = 0; i < js->execution_threads; ++i) {
         ret += pthread_join(js->tids[i], NULL);
     }
-    js->running = false;
-    printf(RED"join threads done!\n"RESET);
+    printf(RED"Join threads done!\n"RESET);
     return !ret;
 }
 
