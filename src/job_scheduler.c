@@ -11,7 +11,7 @@
 #include "../include/job_scheduler.h"
 #include "../include/semaphore.h"
 
-#define QUEUE_SIZE 1000
+#define QUEUE_SIZE 100
 
 #define LOCK_ pthread_mutex_lock(&js->mutex)
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex)
@@ -22,6 +22,7 @@
 #define EXIT_ pthread_exit(NULL)
 #define NOTIFY_BARRIER_ sem_post_(js->sem_barrier)
 #define NOTIFY_JOBS_ sem_post_(js->sem_jobs)
+#define NOTIFY_JOB_COMPLETE_ sem_post(&job->sem_complete)
 
 struct job_scheduler {
     uint execution_threads;
@@ -63,6 +64,7 @@ void *thread(JobScheduler js) {
             NOTIFY_JOBS_;
             UNLOCK_;
             RUN_ROUTINE_;
+            NOTIFY_JOB_COMPLETE_;
             continue;
         }
         UNLOCK_;
@@ -80,6 +82,7 @@ Job js_create_job(void *(*start_routine)(void *), void *__restrict arg, int arg_
     job->arg_type_sz = arg_type_sz;
     memcpy(job->arg, arg, arg_type_sz);
     job->status = NULL;
+    sem_init(&job->sem_complete, 0, 0);
     return job;
 }
 
@@ -132,6 +135,14 @@ bool js_submit_job(JobScheduler js, Job job) {
 bool js_execute_all_jobs(JobScheduler js) {
     js->running = true;
     return !BROADCAST_WAKEUP_;
+}
+
+bool js_wait_job(JobScheduler js, Job job) {
+    if (js->running) {
+        sem_wait(&job->sem_complete);
+        return true;
+    }
+    return false;
 }
 
 bool js_wait_all_jobs(JobScheduler js) {

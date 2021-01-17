@@ -88,7 +88,8 @@ void *smith_numbers(Job job) {
         }
         i++;
     } while (i <= *(int *) job->arg);
-    printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% Smith numbers sum:%lld\n"RESET, pthread_self(), job->job_id, (100.0 * smith) / i, sum);
+    printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% Smith numbers sum:%lld\n"RESET, pthread_self(), job->job_id,
+           (100.0 * smith) / i, sum);
     return NULL;
 }
 
@@ -106,6 +107,7 @@ void submit_jobs(void) {
         Job job = js_create_job((void *(*)(void *)) smith_numbers, &computations, sizeof(computations));
         //Job job = js_create_job((void *(*)(void *)) decrement, NULL);
         TEST_CHECK(js_submit_job(js, job));
+        printf(WARNING"Job %lld enqueued done!\n"RESET, job->job_id);
     }
 }
 
@@ -116,10 +118,11 @@ void execute_all_jobs(void) {
 
 void overflow_job_scheduler(void) {
     putchar('\n');
-    for (int j = 0; j < 1000; ++j) {
+    for (int j = 0; j < 10; ++j) {
         Job job = js_create_job((void *(*)(void *)) increment, NULL, 0);
         TEST_CHECK(js_submit_job(js, job));
         printf(WARNING"Job %lld enqueued done!\n"RESET, job->job_id);
+        TEST_CHECK(js_wait_job(js, job));
     }
 }
 
@@ -140,6 +143,8 @@ TEST_LIST = {
         {"create_job_scheduler",   create_job_scheduler},
         {"submit_jobs",            submit_jobs},
         {"execute_all_jobs",       execute_all_jobs},
+        {"overflow_job_scheduler", overflow_job_scheduler},
+        {"submit_jobs",            submit_jobs},
         {"overflow_job_scheduler", overflow_job_scheduler},
         {"wait_all_jobs",          wait_all_jobs},
         {"destroy_job_scheduler",  destroy_job_scheduler},
