@@ -27,14 +27,12 @@ void *decrement(Job job) {
 }
 
 void *increment(Job job) {
-    //int sec = rand() % 2 + 1;
-    //sleep(1);
     pthread_mutex_lock(&mtx);
     if (sum == 0) {
         pthread_cond_signal(&count_nonzero);
     }
     sum = sum + 1;
-    printf(CYAN"[%ld] job %lld, sum:%lld\n"RESET, pthread_self(), job->job_id, sum);
+    printf(CYAN"Thread [%ld] job %lld, sum:%lld\n"RESET, pthread_self(), job->job_id, sum);
     pthread_mutex_unlock(&mtx);
     return NULL;
 }
@@ -90,20 +88,21 @@ void *smith_numbers(Job job) {
         }
         i++;
     } while (i <= *(int *) job->arg);
-    //printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% Smith numbers sum:%lld\n"RESET, pthread_self(), job->job_id, (100.0 * smith) / i, sum);
+    printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% Smith numbers sum:%lld\n"RESET, pthread_self(), job->job_id, (100.0 * smith) / i, sum);
     return NULL;
 }
 
-
 void create_job_scheduler(void) {
+    putchar('\n');
     begin = clock();
-    js_create(&js, 40);
+    js_create(&js, 8);
     TEST_CHECK(js != NULL);
 }
 
 void submit_jobs(void) {
-    int computations = 10000;
-    for (int j = 0; j < 356; ++j) {
+    putchar('\n');
+    int computations = 100000;
+    for (int j = 0; j < 100; ++j) {
         Job job = js_create_job((void *(*)(void *)) smith_numbers, &computations, sizeof(computations));
         //Job job = js_create_job((void *(*)(void *)) decrement, NULL);
         TEST_CHECK(js_submit_job(js, job));
@@ -111,19 +110,21 @@ void submit_jobs(void) {
 }
 
 void execute_all_jobs(void) {
+    putchar('\n');
     TEST_CHECK(js_execute_all_jobs(js));
 }
 
 void overflow_job_scheduler(void) {
-    for (int j = 0; j < 0; ++j) {
-        //printf(RED"inserting job...\n"RESET);
+    putchar('\n');
+    for (int j = 0; j < 1000; ++j) {
         Job job = js_create_job((void *(*)(void *)) increment, NULL, 0);
         TEST_CHECK(js_submit_job(js, job));
-        //printf(RED"OK!\n"RESET);
+        printf(WARNING"Job %lld enqueued done!\n"RESET, job->job_id);
     }
 }
 
 void wait_all_jobs(void) {
+    putchar('\n');
     TEST_CHECK(js_wait_all_jobs(js));
     printf(UNDERLINE BOLD"sum: %lld\n"RESET, sum);
     printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
