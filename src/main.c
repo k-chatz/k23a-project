@@ -11,6 +11,7 @@
 #include "../include/ml.h"
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
+#include "../include/job_scheduler.h"
 
 #define epochs 200
 #define batch_size 2000
@@ -23,6 +24,8 @@ typedef struct options {
     char *vec_mode;
     char *export_path;
 } Options;
+
+JobScheduler js = NULL;
 
 void read_options(int argc, char **argv, Options *o) {
     int i;
@@ -561,6 +564,9 @@ int main(int argc, char *argv[]) {
 
     /* initialize mode {tfidf|bow}*/
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
+
+    /* initialze job scheduler */
+    js_create(&js, 8);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);

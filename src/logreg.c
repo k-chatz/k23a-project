@@ -2,6 +2,7 @@
 #include <assert.h>
 
 #include "../include/logreg.h"
+#include "../include/job_scheduler.h"
 
 LogReg *lr_new(int weights_len, float learning_rate) {
     unsigned int seed = 12345;
@@ -84,12 +85,27 @@ float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
     return Ps;
 }
 
+
+//void * calculate_deltas(Job job){
+//    job->arg
+//
+//    log
+//
+//}
+
 float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     float *Ps = lr_predict(reg, Xs, batch_sz);
 
     /* calculate the Deltas */
     float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
     memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
+
+    //JobScheduler js = NULL;
+    //js_create(&js, 8);
+    //Job job = js_create_job( NULL, NULL, 0);
+    //Job job = js_create_job( x, reg, Deltas, 4);
+    //js_submit_job(js, job);
+
     for (int i = 0; i < batch_sz; i++) {
         int j;
         for (j = 0; j < reg->weights_len; j++) {
@@ -100,14 +116,18 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
         Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]);
     }
 
+//    js_wait_all_jobs(js);
+
     /* update the weights */
     float max_delta = .0;
     int j;
     for (j = 0; j < reg->weights_len; j++) {
         if (fabsf(Deltas[j]) > max_delta)
             max_delta = fabsf(Deltas[j]);
+
         reg->weights[j] -= Deltas[j];
     }
+
     reg->bias -= Deltas[j];
 
     free(Ps);
