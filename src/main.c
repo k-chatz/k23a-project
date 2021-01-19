@@ -12,10 +12,10 @@
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
 
-#define epochs 1
+#define epochs 10
 #define batch_size 2000
 #define learning_rate 0.0001
-#define STEP_VALUE 0.1
+#define STEP_VALUE 0.15
 
 typedef struct options {
     char *dataset_dir;
@@ -733,6 +733,27 @@ int main(int argc, char *argv[]) {
     /**/
 
 
+    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, NULL, ml, json_dict, &val_set,
+                result_vec_val, y_val, tfidf, 1);
+
+    /* Predict validation set */
+    y_pred = lr_predict(model, result_vec_val, val_sz);
+    for (int i = 0; i < val_sz; i++) {
+        if (val_set[i].relation) {
+            printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        } else {
+            printf(B_RED"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        }
+        // if (i==2) break;
+    }
+
+    /* calculate F1 score */
+    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
+
+
+    /**/
 
 
     free(bow_vector_1);
