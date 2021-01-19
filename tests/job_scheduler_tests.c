@@ -43,9 +43,16 @@ int sd(int x) {
 void *smith_numbers(Job job) {
     double *return_val = malloc(sizeof(double));
     int i = 0, x = 0, y = 0, z = 0, sumfact = 0, smith = 0;
+    int computations = 0;
+    int test = 0;
+    JobScheduler jobScheduler = NULL;
+
+    js_get_args(job, &computations, &test, &jobScheduler, NULL);
+
     long timesec = 0;
     timesec = time(NULL);
-    srand((unsigned int) timesec);
+    //srand((unsigned int) timesec);
+    srand(233);
     do {
         y = rand();
         z = rand();
@@ -74,7 +81,7 @@ void *smith_numbers(Job job) {
             //printf("%10d is Smith number\n", x);
         }
         i++;
-    } while (i <= *(int *) js_get_job_arg(job));
+    } while (i <= computations);
     *return_val = (100.0 * smith) / i;
 
     LOCK_;
@@ -84,8 +91,9 @@ void *smith_numbers(Job job) {
     sum += *return_val;
     UNLOCK_;
 
-    printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% sum:%f\n"RESET, pthread_self(), js_get_job_id(job),
-           *return_val, sum);
+    printf(CYAN"Thread [%ld] job %lld, Computations: %d, Found %4.2f%% sum:%f\n"RESET, pthread_self(),
+           js_get_job_id(job),
+           computations, *return_val, sum);
     return return_val;
 }
 
@@ -109,9 +117,15 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-    int computations = 100000;
-    for (int j = 0; j < 30; ++j) {
-        Job job = js_create_job((void *(*)(void *)) smith_numbers, &computations, sizeof(computations));
+    int computations = 1000000;
+    int test = 364;
+    for (int j = 100000; j > 0; j -= 10000) {
+        Job job = js_create_job((void *(*)(void *)) smith_numbers,
+                                JOB_ARG(j),
+                                JOB_ARG(test),
+                                JOB_ARG(js),
+                                NULL
+        );
         TEST_CHECK(js_submit_job(js, job));
     }
 }
@@ -121,9 +135,10 @@ void execute_all_jobs(void) {
 }
 
 void wait_all_jobs(void) {
-    TEST_CHECK(js_wait_all_jobs(js));
+    js_wait_all_jobs(js);
     printf(UNDERLINE BOLD"sum: %f\n"RESET, sum);
     printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
+    TEST_CHECK(1);
 }
 
 void destroy_job_scheduler(void) {
