@@ -721,8 +721,8 @@ int main(int argc, char *argv[]) {
                             // and add it to the set.
                             dynamic_train_set = realloc(dynamic_train_set, (++dynamic_train_sz) * sizeof(Pair));
                             Pair new_pair;
-                            new_pair.spec1 = left;
-                            new_pair.spec2 = right;
+                            new_pair.spec1 = A->data;
+                            new_pair.spec2 = B->data;
                             new_pair.relation = y_pred < threshold ? 0 : 1;
                             dynamic_train_set[dynamic_train_sz - 1] = new_pair;
                             set_put(dynamic_train_hset, entry_buf);
