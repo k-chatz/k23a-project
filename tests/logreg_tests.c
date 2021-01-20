@@ -8,7 +8,7 @@ JobScheduler js = NULL;
 
 void logreg_test(void) {
     /* initialze job scheduler */
-    js_create(&js, 16);
+    //js_create(&js, 16);
     srand(0);
     float Xs[10] =
             {
@@ -47,6 +47,6 @@ void logreg_test(void) {
 }
 
 TEST_LIST = {
-//        {"logreg_test", logreg_test},
+        {"logreg_test", logreg_test},
         {NULL, NULL}
 };

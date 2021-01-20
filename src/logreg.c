@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
-#include <pthread.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "../include/logreg.h"
 #include "../include/queue.h"
@@ -84,18 +84,35 @@ float lr_predict_one(LogReg *reg, float *X) {
     return p;
 }
 
+void *lr_predict_t(Job job) {
+    LogReg *reg;
+    float *Xs = NULL, *Ps = NULL;
+    int i = 0;
+    js_get_args(job, &reg, &Xs, &Ps, &i, NULL);
+    Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
+    return NULL;
+}
+
 float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
     float *Ps = malloc(sizeof(Ps) * batch_sz);
-    for (int i = 0; i < batch_sz; i++)
-        Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
+    if (js == NULL) {
+        for (int i = 0; i < batch_sz; i++) {
+            Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
+        }
+    } else {
+        Job jobs[batch_sz];
+        for (int i = 0; i < batch_sz; i++) {
+            jobs[i] = js_create_job((void *(*)(void *)) lr_predict_t, JOB_ARG(reg), JOB_ARG(Xs),JOB_ARG(Ps),
+                                    JOB_ARG(i), NULL);
+            js_submit_job(js, jobs[i]);
+        }
+        js_execute_all_jobs(js);
+        js_wait_all_jobs(js);
+    }
     return Ps;
 }
 
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK_ pthread_mutex_lock(&mtx)
-#define UNLOCK_ pthread_mutex_unlock(&mtx)
-
-void *loop(Job job) {
+void *lr_train_t_(Job job) {
     LogReg *reg;
     float *Xs = NULL, *Ps = NULL, *Deltas = NULL;
     int i = 0, *Ys = NULL;
@@ -113,66 +130,47 @@ void *loop(Job job) {
     }
     /* Delta for the bias */
     Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]);
-
     //printf(CYAN"Thread [%ld] job %lld calculated deltas\n"RESET, pthread_self(), js_get_job_id(job));
     return Deltas;
 }
 
 float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     float *Ps = lr_predict(reg, Xs, batch_sz);
-
     /* calculate the Deltas */
     float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
     memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
-
-    /*Επαναλαμβάνεται μέχρι εξάντηλησης παρατηρήσεων:
-
-    Όλα τα παράλληλα threads θα ξεκινούν και θα δουλεύουν με το ίδιο αρχικό διάνυσμα συντελεστών w
-
-     Σε όλη τη διάρκεια της επεξεργασίας των παρατηρήσεων (ζευγών), δεν θα αλλάζει το w
-
-     Κάθε thread θα δημιουργεί το δικό του ∇J(w,b), το οποίο θα είναι ουσιαστικά ένα διάνυσμα τροποποίησης
-     του w.
-
-     Στο τέλος της επεξεργασίας των threads, θα συγχρονίζονται τα threads και θα λαμβάνεται ο μέσος όρος για
-     όλα τα ∇J(w,b) που θα έχουν υπολογίσει τα επιμέρους threads.
-
-     Με βάση αυτό το μέσο όρο (και το learning rate η), θα υπολογίζεται η νέα τιμή του w.
-
-     Ξεκινούν να δουλεύουν τα νέα jobs στα threads με το ίδιο νέο διάνυσμα συντελεστών w.
-
-     for (int i = 0; i < batch_sz; i++) {
-        int j;
-        for (j = 0; j < reg->weights_len; j++) {
-            //j is inner loop for cache efficiency
-            Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]) * Xs[i * reg->weights_len + j];
+    if (js == NULL) {
+        for (int i = 0; i < batch_sz; i++) {
+            int j;
+            for (j = 0; j < reg->weights_len; j++) {
+                //j is inner loop for cache efficiency
+                Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]) * Xs[i * reg->weights_len + j];
+            }
+            //Delta for the bias
+            Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]);
         }
-        //Delta for the bias
-        Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]);
-    }
-     */
-
-    Job jobs[batch_sz];
-    for (int i = 0; i < batch_sz; i++) {
-        jobs[i] = js_create_job((void *(*)(void *)) loop, JOB_ARG(reg), JOB_ARG(Xs), JOB_ARG(Ys),
-                            JOB_ARG(Ps), JOB_ARG(i), NULL);
-        js_submit_job(js, jobs[i]);
-    }
-
-    js_execute_all_jobs(js);
-
-    printf(RED"WAITING...\n"RESET);
-    js_wait_all_jobs(js);
-    printf(WARNING"WAITING DONE!\n"RESET);
-
-    float *d = NULL;
-    for (int i = 0; i < batch_sz; i++) {
-        //d = (float*)js_get_return_val(jobs[i]);
-        for (int j = 0; j < reg->weights_len + 1; j++){
-
-            Deltas[j] += ((float*)js_get_return_val(jobs[i]))[j];
+    } else {
+        Job jobs[batch_sz];
+        for (int i = 0; i < batch_sz; i++) {
+            jobs[i] = js_create_job((void *(*)(void *)) lr_train_t_,
+                                    JOB_ARG(reg),
+                                    JOB_ARG(Xs),
+                                    JOB_ARG(Ys),
+                                    JOB_ARG(Ps),
+                                    JOB_ARG(i),
+                                    NULL);
+            js_submit_job(js, jobs[i]);
         }
-        free((float*)js_get_return_val(jobs[i]));
+
+        js_execute_all_jobs(js);
+        js_wait_all_jobs(js);
+
+        for (int i = 0; i < batch_sz; i++) {
+            for (int j = 0; j < reg->weights_len + 1; j++) {
+                Deltas[j] += ((float *) js_get_return_val(jobs[i]))[j];
+            }
+            free((float *) js_get_return_val(jobs[i]));
+        }
     }
 
     /* update the weights */

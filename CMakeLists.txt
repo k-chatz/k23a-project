@@ -83,6 +83,9 @@ add_executable(k23a_project_job_scheduler_tests
 add_executable(k23a_project_logreg_tests
         src/logreg.c
         tests/logreg_tests.c
+        src/job_scheduler.c
+        src/queue.c
+        src/semaphore.c
         )
 
 #tokenizer tests
