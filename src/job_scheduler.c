@@ -16,6 +16,9 @@
 #define LOCK_ pthread_mutex_lock(&js->mutex)
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex)
 #define WAIT_ pthread_cond_wait(&js->condition_wake_up, &js->mutex)
+#define WAIT_SUBMITTER_ pthread_cond_wait(&js->condition_wake_up_submitter, &js->mutex_submitter)
+#define LOCK_SUBMITTER_ pthread_mutex_lock(&js->mutex_submitter)
+#define UNLOCK_SUBMITTER_ pthread_mutex_unlock(&js->mutex_submitter)
 #define BROADCAST_WAKEUP_ pthread_cond_broadcast(&js->condition_wake_up)
 #define SIGNAL_WAKEUP_ pthread_cond_signal(&js->condition_wake_up)
 #define RUN_ROUTINE_ job->return_val = (job->start_routine)(job)
@@ -52,8 +55,11 @@ struct job_scheduler {
     Queue running_queue;
     bool running;
     bool exit;
+    int ready;
     pthread_cond_t condition_wake_up;
+    pthread_cond_t condition_wake_up_submitter;
     pthread_mutex_t mutex;
+    pthread_mutex_t mutex_submitter;
     sem_t_ *sem_barrier;
 };
 
@@ -64,8 +70,14 @@ void *thread(JobScheduler js) {
     while (true) {
         LOCK_;
         while ((!js->running && !js->exit) || (!queue_size(js->waiting_queue) && !js->exit)) {
+            js->ready++;
+            if (js->ready == js->execution_threads) {
+                js->running = false;
+            }
+            pthread_cond_signal(&js->condition_wake_up_submitter);
             NOTIFY_BARRIER_;
             WAIT_;
+            js->ready--;
         }
         if (js->exit && !queue_size(js->waiting_queue)) {
             printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
@@ -73,8 +85,7 @@ void *thread(JobScheduler js) {
             EXIT_;
         }
         Job job = NULL;
-        queue_dequeue(js->waiting_queue, &job, false);
-        if (job != NULL) {
+        if (queue_dequeue(js->waiting_queue, &job, false)) {
             jobs_count++;
             queue_enqueue(js->running_queue, &job, true);
             queue_unblock_enqueue(js->waiting_queue);
@@ -109,6 +120,7 @@ Job js_create_job(void *(*start_routine)(void *), ...) {
     assert(job != NULL);
     job->job_id = ++job_id;
     job->start_routine = start_routine;
+    job->args = NULL;
     va_start(vargs, start_routine);
     FOREACH_ARG(arg, vargs) {
         int size_t_sz = va_arg(vargs, size_t);
@@ -162,13 +174,16 @@ void js_create(JobScheduler *js, int execution_threads) {
     (*js)->execution_threads = execution_threads;
     queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
     queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
+    (*js)->ready = 0;
     (*js)->running = false;
     (*js)->exit = false;
     (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     /* sync */
     (*js)->sem_barrier = sem_init_(-execution_threads + 1);
     pthread_mutex_init(&(*js)->mutex, NULL);
+    pthread_mutex_init(&(*js)->mutex_submitter, NULL);
     pthread_cond_init(&(*js)->condition_wake_up, NULL);
+    pthread_cond_init(&(*js)->condition_wake_up_submitter, NULL);
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
@@ -177,8 +192,17 @@ void js_create(JobScheduler *js, int execution_threads) {
 
 bool js_submit_job(JobScheduler js, Job job) {
     if (js->running) {
+        LOCK_SUBMITTER_;
+        LOCK_;
+        while (!js->ready) {
+            UNLOCK_;
+            WAIT_SUBMITTER_;
+            LOCK_;
+        }
         queue_enqueue(js->waiting_queue, &job, true);
+        UNLOCK_;
         SIGNAL_WAKEUP_;
+        UNLOCK_SUBMITTER_;
     } else {
         if (queue_is_full(js->waiting_queue, true)) {
             return false;
@@ -189,8 +213,13 @@ bool js_submit_job(JobScheduler js, Job job) {
 }
 
 bool js_execute_all_jobs(JobScheduler js) {
-    js->running = true;
-    return !BROADCAST_WAKEUP_;
+    if (js->running) {
+        return false;
+    } else if (js->ready == js->execution_threads) {
+        js->running = true;
+        return !BROADCAST_WAKEUP_;
+    }
+    return false;
 }
 
 bool js_wait_job(JobScheduler js, Job job) {
@@ -204,13 +233,18 @@ bool js_wait_job(JobScheduler js, Job job) {
 
 void js_wait_all_jobs(JobScheduler js) {
     Job job = NULL;
-    while (true) {
-        job = NULL;
-        queue_dequeue(js->running_queue, &job, false);
-        if (job == NULL) {
-            break;
+    if (js->running) {
+        while (queue_size(js->waiting_queue) || queue_size(js->running_queue)) {
+            job = NULL;
+            queue_dequeue(js->running_queue, &job, false);
+            if (job == NULL && !queue_size(js->waiting_queue)) {
+                break;
+            }
+            else if (job == NULL){
+                continue;
+            }
+            js_wait_job(js, job);
         }
-        js_wait_job(js, job);
     }
 }
 
