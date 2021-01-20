@@ -25,7 +25,7 @@ objs/%.o: %.c
 #                                                #
 ##################################################
 
-project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o semaphore.o)
+project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o job_scheduler.o queue.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
@@ -42,7 +42,7 @@ user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_
 tests: $(addprefix tests-bin/, hash_tests spec_to_specs_tests lists_tests json_parser_tests general_tests ml_tests queue_tests job_scheduler_tests logreg_tests tokenizer_tests hset_tests)
 	for test in tests-bin/*; do if [ -x $$test ]; then printf "${yellow}\nRunning $$test...${color_rst}\n"; ./$$test -E || exit 1; fi done
 
-tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o )
+tests-bin/logreg_tests: $(addprefix objs/, logreg.o logreg_tests.o job_scheduler.o queue.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 tests-bin/hash_tests: $(addprefix objs/, hash_tests.o hash.o json_parser.o lists.o tokenizer.o)

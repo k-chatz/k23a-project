@@ -108,6 +108,9 @@ add_executable(k23a_project
         src/ml.c
         src/tokenizer.c
         src/logreg.c
+        src/job_scheduler.c
+        src/queue.c
+        src/semaphore.c
         )
 
 #user
@@ -121,6 +124,9 @@ add_executable(k23a_project_user
         src/tokenizer.c
         src/logreg.c
         src/unique_rand.c
+        src/job_scheduler.c
+        src/queue.c
+        src/semaphore.c
         )
 
 target_link_libraries(k23a_project_general_tests m)
