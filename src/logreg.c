@@ -99,23 +99,20 @@ void *loop(Job job) {
     LogReg *reg;
     float *Xs = NULL, *Ps = NULL, *Deltas = NULL;
     int i = 0, *Ys = NULL;
-    js_get_args(job, &reg, &Deltas, &Xs, &Ys, &Ps, &i, NULL);
+    js_get_args(job, &reg, &Xs, &Ys, &Ps, &i, NULL);
+
     //printf(CYAN"Thread [%ld] job %lld i=%d\n"RESET, pthread_self(), js_get_job_id(job), i);
-    //float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
-    //memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
+
+    Deltas = malloc((reg->weights_len + 1) * sizeof(float));
+    memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
+
     int j;
     for (j = 0; j < reg->weights_len; j++) {
         /* j is inner loop for cache efficiency */
-
-        LOCK_;
         Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]) * Xs[i * reg->weights_len + j];
-        UNLOCK_;
     }
     /* Delta for the bias */
-
-    LOCK_;
     Deltas[j] += reg->learning_rate * (Ps[i] - Ys[i]);
-    UNLOCK_;
 
     //printf(CYAN"Thread [%ld] job %lld calculated deltas\n"RESET, pthread_self(), js_get_job_id(job));
     return Deltas;
@@ -155,15 +152,28 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     }
      */
 
-    Job job = NULL;
+    Job jobs[batch_sz];
     for (int i = 0; i < batch_sz; i++) {
-        job = js_create_job((void *(*)(void *)) loop, JOB_ARG(reg), JOB_ARG(Deltas), JOB_ARG(Xs), JOB_ARG(Ys),
+        jobs[i] = js_create_job((void *(*)(void *)) loop, JOB_ARG(reg), JOB_ARG(Xs), JOB_ARG(Ys),
                             JOB_ARG(Ps), JOB_ARG(i), NULL);
-        js_submit_job(js, job);
+        js_submit_job(js, jobs[i]);
     }
 
     js_execute_all_jobs(js);
+
+    printf(RED"WAITING...\n"RESET);
     js_wait_all_jobs(js);
+    printf(WARNING"WAITING DONE!\n"RESET);
+
+    float *d = NULL;
+    for (int i = 0; i < batch_sz; i++) {
+        //d = (float*)js_get_return_val(jobs[i]);
+        for (int j = 0; j < reg->weights_len + 1; j++){
+
+            Deltas[j] += ((float*)js_get_return_val(jobs[i]))[j];
+        }
+        free((float*)js_get_return_val(jobs[i]));
+    }
 
     /* update the weights */
     float max_delta = .0;

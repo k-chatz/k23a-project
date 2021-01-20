@@ -91,6 +91,7 @@ void *thread(JobScheduler js) {
             queue_unblock_enqueue(js->waiting_queue);
             UNLOCK_;
             RUN_ROUTINE_;
+            job->complete = true;
             NOTIFY_JOB_COMPLETE_;
             continue;
         }
@@ -151,6 +152,7 @@ void js_get_args(Job job, ...) {
 }
 
 void *js_get_return_val(Job job) {
+    js_wait_job(job);
     return job->return_val;
 }
 
@@ -222,7 +224,7 @@ bool js_execute_all_jobs(JobScheduler js) {
     return false;
 }
 
-bool js_wait_job(JobScheduler js, Job job) {
+bool js_wait_job(Job job) {
     if (job->complete) {
         return true;
     }
@@ -243,7 +245,7 @@ void js_wait_all_jobs(JobScheduler js) {
             else if (job == NULL){
                 continue;
             }
-            js_wait_job(js, job);
+            js_wait_job(job);
         }
     }
 }

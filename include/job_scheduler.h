@@ -32,7 +32,7 @@ bool js_submit_job(JobScheduler js, Job job);
 
 bool js_execute_all_jobs(JobScheduler js);
 
-bool js_wait_job(JobScheduler js, Job job);
+bool js_wait_job(Job job);
 
 void js_wait_all_jobs(JobScheduler js);
 
