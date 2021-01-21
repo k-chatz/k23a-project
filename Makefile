@@ -12,7 +12,7 @@ yellow=\033[0;33m       # Yellow
 
 .PHONY: tests all clean githooks docs phony
 
-all: tests project user
+all: tests project 
 
 objs/%.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
@@ -28,7 +28,7 @@ objs/%.o: %.c
 project: $(addprefix objs/, main.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o job_scheduler.o queue.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
-user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o)
+user: $(addprefix objs/, user.o lists.o spec_to_specs.o hash.o tokenizer.o json_parser.o ml.o logreg.o unique_rand.o hset.o job_scheduler.o queue.o semaphore.o)
 	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 ##################################################
