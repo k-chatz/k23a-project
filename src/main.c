@@ -201,14 +201,16 @@ dictp user_json_dict(char *path) {
 }
 
 void
-prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
+prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             dictp json_dict, Pair **pairs, float *result_vector, int *y, bool tfidf, bool is_user) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
 
     for (int i = start; i < end; i++) {
-
+        float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+        bow_vector_1 = malloc (ml_bow_sz(ml) * sizeof(float));
+        bow_vector_2 = malloc (ml_bow_sz(ml) * sizeof(float));
         x = random ? ur_get(ur) : i;
         json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
@@ -225,13 +227,11 @@ prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool r
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
-
+        free(bow_vector_1);
+        free(bow_vector_2);
         if (is_user == 0) {
-            spec1 = sts_get(X, (*pairs)[x].spec1);
-            spec2 = sts_get(X, (*pairs)[x].spec2);
-            y[i - start] = (findRoot(X, spec1) == findRoot(X, spec2));
+            y[i - start] = (*pairs)[x].relation;
         }
-
     }
 }
 
@@ -493,13 +493,13 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         printf("epoch: %d\n", e);
         for (int j = 0; j < train_sz / batch_size; j++) {
 
-            prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
+            prepare_set(0, batch_size, true, ur_mini_batch, X, ml, json_dict,
                         &train_set, result_vec, y, mode, 0);
 
             lr_train(model, result_vec, y, batch_size);
         }
 
-        prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
+        prepare_set(0, test_sz, false, NULL, X, ml, json_dict,
                     &test_set, result_vec_test, y_test, mode, 0);
 
         y_pred = lr_predict(model, result_vec_test, test_sz);
@@ -627,7 +627,7 @@ int main(int argc, char *argv[]) {
 
     y_val = malloc(val_sz * sizeof(int));
 
-    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, NULL, ml, json_dict, &val_set,
+    prepare_set(0, val_sz, false, NULL, NULL, ml, json_dict, &val_set,
                 result_vec_val, y_val, tfidf, 1);
 
     /* Predict validation set */
