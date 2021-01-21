@@ -10,7 +10,7 @@ typedef struct job_scheduler *JobScheduler;
 
 typedef struct job *Job;
 
-static int job_id = 0;
+static long long int job_id = 0;
 
 Job js_create_job(void *(*start_routine)(void *), ...);
 
@@ -35,5 +35,7 @@ bool js_execute_all_jobs(JobScheduler js);
 bool js_wait_job(Job job);
 
 void js_wait_all_jobs(JobScheduler js);
+
+void js_destroy(JobScheduler *js);
 
 #endif

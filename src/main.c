@@ -14,11 +14,11 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 1
+#define epochs 10
 #define batch_size 2000
 #define learning_rate 0.0001
 
-pthread_mutex_t wc_lock; 
+pthread_mutex_t wc_lock;
 
 typedef struct options {
     char *dataset_dir;
@@ -203,76 +203,58 @@ dictp user_json_dict(char *path) {
     return json_dict;
 }
 
-void *fill_vector(Job job){
-    URand ur; 
+float *vec_from_json(ML ml, dictp json_dict, char *spec, bool tfidf) {
+    int wc = 0;
+    float *vector = malloc(ml_bow_sz(ml) * sizeof(float));
+//    memset(vector, 0, ml_bow_sz(ml) * sizeof(float));
+    JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, spec);
+    ml_bow_json_vector(ml, *json, vector, &wc, false);
+    if (tfidf) {
+        ml_tfidf(ml, vector, wc);
+    }
+
+    return vector;
+}
+
+#define LOCK_ pthread_mutex_lock(&mtx)
+#define UNLOCK_ pthread_mutex_unlock(&mtx)
+
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+
+void *fill_vector(Job job) {
+    URand ur;
     ML ml;
-    dictp json_dict; 
-    Pair **pairs; 
-    float *result_vector; 
+    dictp json_dict;
+    Pair **pairs;
+    float *result_vector;
     int *y, wc = 0, x = 0, i = 0, start = 0;
     bool tfidf, is_user, random;
-    
-   
-    js_get_args(
-        job, 
-        &ur, 
-        &ml, 
-        &json_dict, 
-        &pairs, 
-        &result_vector, 
-        &y,
-        &x,
-        &i,
-        &wc,
-        &start,
-        NULL
-    );
+
+    js_get_args(job, &ur, &ml, &json_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
 
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    JSON_ENTITY **json1 = NULL, **json2 = NULL;
-    
-
-    bow_vector_1 = malloc (ml_bow_sz(ml) * sizeof(float));
-    bow_vector_2 = malloc (ml_bow_sz(ml) * sizeof(float));
-    json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-    
-    /////////////
-    pthread_mutex_lock(&wc_lock); 
-    ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
-    if (tfidf) {
-        ml_tfidf(ml, bow_vector_1, wc);
-    }
-    /////////////
-    pthread_mutex_unlock(&wc_lock);
-
-
-
-    json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-  
-
-    /////////////
-    pthread_mutex_lock(&wc_lock);
-    ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
-    if (tfidf) {
-        ml_tfidf(ml, bow_vector_2, wc);
-    }
-    /////////////
-    pthread_mutex_unlock(&wc_lock);
-
-
+    LOCK_;
+    bow_vector_1 = vec_from_json(ml, json_dict, (*pairs)[x].spec1, tfidf);
+    bow_vector_2 = vec_from_json(ml, json_dict, (*pairs)[x].spec2, tfidf);
+    UNLOCK_;
+    //    printf("left: %s\n", (*pairs)[x].spec1);
+//    printf("right: %s\n", (*pairs)[x].spec2);
 
     for (int c = 0; c < ml_bow_sz(ml); c++) {
+        LOCK_;
         result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+        UNLOCK_;
     }
     free(bow_vector_1);
     free(bow_vector_2);
     if (is_user == 0) {
+        LOCK_;
         y[i - start] = (*pairs)[x].relation;
+        UNLOCK_;
     }
-   
+
     return NULL;
 }
-
 
 void
 prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
@@ -280,65 +262,35 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
-
-
-        if(!js){
-            Job *jobs = malloc((end-start) * sizeof(Job));
-
-            for (int i = start; i < end; i++) {
-                x = random ? ur_get(ur) : i;
-        
-                jobs[i] = js_create_job((void *(*)(void *))fill_vector,
-            
-                    JOB_ARG(ur), 
-                    JOB_ARG(ml), 
-                    JOB_ARG(json_dict), 
-                    JOB_ARG(pairs), 
-                    JOB_ARG(result_vector), 
-                    JOB_ARG(y),
-                    JOB_ARG(x),
-                    JOB_ARG(i),
-                    JOB_ARG(wc),
-                    JOB_ARG(start),
-                    NULL
-                );
-                js_submit_job(js,jobs[i]);
-            }
-
-            js_execute_all_jobs(js);
-            js_wait_all_jobs(js);
+    if (js) {
+        Job *jobs = malloc((end - start) * sizeof(Job));
+        for (int i = start; i < end; i++) {
+            x = random ? ur_get(ur) : i;
+            jobs[i] = js_create_job((void *(*)(void *)) fill_vector, JOB_ARG(ur), JOB_ARG(ml), JOB_ARG(json_dict),
+                                    JOB_ARG(pairs), JOB_ARG(result_vector), JOB_ARG(y), JOB_ARG(x), JOB_ARG(i),
+                                    JOB_ARG(start), NULL);
+            js_submit_job(js, jobs[i]);
         }
-        else{
-            for (int i = start; i < end; i++) {
-                float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-                x = random ? ur_get(ur) : i;
-            
-                bow_vector_1 = malloc (ml_bow_sz(ml) * sizeof(float));
-                bow_vector_2 = malloc (ml_bow_sz(ml) * sizeof(float));
-                json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-                ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
-                if (tfidf) {
-                    ml_tfidf(ml, bow_vector_1, wc);
-                }
-
-                json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-                ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
-                if (tfidf) {
-                    ml_tfidf(ml, bow_vector_2, wc);
-                }
-
-                for (int c = 0; c < ml_bow_sz(ml); c++) {
-                    result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
-                }
-                free(bow_vector_1);
-                free(bow_vector_2);
-                if (is_user == 0) {
-                    y[i - start] = (*pairs)[x].relation;
-                }
+        js_execute_all_jobs(js);
+        js_wait_all_jobs(js);
+    } else {
+        for (int i = start; i < end; i++) {
+            float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+            x = random ? ur_get(ur) : i;
+            bow_vector_1 = vec_from_json(ml, json_dict, (*pairs)[x].spec1, tfidf);
+            bow_vector_2 = vec_from_json(ml, json_dict, (*pairs)[x].spec2, tfidf);
+            for (int c = 0; c < ml_bow_sz(ml); c++) {
+                result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+            }
+            free(bow_vector_1);
+            free(bow_vector_2);
+            if (is_user == 0) {
+                y[i - start] = (*pairs)[x].relation;
             }
         }
+    }
 
-    
+
 }
 
 Pair *shuffle_dataset(Pair *pairs, int dataset_size) {
@@ -672,7 +624,7 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 16);
+    js_create(&js, 64);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);

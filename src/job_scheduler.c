@@ -241,8 +241,7 @@ void js_wait_all_jobs(JobScheduler js) {
             queue_dequeue(js->running_queue, &job, false);
             if (job == NULL && !queue_size(js->waiting_queue)) {
                 break;
-            }
-            else if (job == NULL){
+            } else if (job == NULL) {
                 continue;
             }
             js_wait_job(job);

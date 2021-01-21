@@ -1,5 +1,4 @@
 #include <pthread.h>
-#include <limits.h>
 
 #include "../include/acutest.h"
 #include "../include/job_scheduler.h"
@@ -113,40 +112,25 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-
-    int test = 364;
     Job jobs[20][10];
-
     for (int i = 0; i < 2; ++i) {
-        //printf(RED"start submitting jobs...\n"RESET);
+        printf(RED"start submitting jobs...\n"RESET);
         for (int j = 0; j < 10; j++) {
-
             int computations = 1000000 / (j + 1);
-
             jobs[i][j] = js_create_job((void *(*)(void *)) smith_numbers, JOB_ARG(computations), NULL);
             TEST_CHECK(js_submit_job(js, jobs[i][j]));
         }
-        //printf(UNDERLINE BOLD"sum: %f\n"RESET, sum);
-
         js_execute_all_jobs(js);
         js_wait_all_jobs(js);
-        //printf(WARNING"waiting jobs done!\n"RESET);
+        printf(WARNING"waiting jobs done!\n"RESET);
     }
     double return_val = 0;
     for (int i = 0; i < 2; ++i) {
-
         for (int j = 0; j < 10; j++) {
             return_val = *(double*)js_get_return_val(jobs[i][j]);
             printf("return_val = [%4.2f%%]\n", return_val);
-
-
         }
     }
-
-
-
-
-//    sleep(1);
 }
 
 void execute_all_jobs(void) {
