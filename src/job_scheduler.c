@@ -176,11 +176,13 @@ void js_create(JobScheduler *js, int execution_threads) {
     *js = malloc(sizeof(struct job_scheduler));
     assert(*js != NULL);
     (*js)->execution_threads = execution_threads;
-    queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
-    queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
+    (*js)->waiting_queue = NULL;
+    (*js)->running_queue = NULL;
     (*js)->ready = 0;
     (*js)->running = false;
     (*js)->exit = false;
+    queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
+    queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
     (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     /* sync */
     (*js)->sem_barrier = sem_init_(-execution_threads + 1);
