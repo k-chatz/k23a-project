@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 100
+#define epochs 170
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -227,7 +227,7 @@ void *fill_vector(Job job) {
     Pair **pairs = NULL;
     float *result_vector = NULL;
     int *y, wc = 0, x = 0, i = 0, start = 0;
-    bool tfidf, is_user = 0, random;
+    bool tfidf, is_user, random;
 
     js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
 
@@ -236,6 +236,12 @@ void *fill_vector(Job job) {
     bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
     bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
 
+    //ml_print_vector(ml, bow_vector_1);
+    //ml_print_vector(ml, bow_vector_2);
+
+
+    //    printf("left: %s\n", (*pairs)[x].spec1);
+//    printf("right: %s\n", (*pairs)[x].spec2);
 
     for (int c = 0; c < ml_bow_sz(ml); c++) {
 
@@ -243,11 +249,11 @@ void *fill_vector(Job job) {
 
     }
 
-    // if (is_user == 0) {
+    if (is_user == 0) {
 
         y[i - start] = (*pairs)[x].relation;
 
-    // }
+    }
 
     return NULL;
 }
@@ -644,7 +650,7 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 64);
+    js_create(&js, 16);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -709,7 +715,7 @@ int main(int argc, char *argv[]) {
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        if ((val_set[i].relation == 0 && y_pred[i] < 0.5) || (val_set[i].relation == 1 && y_pred[i] >= 0.5)) {
+        if (val_set[i].relation) {
             printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
                    val_set[i].relation, y_pred[i]);
         } else {
@@ -734,7 +740,6 @@ int main(int argc, char *argv[]) {
     ml_destroy(&ml);
 
     /* Destroy json dict */
-    dict_free(vectors_dict, NULL);
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
     set_free(train_json_files_set);
     lr_free(model);

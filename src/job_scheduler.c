@@ -87,7 +87,7 @@ void *thread(JobScheduler js) {
         Job job = NULL;
         if (queue_dequeue(js->waiting_queue, &job, false)) {
             jobs_count++;
-            queue_enqueue(js->running_queue, &job, true);
+            queue_enqueue(js->running_queue, &job, false);
             queue_unblock_enqueue(js->waiting_queue);
             UNLOCK_;
             RUN_ROUTINE_;
@@ -167,8 +167,8 @@ void js_destroy_job(Job *job) {
         free((*job)->args[i].arg);
     }
     free((*job)->args);
-//    free(*job);
-//    *job = NULL;
+    free(*job);
+    *job = NULL;
 }
 
 void js_create(JobScheduler *js, int execution_threads) {
@@ -248,7 +248,9 @@ void js_wait_all_jobs(JobScheduler js, bool destroy_jobs) {
     if (js->running) {
         while (queue_size(js->waiting_queue) || queue_size(js->running_queue)) {
             job = NULL;
+            LOCK_;
             queue_dequeue(js->running_queue, &job, false);
+            UNLOCK_;
             if (job == NULL && !queue_size(js->waiting_queue)) {
                 break;
             } else if (job == NULL) {
