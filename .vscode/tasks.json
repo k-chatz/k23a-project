@@ -30,6 +30,15 @@
             }
         }, 
         {
+            "label": "make project",
+            "type": "shell",
+            "command": "make project",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        }, 
+        {
             "label": "Build Test",
             "type": "shell",
             "command": "gcc tests/logreg_tests.c src/logreg.c -o logreg_tests"
