@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 170
+#define epochs 100
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -227,7 +227,7 @@ void *fill_vector(Job job) {
     Pair **pairs = NULL;
     float *result_vector = NULL;
     int *y, wc = 0, x = 0, i = 0, start = 0;
-    bool tfidf, is_user, random;
+    bool tfidf, is_user = 1, random;
 
     js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
 
@@ -236,12 +236,6 @@ void *fill_vector(Job job) {
     bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
     bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
 
-    //ml_print_vector(ml, bow_vector_1);
-    //ml_print_vector(ml, bow_vector_2);
-
-
-    //    printf("left: %s\n", (*pairs)[x].spec1);
-//    printf("right: %s\n", (*pairs)[x].spec2);
 
     for (int c = 0; c < ml_bow_sz(ml); c++) {
 
@@ -264,7 +258,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
-    if (js) {
+    if (!js) {
         Job *jobs = malloc((end - start) * sizeof(Job));
         for (int i = start; i < end; i++) {
             x = random ? ur_get(ur) : i;
@@ -715,7 +709,7 @@ int main(int argc, char *argv[]) {
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        if (val_set[i].relation) {
+        if ((val_set[i].relation == 0 && y_pred[i] < 0.5) || (val_set[i].relation == 1 && y_pred[i] >= 0.5)) {
             printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
                    val_set[i].relation, y_pred[i]);
         } else {
@@ -740,6 +734,7 @@ int main(int argc, char *argv[]) {
     ml_destroy(&ml);
 
     /* Destroy json dict */
+    dict_free(vectors_dict, free);
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
     set_free(train_json_files_set);
     lr_free(model);
