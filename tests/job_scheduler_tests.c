@@ -87,8 +87,8 @@ void *smith_numbers(Job job) {
     sum += *return_val;
     UNLOCK_;
 
-//    printf(CYAN"Thread [%ld] job %lld, Computations: %d, Found %4.2f%% sum:%f\n"RESET, pthread_self(),
-//           js_get_job_id(job), computations, *return_val, sum);
+    printf(CYAN"Thread [%ld] job %lld, Computations: %d, Found %4.2f%% sum:%f\n"RESET, pthread_self(),
+           js_get_job_id(job), computations, *return_val, sum);
     return return_val;
 }
 

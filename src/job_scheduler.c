@@ -36,7 +36,7 @@ typedef struct argument {
 } Argument;
 
 struct job {
-    //long long int job_id;
+    long long int job_id;
 
     void *(*start_routine)(void *);
 
@@ -116,10 +116,11 @@ bool js_join_threads(JobScheduler js) {
 /***Public functions***/
 
 void js_create_job(Job *job, void *(*start_routine)(void *), ...) {
+    static long long int job_id = 0;
     va_list vargs;
     *job = malloc(sizeof(struct job));
     assert(job != NULL);
-    //(*job)->job_id = ++job_id;
+    (*job)->job_id = ++job_id;
     (*job)->start_routine = start_routine;
     (*job)->args = NULL;
     (*job)->args_count = 0;
@@ -158,7 +159,7 @@ void *js_get_return_val(Job job) {
 }
 
 long long int js_get_job_id(Job job) {
-    //return job->job_id;
+    return job->job_id;
 }
 
 void js_destroy_job(Job *job) {
@@ -175,11 +176,13 @@ void js_create(JobScheduler *js, int execution_threads) {
     *js = malloc(sizeof(struct job_scheduler));
     assert(*js != NULL);
     (*js)->execution_threads = execution_threads;
-    queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
-    queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
+    (*js)->waiting_queue = NULL;
+    (*js)->running_queue = NULL;
     (*js)->ready = 0;
     (*js)->running = false;
     (*js)->exit = false;
+    queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
+    queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
     (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     /* sync */
     (*js)->sem_barrier = sem_init_(-execution_threads + 1);

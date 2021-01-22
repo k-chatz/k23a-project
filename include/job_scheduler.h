@@ -10,8 +10,6 @@ typedef struct job_scheduler *JobScheduler;
 
 typedef struct job *Job;
 
-static long long int job_id = 0;
-
 void js_create_job(Job *job, void *(*start_routine)(void *), ...);
 
 void js_get_arg(Job job, void *arg, int arg_index);
