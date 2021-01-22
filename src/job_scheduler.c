@@ -36,12 +36,12 @@ typedef struct argument {
 } Argument;
 
 struct job {
-    long long int job_id;
+    //long long int job_id;
 
     void *(*start_routine)(void *);
 
-    Argument *args;
     int args_count;
+    Argument *args;
     void *return_val;
     bool complete;
     /* sync */
@@ -115,27 +115,28 @@ bool js_join_threads(JobScheduler js) {
 
 /***Public functions***/
 
-Job js_create_job(void *(*start_routine)(void *), ...) {
+void js_create_job(Job *job, void *(*start_routine)(void *), ...) {
     va_list vargs;
-    Job job = malloc(sizeof(struct job));
+    *job = malloc(sizeof(struct job));
     assert(job != NULL);
-    job->job_id = ++job_id;
-    job->start_routine = start_routine;
-    job->args = NULL;
+    //(*job)->job_id = ++job_id;
+    (*job)->start_routine = start_routine;
+    (*job)->args = NULL;
+    (*job)->args_count = 0;
     va_start(vargs, start_routine);
     FOREACH_ARG(arg, vargs) {
-        int size_t_sz = va_arg(vargs, size_t);
-        job->args = realloc(job->args, (i + 1) * sizeof(Argument));
-        job->args[i].arg = malloc(size_t_sz);
-        memcpy(job->args[i].arg, arg, size_t_sz);
-        job->args[i].type_sz = size_t_sz;
-        job->args_count++;
+        size_t type_sz = va_arg(vargs, size_t);
+        (*job)->args = realloc((*job)->args, (i + 1) * sizeof(Argument));
+        (*job)->args[i].arg = malloc(type_sz);
+        assert((*job)->args[i].arg != NULL);
+        memcpy((*job)->args[i].arg, arg, type_sz);
+        (*job)->args[i].type_sz = type_sz;
+        (*job)->args_count++;
     };
     va_end(vargs);
-    job->return_val = NULL;
-    job->complete = false;
-    sem_init(&job->sem_complete, 0, 0);
-    return job;
+    (*job)->return_val = NULL;
+    (*job)->complete = false;
+    sem_init(&(*job)->sem_complete, 0, 0);
 }
 
 void js_get_arg(Job job, void *arg, int arg_index) {
@@ -152,21 +153,21 @@ void js_get_args(Job job, ...) {
 }
 
 void *js_get_return_val(Job job) {
-    js_wait_job(job);
+    js_wait_job(job, false);
     return job->return_val;
 }
 
 long long int js_get_job_id(Job job) {
-    return job->job_id;
+    //return job->job_id;
 }
 
 void js_destroy_job(Job *job) {
     for (int i = 0; i < (*job)->args_count; ++i) {
         free((*job)->args[i].arg);
-        free((*job)->args);
     }
-    free((*job));
-    *job = NULL;
+    free((*job)->args);
+//    free(*job);
+//    *job = NULL;
 }
 
 void js_create(JobScheduler *js, int execution_threads) {
@@ -224,16 +225,22 @@ bool js_execute_all_jobs(JobScheduler js) {
     return false;
 }
 
-bool js_wait_job(Job job) {
+bool js_wait_job(Job job, bool destroy) {
     if (job->complete) {
+        if (destroy) {
+            js_destroy_job(&job);
+        }
         return true;
     }
     sem_wait(&job->sem_complete);
     job->complete = true;
+    if (destroy) {
+        js_destroy_job(&job);
+    }
     return true;
 }
 
-void js_wait_all_jobs(JobScheduler js) {
+void js_wait_all_jobs(JobScheduler js, bool destroy_jobs) {
     Job job = NULL;
     if (js->running) {
         while (queue_size(js->waiting_queue) || queue_size(js->running_queue)) {
@@ -244,7 +251,7 @@ void js_wait_all_jobs(JobScheduler js) {
             } else if (job == NULL) {
                 continue;
             }
-            js_wait_job(job);
+            js_wait_job(job, destroy_jobs);
         }
     }
 }
