@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "../include/colours.h"
 #include "../include/hash.h"
 #include "../include/json_parser.h"
 #include "../include/ml.h"
@@ -46,7 +47,7 @@ dictp ml_stop_words(ML ml, const char *sw_file) {
     /* clang-format off */
     /* @formatter:off */
     dictp sw = dict_config(
-            dict_new2(32, 0),
+            dict_new2(256, 0),
             DICT_CONF_HASH_FUNC, djb2_str,
             DICT_CONF_KEY_CPY, (ht_key_cpy_func) strncpy,
             DICT_CONF_CMP, (ht_cmp_func) strncmp,
@@ -155,6 +156,10 @@ ulong ml_bow_sz(ML ml) {
     return ml->vocabulary_bow_dict->htab->buf_load;
 }
 
+dictp ml_get_stopwords(ML ml) {
+    return ml->stopwords;
+}
+
 void ml_cleanup_sentence(ML ml, char *input) {
     ml_rm_punct_and_upper_case(ml, input);
     ml_rm_stop_words(ml, input);
@@ -193,17 +198,16 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, 
         if (cur_ent->type == JSON_STRING) {
             char *sentence = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
-            sentence = strdup(sentence);
-            ml_cleanup_sentence(ml, sentence);
-            for (token = strtok_r(sentence, " ", &rest); token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
-                if (w == NULL) {
-                    continue;
-                }
-                bow_vector[w->position] += 1.0;
-                (*wc)++;
+            tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml->stopwords);
+            while ((token = tokenizer_next(tok)) != NULL) {
+                    Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
+                    if (w == NULL) {
+                        continue;
+                    }
+                    bow_vector[w->position] += 1.0;
+                    (*wc)++;
             }
-            free(sentence);
+            tokenizer_free(tok);
         }
     }
     return bow_vector;
@@ -316,7 +320,7 @@ void ml_print_vector(ML ml, float *vector) {
     printf("[");
     for (int i = 0; i < ml_bow_sz(ml); i++) {
         if (vector[i]) {
-            printf("%.3f ", vector[i]);
+            printf(WARNING"%.3f "RESET, vector[i]);
         } else {
             printf("----- ");
         }
