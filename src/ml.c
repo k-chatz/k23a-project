@@ -237,7 +237,7 @@ void ml_idf_remove(ML ml) {
 
 float ml_f1_score(float *y, float *y_pred, int y_size) {
     float true_pos = 0.0, true_neg = 0.0, false_pos = 0.0, false_neg = 0.0;
-    float precision, recall;
+    float precision = 0, recall = 0;
 
     float *y_pred1 = malloc(y_size * sizeof(float));
     float *y1 = malloc(y_size * sizeof(float));

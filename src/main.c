@@ -227,7 +227,7 @@ void *fill_vector(Job job) {
     Pair **pairs = NULL;
     float *result_vector = NULL;
     int *y, wc = 0, x = 0, i = 0, start = 0;
-    bool tfidf, is_user = 1, random;
+    bool tfidf, is_user = 0, random;
 
     js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
 
@@ -243,11 +243,11 @@ void *fill_vector(Job job) {
 
     }
 
-    if (is_user == 0) {
+    // if (is_user == 0) {
 
         y[i - start] = (*pairs)[x].relation;
 
-    }
+    // }
 
     return NULL;
 }
@@ -258,7 +258,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
-    if (!js) {
+    if (js) {
         Job *jobs = malloc((end - start) * sizeof(Job));
         for (int i = start; i < end; i++) {
             x = random ? ur_get(ur) : i;
@@ -734,7 +734,7 @@ int main(int argc, char *argv[]) {
     ml_destroy(&ml);
 
     /* Destroy json dict */
-    dict_free(vectors_dict, free);
+    dict_free(vectors_dict, NULL);
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
     set_free(train_json_files_set);
     lr_free(model);
