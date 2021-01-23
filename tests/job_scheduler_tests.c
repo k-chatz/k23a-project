@@ -127,7 +127,7 @@ void submit_jobs(void) {
     double return_val = 0;
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 10; j++) {
-            return_val = *(double *) js_get_return_val(jobs[i][j]);
+            return_val = *(double *) js_get_return_val(js, jobs[i][j]);
             printf("return_val = [%4.2f%%]\n", return_val);
             js_destroy_job(&jobs[i][j]);
         }

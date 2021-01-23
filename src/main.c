@@ -248,13 +248,7 @@ void *fill_vector(Job job) {
         result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
 
     }
-
-    if (is_user == 0) {
-
-        y[i - start] = (*pairs)[x].relation;
-
-    }
-
+    y[i - start] = (*pairs)[x].relation;
     return NULL;
 }
 
@@ -290,9 +284,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             for (int c = 0; c < ml_bow_sz(ml); c++) {
                 result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
             }
-            if (is_user == 0) {
                 y[i - start] = (*pairs)[x].relation;
-            }
         }
     }
 
@@ -690,7 +682,7 @@ int main(int argc, char *argv[]) {
     if (tfidf) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
-
+    /* Vectorize JSONs*/
     dictp vectors_dict = init_vectors_dict(json_dict, ml, tfidf);
 
 
@@ -715,7 +707,7 @@ int main(int argc, char *argv[]) {
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        if (val_set[i].relation) {
+        if ((val_set[i].relation == 0 && y_pred[i] < 0.5) || (val_set[i].relation == 1 && y_pred[i] >= 0.5)) {
             printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
                    val_set[i].relation, y_pred[i]);
         } else {

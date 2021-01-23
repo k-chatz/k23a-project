@@ -168,17 +168,13 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
 
         for (int i = 0; i < batch_sz; i++) {
             for (int j = 0; j < reg->weights_len + 1; j++) {
-                Deltas[j] += ((float *) js_get_return_val(jobs[i]))[j];
+                Deltas[j] += ((float *) js_get_return_val(js, jobs[i]))[j];
             }
-            free((float *) js_get_return_val(jobs[i]));
+            free((float *) js_get_return_val(js, jobs[i]));
             //js_destroy_job(&jobs[i]);
         }
-
         free(jobs);
-
-
     }
-
     /* update the weights */
     float max_delta = .0;
     int j;
@@ -188,9 +184,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
 
         reg->weights[j] -= Deltas[j];
     }
-
     reg->bias -= Deltas[j];
-
     free(Ps);
     free(Deltas);
     return max_delta;

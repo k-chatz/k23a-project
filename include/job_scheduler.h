@@ -18,7 +18,7 @@ void js_get_args(Job job, ...);
 
 void js_destroy_job(Job *job);
 
-void *js_get_return_val(Job job);
+void *js_get_return_val(JobScheduler js, Job job);
 
 long long int js_get_job_id(Job job);
 
@@ -30,7 +30,7 @@ bool js_submit_job(JobScheduler js, Job job);
 
 bool js_execute_all_jobs(JobScheduler js);
 
-bool js_wait_job(Job job, bool destroy);
+bool js_wait_job(JobScheduler js, Job job, bool destroy);
 
 void js_wait_all_jobs(JobScheduler js, bool destroy_jobs);
 
