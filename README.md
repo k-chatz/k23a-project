@@ -263,19 +263,81 @@ struct SpecEntry_s {
 
 Έχει υλοποιηθεί και δεύτερη main (**user.c**) η οποία κάνει μόνο predict ότι δώσει ο χρήστης σαν είσοδο. Χρησιμοποιόντας το vocabulary και το model που έχουν γίνει export από την πρώτη main. Για το λόγο αυτό το vocabulary και το τελικό model γίνονται export σε αρχεία ώστε να δοθούν ως είσοδο σε αυτήν.
 
-### Επαναληπτηκή εκμάθηση
+### Επαναληπτική εκμάθηση
 
 Στη συνέχεια έπρεπε να γίνει η διαδικασία της επαναληπτικής μάθησης την οποία είχαμε ξεκινήσει να υλοποιούμε στο branch **repetitive learning**, όμως δεν προλάβαμε να το ολοκληρώσουμε ώστε να το κάνουμε merge στο master. 
 
 Η διαδικασία που ακολουθούσαμε ήταν να χρησιμοποιήσουμε όλο το dataset για  training (**train + test + val sets**) και για threshold είχαμε 0.15. Για όλα τα υπόλοιπα πιθανά ζευγάρια (δηλαδή όλα τα ζευγάρια απο specs για τα οποία δεν ξέρουμε τη σχέση τους, κάναμε predict. Aν το μοντέλο μας ήταν αρκετά "σίγουρο" προσθέταμε όλες τις συσχετίσεις που προέκυπταν από αυτό το prediction. Συνεχίζαμε τη διαδικασία για όσο το **threshold**  ήταν < **0,5**.
 
+  <a  name="parallel"></a>  
+## Παραλληλοποίηση
+Για την γρήγορότερη εκπαίδευση του μοντέλου υλοποιήθηκε ένας **Job Scheduler** όπου αναλαμβάνει να τρέξει Jobs σε διαφορετικά νήματα του συστήματος, προσθέτοντας ετσι παραλληλία.
+### Structs
+*Αναπαράσταση της δομής job:*
+```c
+struct job {
+	long long int job_id;  
+	void *(*start_routine)(void *);
+	int args_count;  
+	Argument *args;  
+	void *return_val;  
+	bool complete;  
+	/* sync */  
+	sem_t sem_complete;  
+};
+```
+Κάθε νέο **job** που δημιουργείται μέσω της συνάρησης **js_create_job()** έχει τα παρακάτω χαρακτηριστικά:
+- μοναδικό id (**job_id**)
+- δείκτη σε συνάρτηση (**start_routine**) για την ρουτίνα εκτέλεσης
+- πίνακα με τα ορίσματα της ρουτίνας (**args**)
+- τιμή επιστροφής της ρουτίνας (**return_val**)
+- flag (**complete**) που υποδηλώνει αν το job ολοκληρώθηκε ή όχι
+- semaphore (**sem_complete**) ώστε αν κάποιο νήμα ζητήσει να δει την τιμή επιστροφής του, να είναι εφικτό να μπλοκάρει μέχρι αυτο να ολοκληρωθεί. 
+
+*Αναπαράσταση της δομής job_scheduler:*
+```c
+struct job_scheduler {  
+	 uint execution_threads;  
+	 pthread_t *tids;  
+	 Queue waiting_queue;  
+	 Queue running_queue;  
+	 bool working;  
+	 bool exit;  
+	 int ready;
+	 /* sync */   
+	 pthread_cond_t condition_wake_up;  
+	 pthread_cond_t condition_wake_up_submitter;  
+	 pthread_mutex_t mutex;  
+	 pthread_mutex_t mutex_submitter;  
+	 sem_t_ *sem_barrier;  
+};
+```
+Η δομή του Job Scheduler αποτελείται έχει τα παρακάτω χαρακτηριστικά:
+- Αριθμός διαθέσιμων νημάτων (**execution_threads**) για εκτέλεση εργασιών.
+- Πίνακας με τα αναγνωριστικά των νημάτων (**tids**) που χρησιμοποιείται για την ένωσή τους με το αρχικό νήμα με τη σηνάρτηση **pthread_join**.
+- Ουρά αναμονής (**waiting_queue**) προς εκτέλεση εργασιών.
+- Ουρά εργασιών που ξεκίνησαν να τρέχουν (**running_queue**) η οποία χρησιμοποιείται για να τα συλλέξει με τη σωστή σειρά το master thread όταν θα έχουν ολοκληρωθεί όλα.
+- Flag  (**working**) που χρησιμοποιείται για να υποδηλώσει ένα ενεργό **work cycle** όταν έχει την τιμή true και **barrier ready** όταν έχει την τιμή false.
+- Flag (**exit**) που υποδηλώνει ότι το master thread αποφάσισε να μην χρησιμοποιήσει άλλο τον scheduler. Αν λάβει την τιμή true, τοτε όταν το κάθε νήμα "ξυπνήσει" θα καλέσει την **pthread_exit**.
+- Μετρητής έτοιμων νημάτων (**ready**) που δεν τρέχουν κάποια εργασία αυτή τη στιγμή.
+ενώ για τον συνχρωνισμό:
+- Mutex  (**mutex**)  που χρησιμοποιείται για τον αμοιβαίο αποκλεισμό των άλλων νημάτων στις περιπτώσεις που χρειάζεται.
+- Condition variable (**condition_wake_up**) για 
+- Mutex αποστολέα  (**mutex_submitter**) για τον αμοιβαίο αποκλεισμό των υπόλοιπων νημάτων που προσπαθούν εκείνη τη στιγμή ταυτόχρονα να βάλουν μία νέα εργασία στην ουρά.
+- Condition variable (**condition_wake_up_submitter**) που χρησιμοποιείται για να μπλοκάρει μέχρι να υπάρξει κάποιο διαθσιμο νήμα.
+- Custom semaphore (**sem_barrier**) που χρησιμοποιείται για να ενημερώσει το master thread που έχει καλέσει την **join_threads** ότι όλα τα νήματα είναι έτοιμα. 
+
+
+### Thread pool
+Ο Job scheduler αναλαμβάνει να τρέξει εργασίες (jobs) σε διαφορετικά νήματα με FIFO (First In First Out) σειρά και αυτό το επιτυγχάνει με μια ουρά αναμονής (waiting_queue). 
+Όταν γίνεται εξαγωγή ενώς job από την waiting_queue το πρώτο διαθέσιμο νήμα που 
 
 
 <a  name="flow"></a>  
-## Ροή του προγράμματος  
+## Ροή του προγράμματος
   
     
-![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I6TSAEO3RWM4E22FUK7Z7ZZS)  
+ ![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I6TSAEO3RWM4E22FUK7Z7ZZS)  
   
     
   
@@ -295,8 +357,6 @@ struct SpecEntry_s {
 
 Το Documentation υλοποιήθηκε μέσω του [Doxygen](https://www.doxygen.nl/index.html). Τα man pages αυτά ανανεώνονται κάθε φορά που προστίθεται νέο commit στο master. Τα output αρχεία του doxygen γίνονται push στο branch "**docs**" και απο εκεί ενημερώνεται το documentation site μας.
 
-  
-
-
 <a  name="conclusions"></a>  
 ## Συμπεράσματα
+
