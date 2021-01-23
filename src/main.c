@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "../include/colours.h"
 #include "../include/lists.h"
@@ -11,10 +12,13 @@
 #include "../include/ml.h"
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
+#include "../include/job_scheduler.h"
 
-#define epochs 200
+#define epochs 170
 #define batch_size 2000
 #define learning_rate 0.0001
+
+pthread_mutex_t wc_lock;
 
 typedef struct options {
     char *dataset_dir;
@@ -23,6 +27,8 @@ typedef struct options {
     char *vec_mode;
     char *export_path;
 } Options;
+
+JobScheduler js = NULL;
 
 void read_options(int argc, char **argv, Options *o) {
     int i;
@@ -197,39 +203,92 @@ dictp user_json_dict(char *path) {
     return json_dict;
 }
 
+float *vec_from_json(ML ml, dictp json_dict, char *spec, bool tfidf) {
+    int wc = 0;
+    float *vector = malloc(ml_bow_sz(ml) * sizeof(float));
+//    memset(vector, 0, ml_bow_sz(ml) * sizeof(float));
+    JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, spec);
+    ml_bow_json_vector(ml, *json, vector, &wc, false);
+    if (tfidf) {
+        ml_tfidf(ml, vector, wc);
+    }
+
+    return vector;
+}
+
+#define LOCK_ pthread_mutex_lock(&mtx)
+#define UNLOCK_ pthread_mutex_unlock(&mtx)
+
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+
+void *fill_vector(Job job) {
+    ML ml = NULL;
+    dictp json_dict = NULL, vectors_dict = NULL;
+    Pair **pairs = NULL;
+    float *result_vector = NULL;
+    int *y, wc = 0, x = 0, i = 0, start = 0;
+    bool tfidf, is_user, random;
+
+    js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
+
+    float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+
+    bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
+    bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
+
+    //ml_print_vector(ml, bow_vector_1);
+    //ml_print_vector(ml, bow_vector_2);
+
+
+    //    printf("left: %s\n", (*pairs)[x].spec1);
+//    printf("right: %s\n", (*pairs)[x].spec2);
+
+    for (int c = 0; c < ml_bow_sz(ml); c++) {
+
+        result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+
+    }
+    y[i - start] = (*pairs)[x].relation;
+    return NULL;
+}
+
 void
-prepare_set(int start, int end, float *bow_vector_1, float *bow_vector_2, bool random, URand ur, STS *X, ML ml,
-            dictp json_dict, Pair **pairs, float *result_vector, int *y, bool tfidf, bool is_user) {
+prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
+            dictp json_dict, dictp vectors_dict, Pair **pairs, float *result_vector, int *y, bool tfidf, bool is_user) {
     int wc = 0, x = 0;
     JSON_ENTITY **json1 = NULL, **json2 = NULL;
     SpecEntry *spec1 = NULL, *spec2 = NULL;
+    if (js) {
+        Job *jobs = malloc((end - start) * sizeof(Job));
+        for (int i = start; i < end; i++) {
+            x = random ? ur_get(ur) : i;
+            js_create_job(&jobs[i], (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
+                                    JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
+                                    JOB_ARG(y), JOB_ARG(x), JOB_ARG(i), JOB_ARG(start), NULL);
+            js_submit_job(js, jobs[i]);
+        }
+        js_execute_all_jobs(js);
+        js_wait_all_jobs(js, false);
 
-    for (int i = start; i < end; i++) {
-
-        x = random ? ur_get(ur) : i;
-        json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
-        ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
-        if (tfidf) {
-            ml_tfidf(ml, bow_vector_1, wc);
+        for (int i = start; i < end; i++) {
+           js_destroy_job(&jobs[i]);
         }
 
-        json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
-        ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
-        if (tfidf) {
-            ml_tfidf(ml, bow_vector_2, wc);
+        free(jobs);
+    } else {
+        for (int i = start; i < end; i++) {
+            float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
+            x = random ? ur_get(ur) : i;
+            bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
+            bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
+            for (int c = 0; c < ml_bow_sz(ml); c++) {
+                result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+            }
+                y[i - start] = (*pairs)[x].relation;
         }
-
-        for (int c = 0; c < ml_bow_sz(ml); c++) {
-            result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
-        }
-
-        if (is_user == 0) {
-            spec1 = sts_get(X, (*pairs)[x].spec1);
-            spec2 = sts_get(X, (*pairs)[x].spec2);
-            y[i - start] = (findRoot(X, spec1) == findRoot(X, spec2));
-        }
-
     }
+
+
 }
 
 Pair *shuffle_dataset(Pair *pairs, int dataset_size) {
@@ -416,16 +475,11 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                 if (json_val) {
                     if (json_val->type == JSON_STRING) {
                         sentence = json_to_string(json_val);
-                        sentence = strdup(sentence);
-                        ml_cleanup_sentence(ml, sentence);
-
-                        /* tokenize sentence & put tokens in json_bow_set */
-
-                        for (token = strtok_r(sentence, " ", &rest);
-                             token != NULL; token = strtok_r(NULL, " ", &rest)) {
-                            set_put(json_bow_set, token);
+                        tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml_get_stopwords(ml));
+                        while ((token = tokenizer_next(tok)) != NULL) {
+                                set_put(json_bow_set, token);
                         }
-                        free(sentence);
+                        tokenizer_free(tok);
                     }
                 }
             }
@@ -469,7 +523,7 @@ bool check_weigths(LogReg *model, float e) {
 }
 
 LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
-                    dictp json_dict, int mode, Pair *test_set, int test_sz) {
+                    dictp json_dict, dictp vectors_dict, int mode, Pair *test_set, int test_sz) {
     /* initialize the model */
     LogReg *model = lr_new(ml_bow_sz(ml), learning_rate);
     LogReg *models[epochs];
@@ -490,13 +544,13 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         printf("epoch: %d\n", e);
         for (int j = 0; j < train_sz / batch_size; j++) {
 
-            prepare_set(0, batch_size, bow_vector_1, bow_vector_2, true, ur_mini_batch, X, ml, json_dict,
+            prepare_set(0, batch_size, true, ur_mini_batch, X, ml, json_dict, vectors_dict,
                         &train_set, result_vec, y, mode, 0);
 
             lr_train(model, result_vec, y, batch_size);
         }
 
-        prepare_set(0, test_sz, bow_vector_1, bow_vector_2, false, NULL, X, ml, json_dict,
+        prepare_set(0, test_sz, false, NULL, X, ml, json_dict, vectors_dict,
                     &test_set, result_vec_test, y_test, mode, 0);
 
         y_pred = lr_predict(model, result_vec_test, test_sz);
@@ -540,6 +594,31 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
     return model;
 }
 
+dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
+    dictp vectors_dict = dict_new2(128, ml_bow_sz(ml) * sizeof(float));
+    dict_config(vectors_dict,
+                DICT_CONF_HASH_FUNC, djb2_str,
+                DICT_CONF_KEY_CPY, strncpy,
+                DICT_CONF_CMP, strncmp,
+                DICT_CONF_KEY_SZ_F, str_sz,
+                DICT_CONF_DONE
+    );
+    char* entry;
+    ulong i_start = 0;
+    int size = ml_bow_sz(ml);
+    DICT_FOREACH_ENTRY(entry, json_dict, &i_start, json_dict->htab->buf_load){
+        float vector[size];
+        int wc = 0;
+        JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, entry);
+        ml_bow_json_vector(ml, *json, vector, &wc, false);
+        if (tfidf) {
+            ml_tfidf(ml, vector, wc);
+        }
+        dict_put(vectors_dict,entry, &vector);
+    }
+    return vectors_dict;
+}
+
 int main(int argc, char *argv[]) {
     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
@@ -561,6 +640,9 @@ int main(int argc, char *argv[]) {
 
     /* initialize mode {tfidf|bow}*/
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
+
+    /* initialze job scheduler */
+    js_create(&js, 16);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -597,23 +679,21 @@ int main(int argc, char *argv[]) {
     /* tokenize json train set to init bag of words dict*/
     tokenize_json_train_set(ml, train_json_files_set, json_dict);
 
-    //todo: init idf ?
-
     if (tfidf) {
         ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
     }
+    /* Vectorize JSONs*/
+    dictp vectors_dict = init_vectors_dict(json_dict, ml, tfidf);
+
 
     /* export vocabulary into csv file */
     ml_export_vocabulary(ml, options.export_path);
-
-    bow_vector_1 = malloc(ml_bow_sz(ml) * sizeof(float));
-    bow_vector_2 = malloc(ml_bow_sz(ml) * sizeof(float));
 
     result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
 
     /*********************************************** Training *********************************************************/
 
-    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, tfidf, test_set, test_sz);
+    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf, test_set, test_sz);
 
     lr_export_model(model, !tfidf, options.export_path);
 
@@ -621,13 +701,13 @@ int main(int argc, char *argv[]) {
 
     y_val = malloc(val_sz * sizeof(int));
 
-    prepare_set(0, val_sz, bow_vector_1, bow_vector_2, false, NULL, NULL, ml, json_dict, &val_set,
+    prepare_set(0, val_sz, false, NULL, NULL, ml, json_dict, vectors_dict, &val_set,
                 result_vec_val, y_val, tfidf, 1);
 
     /* Predict validation set */
     y_pred = lr_predict(model, result_vec_val, val_sz);
     for (int i = 0; i < val_sz; i++) {
-        if (val_set[i].relation) {
+        if ((val_set[i].relation == 0 && y_pred[i] < 0.5) || (val_set[i].relation == 1 && y_pred[i] >= 0.5)) {
             printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
                    val_set[i].relation, y_pred[i]);
         } else {
@@ -639,9 +719,6 @@ int main(int argc, char *argv[]) {
 
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
-
-    free(bow_vector_1);
-    free(bow_vector_2);
 
     free(result_vec_val);
 

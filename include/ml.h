@@ -12,6 +12,8 @@ void ml_destroy(ML *ml);
 
 ulong ml_bow_sz(ML ml);
 
+dictp ml_get_stopwords(ML ml);
+
 void ml_cleanup_sentence(ML ml, char *input);
 
 dictp ml_init_vocabulary_from_json_bow_set(ML ml, setp json_bow_set);
