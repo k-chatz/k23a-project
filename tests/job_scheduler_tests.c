@@ -131,7 +131,7 @@ void submit_smith_jobs(void) {
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 8; j++) {
             return_val = *(double *) js_get_return_val(js, jobs[i][j]);
-            printf("return_val = [%4.2f%%]\n", return_val);
+            printf("job's %lld return_val = [%4.2f%%]\n", js_get_job_id(jobs[i][j]), return_val);
             js_destroy_job(&jobs[i][j]);
         }
     }
