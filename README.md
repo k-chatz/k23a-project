@@ -314,7 +314,7 @@ struct job_scheduler {
 ```
 Η δομή του Job Scheduler αποτελείται έχει τα παρακάτω χαρακτηριστικά:
 - Αριθμός διαθέσιμων νημάτων (**execution_threads**) για εκτέλεση εργασιών.
-- Πίνακας με τα αναγνωριστικά των νημάτων (**tids**) που χρησιμοποιείται για την ένωσή τους με το αρχικό νήμα με τη σηνάρτηση **pthread_join**.
+- Πίνακας με τα αναγνωριστικά των νημάτων (**tids**) που χρησιμοποιείται για την ευρεσή τους με σκοπό την ένωσή τους με το αρχικό νήμα κανωντας κλήση της σηνάρτησης **pthread_join**.
 - Ουρά αναμονής (**waiting_queue**) προς εκτέλεση εργασιών.
 - Ουρά εργασιών που ξεκίνησαν να τρέχουν (**running_queue**) η οποία χρησιμοποιείται για να τα συλλέξει με τη σωστή σειρά το master thread όταν θα έχουν ολοκληρωθεί όλα.
 - Flag  (**working**) που χρησιμοποιείται για να υποδηλώσει ένα ενεργό **work cycle** όταν έχει την τιμή true και **barrier ready** όταν έχει την τιμή false.
@@ -322,24 +322,63 @@ struct job_scheduler {
 - Μετρητής έτοιμων νημάτων (**ready**) που δεν τρέχουν κάποια εργασία αυτή τη στιγμή.
 ενώ για τον συνχρωνισμό:
 - Mutex  (**mutex**)  που χρησιμοποιείται για τον αμοιβαίο αποκλεισμό των άλλων νημάτων στις περιπτώσεις που χρειάζεται.
-- Condition variable (**condition_wake_up**) για 
+- Condition variable (**condition_wake_up**) που χρησιμοποιείται για να μπλοκάρουν τα νήματα που είναι έτοιμα και δεν υπάρχει ακόμα διαθέσιμο job.
 - Mutex αποστολέα  (**mutex_submitter**) για τον αμοιβαίο αποκλεισμό των υπόλοιπων νημάτων που προσπαθούν εκείνη τη στιγμή ταυτόχρονα να βάλουν μία νέα εργασία στην ουρά.
 - Condition variable (**condition_wake_up_submitter**) που χρησιμοποιείται για να μπλοκάρει μέχρι να υπάρξει κάποιο διαθσιμο νήμα.
 - Custom semaphore (**sem_barrier**) που χρησιμοποιείται για να ενημερώσει το master thread που έχει καλέσει την **join_threads** ότι όλα τα νήματα είναι έτοιμα. 
-
 
 ### Thread pool
 Ο Job scheduler αναλαμβάνει να τρέξει εργασίες (jobs) σε διαφορετικά νήματα με FIFO (First In First Out) σειρά και αυτό το επιτυγχάνει με μια ουρά αναμονής (waiting_queue). 
 Όταν γίνεται εξαγωγή ενώς job από την waiting_queue το πρώτο διαθέσιμο νήμα που 
 
+### Work cycle
+Όταν ξεκινάει να λειτουργεί ένα νήμα, κατευθείαν μπαίνει σε ατέρμον επανάλληψη έως ότου το master thread αποφασίσει να καταστρέψει τον scheduler. Στην αρχή κάθε επαννάληψης της κεντρικής λούπας κλειδώνει 
+
+ελέγχει αν ο scheduler είναι σε κατάσταση working ή exit 
+
+αναμονής μέχρι να υπάρξει διαθέσιμη εργασία.
+
+
+```c
+void *thread(JobScheduler js) {
+    int jobs_count = 0;
+    while (true) {
+        LOCK_;
+        while ((!js->working && !js->exit) || (!queue_size(js->waiting_queue) && !js->exit)) {
+            js->ready++;
+            if (js->ready == js->execution_threads) {
+                js->working = false;
+            }
+            pthread_cond_signal(&js->condition_wake_up_submitter);
+            NOTIFY_BARRIER_;
+            WAIT_;
+            js->ready--;
+        }
+        if (js->exit && !queue_size(js->waiting_queue)) {
+            UNLOCK_;
+            EXIT_;
+        }
+        Job job = NULL;
+        if (queue_dequeue(js->waiting_queue, &job, false)) {
+            jobs_count++;
+            queue_enqueue(js->running_queue, &job, false);
+            queue_unblock_enqueue(js->waiting_queue);
+            UNLOCK_;
+            RUN_ROUTINE_;
+            job->complete = true;
+            NOTIFY_JOB_COMPLETE_;
+            continue;
+        }
+        UNLOCK_;
+    }
+}
+```
+
+
 
 <a  name="flow"></a>  
 ## Ροή του προγράμματος
-  
-    
  ![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I6TSAEO3RWM4E22FUK7Z7ZZS)  
-  
-    
   
 <a  name="unit_tests"></a>  
 ## Unit tests  
@@ -348,7 +387,6 @@ struct job_scheduler {
 Όταν επιχειρούμε να κάνουμε complile (make), commit  ή push εκτελούνται τα unit tests και αν τερματίσουν επιτυχώς, πραγματοποιείται με επιτυχία η αντίστοιχη διαδικασία.
 
 Επιπλέον, τα test αυτά εκτελούνται remotely μέσω των github actions (CI)
-
 
 <a  name="documentation"></a>  
 ## Documentation
