@@ -43,9 +43,13 @@ int sd(int x) {
 void *smith_numbers(Job job) {
     double *return_val = malloc(sizeof(double));
     int i = 0, x = 0, y = 0, z = 0, sumfact = 0, smith = 0;
+    int computations = 0;
+    js_get_args(job, &computations, NULL);
+
     long timesec = 0;
     timesec = time(NULL);
-    srand((unsigned int) timesec);
+    //srand((unsigned int) timesec);
+    srand(233);
     do {
         y = rand();
         z = rand();
@@ -74,7 +78,7 @@ void *smith_numbers(Job job) {
             //printf("%10d is Smith number\n", x);
         }
         i++;
-    } while (i <= *(int *) js_get_job_arg(job));
+    } while (i <= computations);
     *return_val = (100.0 * smith) / i;
 
     LOCK_;
@@ -84,8 +88,8 @@ void *smith_numbers(Job job) {
     sum += *return_val;
     UNLOCK_;
 
-    printf(CYAN"Thread [%ld] job %lld, Found %4.2f%% sum:%f\n"RESET, pthread_self(), js_get_job_id(job),
-           *return_val, sum);
+    printf(CYAN"Thread [%ld] job %lld, Computations: %d, Found %4.2f%% sum:%f\n"RESET, pthread_self(),
+           js_get_job_id(job), computations, *return_val, sum);
     return return_val;
 }
 
@@ -96,7 +100,7 @@ void *increment(Job job) {
     }
     sum++;
     UNLOCK_;
-    printf(CYAN"Thread [%ld] job %lld, sum:%f\n"RESET, pthread_self(), js_get_job_id(job), sum);
+    //printf(CYAN"Thread [%ld] job %lld, sum:%f\n"RESET, pthread_self(), js_get_job_id(job), sum);
     return NULL;
 }
 
@@ -109,11 +113,27 @@ void create_job_scheduler(void) {
 }
 
 void submit_jobs(void) {
-    int computations = 100000;
-    for (int j = 0; j < 30; ++j) {
-        Job job = js_create_job((void *(*)(void *)) smith_numbers, &computations, sizeof(computations));
-        TEST_CHECK(js_submit_job(js, job));
+
+    int test = 364;
+
+    for (int i = 0; i < 2000; ++i) {
+        //printf(RED"start submitting jobs...\n"RESET);
+        for (int j = 0; j < 10; j++) {
+
+            int computations = 1000000 / (j + 1);
+
+            Job job = js_create_job((void *(*)(void *)) increment, JOB_ARG(computations), NULL);
+            TEST_CHECK(js_submit_job(js, job));
+        }
+        //printf(UNDERLINE BOLD"sum: %f\n"RESET, sum);
+
+        js_execute_all_jobs(js);
+        js_wait_all_jobs(js);
+        //printf(WARNING"waiting jobs done!\n"RESET);
     }
+
+
+//    sleep(1);
 }
 
 void execute_all_jobs(void) {
@@ -121,9 +141,10 @@ void execute_all_jobs(void) {
 }
 
 void wait_all_jobs(void) {
-    TEST_CHECK(js_wait_all_jobs(js));
+    //  js_wait_all_jobs(js);
     printf(UNDERLINE BOLD"sum: %f\n"RESET, sum);
     printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
+    //TEST_CHECK(sum == 200.0);
 }
 
 void destroy_job_scheduler(void) {
@@ -134,7 +155,7 @@ void destroy_job_scheduler(void) {
 TEST_LIST = {
         {"create_job_scheduler",  create_job_scheduler},
         {"submit_jobs",           submit_jobs},
-        {"execute_all_jobs",      execute_all_jobs},
+//        {"execute_all_jobs",      execute_all_jobs},
         {"wait_all_jobs",         wait_all_jobs},
         {"destroy_job_scheduler", destroy_job_scheduler},
         {NULL, NULL}

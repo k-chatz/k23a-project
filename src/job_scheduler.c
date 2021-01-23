@@ -4,17 +4,21 @@
 #include <assert.h>
 #include <semaphore.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "../include/queue.h"
 #include "../include/colours.h"
 #include "../include/job_scheduler.h"
 #include "../include/semaphore.h"
 
-#define QUEUE_SIZE 10000
+#define QUEUE_SIZE 1000000
 
 #define LOCK_ pthread_mutex_lock(&js->mutex)
 #define UNLOCK_ pthread_mutex_unlock(&js->mutex)
 #define WAIT_ pthread_cond_wait(&js->condition_wake_up, &js->mutex)
+#define WAIT_SUBMITTER_ pthread_cond_wait(&js->condition_wake_up_submitter, &js->mutex_submitter)
+#define LOCK_SUBMITTER_ pthread_mutex_lock(&js->mutex_submitter)
+#define UNLOCK_SUBMITTER_ pthread_mutex_unlock(&js->mutex_submitter)
 #define BROADCAST_WAKEUP_ pthread_cond_broadcast(&js->condition_wake_up)
 #define SIGNAL_WAKEUP_ pthread_cond_signal(&js->condition_wake_up)
 #define RUN_ROUTINE_ job->return_val = (job->start_routine)(job)
@@ -22,13 +26,22 @@
 #define NOTIFY_BARRIER_ sem_post_(js->sem_barrier)
 #define NOTIFY_JOB_COMPLETE_ sem_post(&job->sem_complete)
 
+#define FOREACH_ARG(ARG, VARGS)                                         \
+void *arg;                                                              \
+for (unsigned int i = 0; (arg = va_arg(vargs, void *)) != NULL; i++)    \
+
+typedef struct argument {
+    void *arg;
+    size_t type_sz;
+} Argument;
+
 struct job {
     long long int job_id;
 
     void *(*start_routine)(void *);
 
-    void *__restrict arg;
-    int arg_type_sz;
+    Argument *args;
+    int args_count;
     void *return_val;
     bool complete;
     /* sync */
@@ -42,8 +55,11 @@ struct job_scheduler {
     Queue running_queue;
     bool running;
     bool exit;
+    int ready;
     pthread_cond_t condition_wake_up;
+    pthread_cond_t condition_wake_up_submitter;
     pthread_mutex_t mutex;
+    pthread_mutex_t mutex_submitter;
     sem_t_ *sem_barrier;
 };
 
@@ -54,17 +70,22 @@ void *thread(JobScheduler js) {
     while (true) {
         LOCK_;
         while ((!js->running && !js->exit) || (!queue_size(js->waiting_queue) && !js->exit)) {
+            js->ready++;
+            if (js->ready == js->execution_threads) {
+                js->running = false;
+            }
+            pthread_cond_signal(&js->condition_wake_up_submitter);
             NOTIFY_BARRIER_;
             WAIT_;
+            js->ready--;
         }
         if (js->exit && !queue_size(js->waiting_queue)) {
-            //printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
+            printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
             UNLOCK_;
             EXIT_;
         }
         Job job = NULL;
-        queue_dequeue(js->waiting_queue, &job, false);
-        if (job != NULL) {
+        if (queue_dequeue(js->waiting_queue, &job, false)) {
             jobs_count++;
             queue_enqueue(js->running_queue, &job, true);
             queue_unblock_enqueue(js->waiting_queue);
@@ -77,24 +98,56 @@ void *thread(JobScheduler js) {
     }
 }
 
+bool js_join_threads(JobScheduler js) {
+    int ret = 0;
+    sem_wait_(js->sem_barrier, false);
+    LOCK_;
+    js->exit = true;
+    js->running = false;
+    UNLOCK_;
+    BROADCAST_WAKEUP_;
+    for (int i = 0; i < js->execution_threads; ++i) {
+        ret += pthread_join(js->tids[i], NULL);
+    }
+    return !ret;
+}
+
 /***Public functions***/
 
-Job js_create_job(void *(*start_routine)(void *), void *__restrict arg, int arg_type_sz) {
+Job js_create_job(void *(*start_routine)(void *), ...) {
+    va_list vargs;
     Job job = malloc(sizeof(struct job));
     assert(job != NULL);
     job->job_id = ++job_id;
     job->start_routine = start_routine;
-    job->arg = malloc(arg_type_sz);
-    job->arg_type_sz = arg_type_sz;
-    memcpy(job->arg, arg, arg_type_sz);
+    job->args = NULL;
+    va_start(vargs, start_routine);
+    FOREACH_ARG(arg, vargs) {
+        int size_t_sz = va_arg(vargs, size_t);
+        job->args = realloc(job->args, (i + 1) * sizeof(Argument));
+        job->args[i].arg = malloc(size_t_sz);
+        memcpy(job->args[i].arg, arg, size_t_sz);
+        job->args[i].type_sz = size_t_sz;
+        job->args_count++;
+    };
+    va_end(vargs);
     job->return_val = NULL;
     job->complete = false;
     sem_init(&job->sem_complete, 0, 0);
     return job;
 }
 
-void *js_get_job_arg(Job job) {
-    return job->arg;
+void js_get_arg(Job job, void *arg, int arg_index) {
+    memcpy(arg, job->args[arg_index].arg, job->args[arg_index].type_sz);
+}
+
+void js_get_args(Job job, ...) {
+    va_list vargs;
+    va_start(vargs, job);
+    FOREACH_ARG(arg, vargs) {
+        memcpy(arg, job->args[i].arg, job->args[i].type_sz);
+    };
+    va_end(vargs);
 }
 
 void *js_get_return_val(Job job) {
@@ -106,7 +159,10 @@ long long int js_get_job_id(Job job) {
 }
 
 void js_destroy_job(Job *job) {
-    free((*job)->arg);
+    for (int i = 0; i < (*job)->args_count; ++i) {
+        free((*job)->args[i].arg);
+        free((*job)->args);
+    }
     free((*job));
     *job = NULL;
 }
@@ -118,13 +174,16 @@ void js_create(JobScheduler *js, int execution_threads) {
     (*js)->execution_threads = execution_threads;
     queue_create(&(*js)->waiting_queue, QUEUE_SIZE, sizeof(Job));
     queue_create(&(*js)->running_queue, QUEUE_SIZE, sizeof(Job));
+    (*js)->ready = 0;
     (*js)->running = false;
     (*js)->exit = false;
     (*js)->tids = malloc((*js)->execution_threads * sizeof(pthread_t));
     /* sync */
     (*js)->sem_barrier = sem_init_(-execution_threads + 1);
     pthread_mutex_init(&(*js)->mutex, NULL);
+    pthread_mutex_init(&(*js)->mutex_submitter, NULL);
     pthread_cond_init(&(*js)->condition_wake_up, NULL);
+    pthread_cond_init(&(*js)->condition_wake_up_submitter, NULL);
     for (int i = 0; i < execution_threads; i++) {
         assert(!pthread_create(&(*js)->tids[i], NULL, (void *(*)(void *)) thread, *js));
     }
@@ -133,8 +192,17 @@ void js_create(JobScheduler *js, int execution_threads) {
 
 bool js_submit_job(JobScheduler js, Job job) {
     if (js->running) {
+        LOCK_SUBMITTER_;
+        LOCK_;
+        while (!js->ready) {
+            UNLOCK_;
+            WAIT_SUBMITTER_;
+            LOCK_;
+        }
         queue_enqueue(js->waiting_queue, &job, true);
+        UNLOCK_;
         SIGNAL_WAKEUP_;
+        UNLOCK_SUBMITTER_;
     } else {
         if (queue_is_full(js->waiting_queue, true)) {
             return false;
@@ -145,8 +213,13 @@ bool js_submit_job(JobScheduler js, Job job) {
 }
 
 bool js_execute_all_jobs(JobScheduler js) {
-    js->running = true;
-    return !BROADCAST_WAKEUP_;
+    if (js->running) {
+        return false;
+    } else if (js->ready == js->execution_threads) {
+        js->running = true;
+        return !BROADCAST_WAKEUP_;
+    }
+    return false;
 }
 
 bool js_wait_job(JobScheduler js, Job job) {
@@ -158,34 +231,25 @@ bool js_wait_job(JobScheduler js, Job job) {
     return true;
 }
 
-bool js_wait_all_jobs(JobScheduler js) {
-    int ret = 0;
+void js_wait_all_jobs(JobScheduler js) {
     Job job = NULL;
-    do {
-        job = NULL;
-        queue_dequeue(js->running_queue, &job, false);
-        if (job == NULL) {
-            break;
+    if (js->running) {
+        while (queue_size(js->waiting_queue) || queue_size(js->running_queue)) {
+            job = NULL;
+            queue_dequeue(js->running_queue, &job, false);
+            if (job == NULL && !queue_size(js->waiting_queue)) {
+                break;
+            }
+            else if (job == NULL){
+                continue;
+            }
+            js_wait_job(js, job);
         }
-        js_wait_job(js, job);
-    } while (job != NULL);
-
-    sem_wait_(js->sem_barrier, false);
-
-    LOCK_;
-    js->exit = true;
-    js->running = false;
-    UNLOCK_;
-
-    BROADCAST_WAKEUP_;
-
-    for (int i = 0; i < js->execution_threads; ++i) {
-        ret += pthread_join(js->tids[i], NULL);
     }
-    return !ret;
 }
 
 void js_destroy(JobScheduler *js) {
+    js_join_threads(*js);
     queue_destroy(&(*js)->waiting_queue, NULL);
     queue_destroy(&(*js)->running_queue, NULL);
     free((*js)->tids);
