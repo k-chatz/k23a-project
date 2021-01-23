@@ -247,17 +247,13 @@ bool js_wait_job(JobScheduler js, Job job, bool destroy) {
 
 void js_wait_all_jobs(JobScheduler js, bool destroy_jobs) {
     Job job = NULL;
-    
-    while (1) {
-      
+    while (true) {
         LOCK_;
-        if (!queue_size(js->waiting_queue) && !queue_size(js->running_queue)){
-            
+        if (!queue_size(js->waiting_queue) && !queue_size(js->running_queue)) {
             UNLOCK_;
             break;
-        } 
+        }
         UNLOCK_;
-
         job = NULL;
         LOCK_;
         queue_dequeue(js->running_queue, &job, false);
