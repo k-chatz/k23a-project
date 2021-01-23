@@ -23,5 +23,6 @@
     "cmake.configureOnOpen": true,
     "cSpell.words": [
         "Qdequeue"
-    ]
+    ],
+    "C_Cpp.errorSquiggles": "Disabled"
 }

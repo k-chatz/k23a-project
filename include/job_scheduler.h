@@ -2,21 +2,25 @@
 #define JOB_SCHEDULER
 
 #include <stdbool.h>
+#include <semaphore.h>
+
+#define JOB_ARG(var) &(var), sizeof(var)
 
 typedef struct job_scheduler *JobScheduler;
 
-static int job_id = 0;
+typedef struct job *Job;
 
-typedef struct job {
-    long long int job_id;
-    void *(*start_routine)(void *);
-    void *__restrict arg;
-    void *status;
-} *Job;
+void js_create_job(Job *job, void *(*start_routine)(void *), ...);
 
-Job js_create_job(void *(*start_routine)(void *), void *__restrict arg);
+void js_get_arg(Job job, void *arg, int arg_index);
 
-void job_destroy(Job job);
+void js_get_args(Job job, ...);
+
+void js_destroy_job(Job *job);
+
+void *js_get_return_val(JobScheduler js, Job job);
+
+long long int js_get_job_id(Job job);
 
 void js_create(JobScheduler *js, int execution_threads);
 
@@ -26,6 +30,10 @@ bool js_submit_job(JobScheduler js, Job job);
 
 bool js_execute_all_jobs(JobScheduler js);
 
-bool js_wait_all_jobs(JobScheduler js);
+bool js_wait_job(JobScheduler js, Job job, bool destroy);
+
+void js_wait_all_jobs(JobScheduler js, bool destroy_jobs);
+
+void js_destroy(JobScheduler *js);
 
 #endif

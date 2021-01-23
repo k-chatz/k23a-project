@@ -69,7 +69,7 @@
             "name": "project tfidf large",  
             "type": "cppdbg",
             "request": "launch",
-            "preLaunchTask": "Build Make",
+            "preLaunchTask": "make project",
             "program": "${workspaceFolder}/project",
             "args": [
                 "-dir",
