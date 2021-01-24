@@ -5,7 +5,9 @@
 #include "../include/ml.h"
 #include "../include/logreg.h"
 #include "../include/unique_rand.h"
+#include "../include/job_scheduler.h"
 
+JobScheduler js = NULL;
 bool bow = false;
 
 typedef struct options {
@@ -162,6 +164,9 @@ int main(int argc, char *argv[]) {
 
     /* parse arguments*/
     read_options(argc, argv, &options);
+
+    /* initialze job scheduler */
+    // js_create(&js, 4);
 
     ml_create(&ml, NULL, 0);
 

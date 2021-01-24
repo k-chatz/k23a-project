@@ -12,7 +12,7 @@ yellow=\033[0;33m       # Yellow
 
 .PHONY: tests all clean githooks docs phony
 
-all: tests project 
+all: tests project user
 
 objs/%.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
