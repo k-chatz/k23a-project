@@ -106,7 +106,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
     SpecEntry *spec1 = NULL, *spec2 = NULL;
     for (int i = p_start; i < p_end; i++) {
         x = random ? ur_get(ur) : i;
-        json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec1);
+        json1 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[i].spec1);
         //json_print_value(*json2);
         ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, true);
         if (!bow) {
@@ -114,7 +114,7 @@ prepare_set(int p_start, int p_end, float *bow_vector_1, float *bow_vector_2, bo
         }
 //        printf("\njson1: %s, bow_vector_1: \n", (*pairs)[x].spec1);
 //        ml_print_vector(ml, bow_vector_1);
-        json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[x].spec2);
+        json2 = (JSON_ENTITY **) dict_get(json_dict, (*pairs)[i].spec2);
         //json_print_value(*json2);
         ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, true);
         if (!bow) {
