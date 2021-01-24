@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="k23a_project_val_set" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-dir $PROJECT_DIR$/Datasets/camera_specs/2013_camera_specs -csv $PROJECT_DIR$/resources/validation_set.csv -vocabulary $PROJECT_DIR$/resources/vocabulary.csv -model $PROJECT_DIR$/resources/model.csv" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k23a_project" TARGET_NAME="k23a_project_user" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k23a_project" RUN_TARGET_NAME="k23a_project_user">
+  <configuration default="false" name="k23a_project_val_set" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-dir $PROJECT_DIR$/Datasets/camera_specs/2013_camera_specs -csv $PROJECT_DIR$/resources/datasets/validation_set.csv -vocabulary $PROJECT_DIR$/resources/vocabulary.csv -model $PROJECT_DIR$/resources/model.csv" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k23a_project" TARGET_NAME="k23a_project_user" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k23a_project" RUN_TARGET_NAME="k23a_project_user">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>
