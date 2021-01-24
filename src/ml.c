@@ -198,10 +198,10 @@ float *ml_bow_json_vector(ML ml, JSON_ENTITY *json, float *bow_vector, int *wc, 
         if (cur_ent->type == JSON_STRING) {
             char *sentence = json_to_string(cur_ent);
             char *token = NULL, *rest = NULL;
-            tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml->stopwords);
+            tokenizer_t *tok = tokenizer_nlp(sentence);
             while ((token = tokenizer_next(tok)) != NULL) {
                     Word *w = (Word *) dict_get(ml->vocabulary_bow_dict, token);
-                    if (w == NULL) {
+                    if (w == NULL || token == '\0') {
                         continue;
                     }
                     bow_vector[w->position] += 1.0;
@@ -226,12 +226,15 @@ void ml_idf_remove(ML ml) {
     DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, end) {
         Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
-        if (w->idf > 9.85) {
+        if (w->idf > 9.85 || !strcmp(entry, "\0")) {
             dict_del(ml->vocabulary_bow_dict, entry);
             c++;
             continue;
         }
         w->position = (int) (i - c);
+        if (!strcmp(entry, "\0")){
+            putchar('\n');
+        }
     }
 }
 
@@ -283,7 +286,7 @@ void ml_init_vocabulary(ML ml, FILE *fp) {
     float idf = 0;
     char pos_str[50], count_str[50];
     //skip first row
-    fseek(fp, 17, SEEK_SET);
+    fseek(fp, 18, SEEK_SET);
     while (fscanf(fp, "%[^,],%[^,],%[^,],%f\n", key, pos_str, count_str, &idf) != EOF) {
         pos = (int) strtol(pos_str, NULL, 10);
         count = (int) strtol(count_str, NULL, 10);
