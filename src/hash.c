@@ -34,6 +34,7 @@ void htab_init(htab_t *ht, ht_hash_func h, size_t key_sz, size_t val_sz,
 htab_t *htab_new(ht_hash_func h, size_t key_sz, size_t val_sz, ulong buf_cap) {
     htab_t *new =
             malloc(sizeof(htab_t) + htab_entry_size2(key_sz, val_sz) * buf_cap);
+    assert(new != NULL);
     htab_init(new, h, key_sz, val_sz, buf_cap);
     return new;
 }
