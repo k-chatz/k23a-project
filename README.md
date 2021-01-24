@@ -1,4 +1,5 @@
 
+
   
 <h1  align="center">ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ</h1>  
   
@@ -69,7 +70,7 @@
 ## Περιεχόμενα  
   
     
-1. [PART 2](#part2)  
+1. [Διαδικαστικά](#procedure)  
   
 2. [Εισαγωγή](#intro)  
   
@@ -82,20 +83,19 @@
 6. [Spec to specs](#spec_to_specs)  
 
 7. [Μηχανική Μάθηση](#machine_learning)
-  
-8. [Ροή του προγράμματος](#flow)  
+
+8. [Παραλληλοποίηση](#parallel)
   
 9. [Unit tests](#unit_tests)  
 
 10. [Documentation](#documentation)
-  
-11. [Συμπεράσματα](#conclusions)  
+
  
   
     
     
   
-<a  name="part2"></a>  
+<a  name="procedure"></a>  
   
     
     
@@ -175,7 +175,7 @@
 ## Hash table  
   
     
-![hash table](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/hash.png?token=AMOC6IZ2FVNF77KBO6EZCBK7Z7ZWC)  
+![hash table](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/hash.png?token=AOECAYY7EWIICN4TZXIPN7TAC3IQ4)  
   
     
   
@@ -232,6 +232,9 @@ struct SpecEntry_s {
   
 Για τον υπολογισμό των διαφορετικών κλικών (different) βάλαμε άλλη μία λίστα στην οποία βρίσκονται οι root κάθε κλίκας που είναι διαφορετική. Αν για παράδειγμα είχαμε τη συσχέτιση "Α, Β, 0", ο root του Α θα συμπεριλάμβανε το root του Β στη different λίστα του, όπως και ο root του Β θα συμπεριλάμβανε το root του Α στη δική του different λίστα.
 
+*Αναπαράσταση εισαγωγής κλίκας:* 
+![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AOECAY7ODGOEUUQACONOD3LAC3IOG)
+
 <a  name="machine_learning"></a>
 ## Μηχανική Μάθηση
 
@@ -250,6 +253,7 @@ struct SpecEntry_s {
 
 Αρχικά δημιουργήθηκαν όλα τα similar και different ζευγάρια μέσω των κλικών. Αυτό ήταν το συνολικό dataset. Στη συνέχεια κρατήσαμε τυχαία το **50% των similar** και το **50% των different** και τα ενώσαμε σε ένα πίνακα. Αυτός ο πίνακας αποτελεί το train set. Κάναμε την ίδια διαδικασία με **25% για το test set** και τα υπόλοιπα **25% για το validation set**. Έτσι είχαμε τα τρία sets που χρειαζόμασταν. 
 
+****Για να δημιουργήσουμε το διάνυσμα κάθε ζευγαριού, χρησημοποιούμε την απόλυτη διαφορά των διανυσμάτων json1-json2.*
 
 ### Εκπαίδευση μοντέλου
 Για την εκπαίδευση υλοποιήσαμε mini **batch gradient decent**. 
@@ -422,12 +426,17 @@ void *thread(JobScheduler js) {
 
 ### Χρήση του Job Scheduler
 
+Στην υλοποίηση μας για τη μηχανική μάθηση, οι συναρτήσεις train και test περιμένουν έναν buffer με όλα τα διανύσματα που θα χρησιμοποιηθούν για αυτές τις διαδικασίες. Το να γεμίσει αυτός ο buffer κάθε φορά που χρειαζόταν, έπαιρνε αρκετό χρόνο, οπότε η πρώτη διαδικασία που παραλληλίσαμε ήταν αυτή. Πιο συγκεκριμένα, κάθε job αναλάμβανε να βάλει ένα διάνυσμα στο σωστό σημείο του buffer. Με αυτό τον τρόπο επιτυγχάνουμε ταυτόχρονο γέμισμα του buffer. 
+
+Άλλο ένα σημείο στο οποίο παραλληλοποιήσαμε ήταν ο υπολογισμός των Deltas στη διαδικασία του training. Κάθε job αναλαμβάνει να υπολογίσει από ένα στοιχείο του Deltas array.
+
+Τέλος, παραλληλοποιήσαμε τη διαδικασία του predict, έτσι ώστε κάθε job να αναλαμβάνει να εκτελέσει το prediction ενός ζευγαριού και να το τοποθετεί στο σωστό σημείο του πίνακα με τα συνολικά predictions.
+
+Με τις παραπάνω ενέργειες είδαμε σημαντική βελτίωση στο χρόνο εκτέλεσης του προγράμματός μας.
+
+Σκοπεύαμε αν προλαβαίναμε, για να παρατηρήσουμε αν θα υπάρξει διαφορά στο χρόνο εκτέλεσης του προγράμματος, να αλλάζαμε τη διαδικασία της παραλληλοποίησης και να δίναμε στα jobs περισσότερες απο μία επαναλήψεις ώστε να γίνονταν περισσότερες πράξεις σε κάθε job.
 
 
-<a  name="flow"></a>  
-## Ροή του προγράμματος
- ![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AMOC6I6TSAEO3RWM4E22FUK7Z7ZZS)  
-  
 <a  name="unit_tests"></a>  
 ## Unit tests  
 
@@ -442,7 +451,3 @@ void *thread(JobScheduler js) {
 Στον σύνδεσμο [Documentation](https://k23a-prj-auth.herokuapp.com) που βρίσκεται και στην πρώτη σελίδα του report βρίσκεται το documentation (man pages) των βιβλιοθηκών που έχουν υλοποιηθεί. Πρόσβαση επιτρέπεται μόνο στους contributors του project (δηλαδή την ομάδα μας και το βοηθό του τμήματός μας) και πρέπει να γίνει authentication μέσω github, ωστε να μην μπορεί κάποιος άλλος να αποκτήσει πρόσβαση.
 
 Το Documentation υλοποιήθηκε μέσω του [Doxygen](https://www.doxygen.nl/index.html). Τα man pages αυτά ανανεώνονται κάθε φορά που προστίθεται νέο commit στο master. Τα output αρχεία του doxygen γίνονται push στο branch "**docs**" και απο εκεί ενημερώνεται το documentation site μας.
-
-<a  name="conclusions"></a>  
-## Συμπεράσματα
-
