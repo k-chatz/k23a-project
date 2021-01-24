@@ -228,6 +228,31 @@ typedef  struct htab_s {
 <a  name="json_parser"></a>  
 ## JSON Parser  
   
+
+O json parser ακολουθεί τη γραμματική του [json.org](https://www.json.org/) .
+
+Πιο συγκεκριμένα, κάθε οντότητα του json περιγράφεται από την παρακάτω δομή: 
+
+```c
+
+typedef struct {
+    const json_type type;
+    char data[];
+} JSON_ENTITY;
+```
+ώπου το data[] περιέχει την ίδια την οντότητα, ενώ το type, περιγράφει τον τύπο της οντότητας, και μπορεί να λάβει οποιαδήποτε από τις τιμές του παρακάτω enum: 
+
+```c
+typedef enum {
+    JSON_OBJ,
+    JSON_ARRAY,
+    JSON_NUM,
+    JSON_BOOL,
+    JSON_STRING,
+    JSON_NULL
+} json_type;
+```
+
 <a  name="spec_to_specs"></a>  
  
 ## Spec to specs  
