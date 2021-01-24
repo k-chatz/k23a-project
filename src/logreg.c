@@ -95,7 +95,7 @@ void *lr_predict_t(Job job) {
 
 float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
     float *Ps = malloc(sizeof(Ps) * batch_sz);
-    if (js != NULL) {
+    if (js == NULL) {
         for (int i = 0; i < batch_sz; i++) {
             Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
         }
@@ -139,7 +139,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     /* calculate the Deltas */
     float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
     memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
-    if (js != NULL) {
+    if (js == NULL) {
         for (int i = 0; i < batch_sz; i++) {
             int j;
             for (j = 0; j < reg->weights_len; j++) {
