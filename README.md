@@ -82,13 +82,15 @@
   
 6. [Spec to specs](#spec_to_specs)  
 
-7. [Μηχανική Μάθηση](#machine_learning)
+7. [Unique rand](#urand)
 
-8. [Παραλληλοποίηση](#parallel)
+8. [Μηχανική Μάθηση](#machine_learning)
+
+9. [Παραλληλοποίηση](#parallel)
   
-9. [Unit tests](#unit_tests)  
+10. [Unit tests](#unit_tests)  
 
-10. [Documentation](#documentation)
+11. [Documentation](#documentation)
 
 <a  name="procedure"></a>  
   ## Διαδικαστικά
@@ -247,7 +249,6 @@ typedef enum {
 ```
 
 <a  name="spec_to_specs"></a>  
- 
 ## Spec to specs  
   
 Ο τρόπος με τον οποίο συνδέουμε τα στοιχεία των κλικών μεταξύ τους, είναι μέσω μίας δενδρικής αναπαράστασης. Το πρώτο spec που θα μπει στην κλίκα είναι ο πατέρας, ενώ τα υπόλοιπα είναι τα παιδιά του. Αν δύο κλίκες γίνουν **merge**, τότε ο πατέρας της δεύτερης κλίκας αποθηκεύεται στον παππού της πρώτης. Με αυτό τον τρόπο κρατάμε το δένδρο σε χαμηλά επίπεδα.  
@@ -270,6 +271,12 @@ struct SpecEntry_s {
 
 *Αναπαράσταση εισαγωγής κλίκας:* 
 ![cliques](https://raw.githubusercontent.com/vasilisp100/k23a-project/master/resources/cliques.gif?token=AOECAY7ODGOEUUQACONOD3LAC3IOG)
+
+
+<a  name="urand"></a>  
+## Unique rand  
+
+Για την επιλογή τυχαίων και ταυτόχρονα μοναδικών τιμών στα σύνολα (**train**, **test**, **validation**) υπήρξε η ανάγκη να υλοποιηθεί ένα module (`urand`) που θα μας επιστρέφει τυχαίες τιμές καλόντας την `ur_get` εξασφαλίζοντας έτσι, ότι τις ίδιες αυτές τιμές που πήραμε δεν θα τις ξαναπάρουμε σε μεταγενέστερη κλήση της συνάρτησης.
 
 <a  name="machine_learning"></a>
 ## Μηχανική Μάθηση
