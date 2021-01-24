@@ -56,6 +56,7 @@ struct job_scheduler {
     bool working;
     bool exit;
     int ready;
+    /* sync */
     pthread_cond_t condition_wake_up;
     pthread_cond_t condition_wake_up_submitter;
     pthread_mutex_t mutex;
