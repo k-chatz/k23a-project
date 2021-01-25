@@ -260,6 +260,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
     SpecEntry *spec1 = NULL, *spec2 = NULL;
     if (js) {
         Job *jobs = malloc((end - start) * sizeof(Job));
+        memset(jobs, 0, (end - start) * sizeof(Job));
         for (int i = start; i < end; i++) {
             x = random ? ur_get(ur) : i;
             js_create_job(&jobs[i], (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
@@ -615,10 +616,10 @@ dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
                 DICT_CONF_KEY_SZ_F, str_sz,
                 DICT_CONF_DONE
     );
-    char* entry;
+    char *entry;
     ulong i_start = 0;
     int size = ml_bow_sz(ml);
-    DICT_FOREACH_ENTRY(entry, json_dict, &i_start, json_dict->htab->buf_load){
+    DICT_FOREACH_ENTRY(entry, json_dict, &i_start, json_dict->htab->buf_load) {
         float vector[size];
         int wc = 0;
         JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, entry);
@@ -626,7 +627,7 @@ dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
         if (tfidf) {
             ml_tfidf(ml, vector, wc);
         }
-        dict_put(vectors_dict,entry, &vector);
+        dict_put(vectors_dict, entry, &vector);
     }
     return vectors_dict;
 }
@@ -705,7 +706,8 @@ int main(int argc, char *argv[]) {
 
     /*********************************************** Training *********************************************************/
 
-    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf, test_set, test_sz);
+    model = train_model(train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf,
+                        test_set, test_sz);
 
     lr_export_model(model, !tfidf, options.export_path);
 
