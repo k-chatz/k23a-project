@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 170
+#define epochs 600000
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -319,6 +319,17 @@ float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
     return max_loss;
 }
 
+float calc_med_loss(float *losses, float *y_pred, int *y, int offset) {
+    float med_loss = 0, sum = 0;
+    /* Calculate max_loss */
+    for (int i = 0; i < offset; i++) {
+        losses[i] = lr_loss(y_pred[i], y[i]);
+        sum += losses[i];
+    }
+    med_loss = sum / offset;
+    return med_loss;
+}
+
 void merge_set(Pair *set, int set_sz, int similar_set_sz, Pair *similar_pairs_train,
                Pair *different_pairs_train) {
     URand ur = NULL;
@@ -491,12 +502,12 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
     dict_free(json_bow_set, NULL);
 }
 
-bool check_local_maximum(int epoch, const float *max_losses) {
+bool check_local_maximum(int epoch, const float *med_losses) {
     int q = 0;
     if (epoch > 3) {
         q = epoch;
         while (q >= epoch - 4) {
-            if (max_losses[q] < max_losses[q - 1]) {
+            if (med_losses[q] < med_losses[q - 1]) {
                 break;
             }
             q--;
@@ -534,7 +545,7 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
 
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_sz - 1);
-    float max_losses[epochs], *y_pred = NULL;
+    float med_losses[epochs], *y_pred = NULL;
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
@@ -556,19 +567,19 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
 
         y_pred = lr_predict(model, result_vec_test, test_sz);
 
-        /* Calculate the max losses value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
+        /* Calculate the max losses value & save into med_losses array*/
+        med_losses[e] = calc_med_loss(losses, y_pred, y_test, test_sz);
 
         free(y_pred);
 
         /* Copy model & max losses*/
         lr_cpy(&models[e], model);
 
-//        /* Check if the last five max losses are ascending */
-//        if (check_local_maximum(e, max_losses)) {
-//            model = models[e - 4];
-//            break;
-//        }
+       /* Check if the last five max losses are ascending */
+       if (check_local_maximum(e, med_losses)) {
+           model = models[e - 4];
+           break;
+       }
 
         // /* Check if the last five max losses are ascending */
         // if (check_weigths(model,  -5)) {
