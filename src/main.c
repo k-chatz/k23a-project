@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 600000
+#define epochs 600
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -655,7 +655,7 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    // js_create(&js, 16);
+    js_create(&js, 16);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -734,6 +734,10 @@ int main(int argc, char *argv[]) {
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
+
+
+    js_destroy(&js);
+
     free(result_vec_val);
 
     free(similar_pairs);
@@ -742,11 +746,11 @@ int main(int argc, char *argv[]) {
     free(train_set);
     free(test_set);
     free(val_set);
-
     ml_destroy(&ml);
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
+    dict_free(vectors_dict, NULL);
     set_free(train_json_files_set);
     lr_free(model);
     free(y_pred);
