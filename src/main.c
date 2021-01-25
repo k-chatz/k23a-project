@@ -477,6 +477,7 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                         sentence = json_to_string(json_val);
                         tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml_get_stopwords(ml));
                         while ((token = tokenizer_next(tok)) != NULL) {
+                                if (!strcmp(token, "\0")) continue;
                                 set_put(json_bow_set, token);
                         }
                         tokenizer_free(tok);
@@ -642,7 +643,7 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 16);
+    // js_create(&js, 16);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
