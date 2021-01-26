@@ -100,7 +100,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
         (*pairs)[*counter].relation = -1;
-        (*pairs)[*counter].type = NAT;
+        // (*pairs)[*counter].type = NAT;
         (*counter)++;
     }
     fclose(fp);
@@ -789,17 +789,10 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
 
-                json1 = (JSON_ENTITY **) dict_get(json_dict, left);
-                ml_bow_json_vector(ml, *json1, bow_vector_1, &wc, false);
-                if (tfidf) {
-                    ml_tfidf(ml, bow_vector_1, wc);
-                }
+                
 
-                json2 = (JSON_ENTITY **) dict_get(json_dict, left);
-                ml_bow_json_vector(ml, *json2, bow_vector_2, &wc, false);
-                if (tfidf) {
-                    ml_tfidf(ml, bow_vector_2, wc);
-                }
+                bow_vector_1 = dict_get(vectors_dict, left);
+                bow_vector_2 = dict_get(vectors_dict, right);
 
                 for (int c = 0; c < ml_bow_sz(ml); c++) {
                     result_vector[c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
