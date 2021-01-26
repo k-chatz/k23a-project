@@ -81,7 +81,7 @@ void *thread(JobScheduler js) {
             js->ready--;
         }
         if (js->exit && !queue_size(js->waiting_queue)) {
-            //printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
+            printf(B_BLUE"Thread [%ld] exiting... (%d)\n"RESET, pthread_self(), jobs_count);
             UNLOCK_;
             EXIT_;
         }
