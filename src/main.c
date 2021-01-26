@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 170
+#define epochs 2000
 #define batch_size 2000
 #define learning_rate 0.0001
 
@@ -674,7 +674,7 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 2);
+    // js_create(&js, 2);
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -755,7 +755,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    js_destroy(&js);
+    if (js) js_destroy(&js);
 
     free(result_vec_val);
 

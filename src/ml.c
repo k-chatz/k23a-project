@@ -226,7 +226,7 @@ void ml_idf_remove(ML ml) {
     DICT_FOREACH_ENTRY(entry, ml->vocabulary_bow_dict, &iterate_state, end) {
         Word *w = (Word *) (entry + ml->vocabulary_bow_dict->htab->key_sz);
         w->idf = (float) log(ml->json_ht_load / w->count);
-        if (w->idf > 9.85 /*|| !strcmp(entry, "\0")*/) {
+        if (w->idf > 8.692) {
             dict_del(ml->vocabulary_bow_dict, entry);
             c++;
             continue;
