@@ -15,10 +15,13 @@
 #define MAX_PROBES 32
 
 #define HT_FOREACH_ENTRY(ENTRY, HT, START, END) \
-   for (unsigned int i = 0; (ENTRY = htab_iterate_r(HT, START)) && i < END ; i++)
+   for (unsigned int i = 0; ((ENTRY) = htab_iterate_r(HT, START)) && i < (END) ; i++)
 
 #define DICT_FOREACH_ENTRY(ENTRY, DICT, START, END) \
-   for (unsigned int i = 0; (ENTRY = dict_iterate_r(DICT, START)) && i < END ; i++)
+   for (unsigned int i = 0; ((ENTRY) = dict_iterate_r(DICT, START)) && i < (END) ; i++)
+
+#define I_DICT_FOREACH_ENTRY(INDEX, ENTRY, DICT, START, END) \
+   for ((INDEX) = 0; ((ENTRY) = dict_iterate_r(DICT, START)) && (INDEX) < (END) ; (INDEX)++)
 
 /*!
 @defgroup htab htab_t

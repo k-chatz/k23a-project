@@ -14,10 +14,10 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 20
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
-#define THREADS 400
+#define THREADS 0
 #define STEP_VALUE 0.15
 
 pthread_mutex_t wc_lock;
@@ -541,8 +541,9 @@ bool check_weigths(LogReg *model, float e) {
     return false;
 }
 
-LogReg *train_model(LogReg **model, int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
-                    dictp json_dict, dictp vectors_dict, int mode, Pair *test_set, int test_sz) {
+LogReg *
+train_model(LogReg **model, int train_sz, Pair *train_set, float *bow_vector_1, float *bow_vector_2, STS *X, ML ml,
+            dictp json_dict, dictp vectors_dict, int mode, Pair *test_set, int test_sz) {
 
     LogReg *models[epochs];
     URand ur_mini_batch = NULL;
@@ -583,7 +584,7 @@ LogReg *train_model(LogReg **model, int train_sz, Pair *train_set, float *bow_ve
 
         /* Check if the last five max losses are ascending */
         if (check_local_maximum(e, med_losses)) {
-            model = models[e - 4];
+            *model = models[e - 4];
             break;
         }
 
@@ -716,7 +717,8 @@ int main(int argc, char *argv[]) {
     /*********************************************** Training *********************************************************/
 /* initialize the model */
     model = lr_new(ml_bow_sz(ml), learning_rate);
-    model = train_model(&model, train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf, test_set, test_sz);
+    model = train_model(&model, train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf,
+                        test_set, test_sz);
 
     lr_export_model(model, !tfidf, options.export_path);
 
@@ -748,80 +750,110 @@ int main(int argc, char *argv[]) {
     }
 
     /*================================================================================================================*/
-
-    int dynamic_train_sz = train_sz + test_sz + val_sz;
-    Pair *dynamic_train_set = malloc(sizeof(Pair) * dynamic_train_sz);
-    memcpy(dynamic_train_set, train_set, train_sz * sizeof(Pair));
-    memcpy(dynamic_train_set + train_sz, test_set, test_sz * sizeof(Pair));
-    memcpy(dynamic_train_set + train_sz + test_sz, val_set, val_sz * sizeof(Pair));
-
     float threshold = STEP_VALUE;
+    float *result_vector = malloc(ml_bow_sz(ml) * sizeof(float));
+//    setp dynamic_train_hset = set_new(54);
+    char name[54];
+    int dynamic_train_sz = train_sz + test_sz + val_sz;
 
-    setp dynamic_train_hset = set_new(128);
-    char name_buf1[128], name_buf2[128];
-    for(int i = 0; i < dynamic_train_sz; i++){
-        snprintf(name_buf1, 128, "%s_%s", dynamic_train_set[i].spec1, dynamic_train_set[i].spec2);
-        snprintf(name_buf2, 128, "%s_%s", dynamic_train_set[i].spec2, dynamic_train_set[i].spec1);
-        set_put(dynamic_train_hset, name_buf1);
-        set_put(dynamic_train_hset, name_buf2);
+    char filepath[100];
+    char *entry = NULL;
+    ulong i_state = 0;
+    snprintf(filepath, 100, "%s/%s", options.export_path, "dynamic_train_set.csv");
+    FILE *fp = fopen(filepath, "w+");
+    assert(fp != NULL);
+    fprintf(fp, "spec1,spec2,relation\n");
+    for (int i = 0; i < train_sz; i++) {
+
+        fprintf(fp, "%s,%s,%d\n", train_set[i].spec1, train_set[i].spec2,
+                train_set[i].relation);
+
+//        snprintf(name, 54, "%s_%s", train_set[i].spec1, train_set[i].spec2);
+//        set_put(dynamic_train_hset, name);
+
+//        snprintf(name, 54, "%s_%s", train_set[i].spec2, train_set[i].spec1);
+//        set_put(dynamic_train_hset, name);
+
+    }
+    for (int i = 0; i < test_sz; i++) {
+
+        fprintf(fp, "%s,%s,%d\n", test_set[i].spec1, test_set[i].spec2,
+                test_set[i].relation);
+//
+//        snprintf(name, 54, "%s_%s", test_set[i].spec1, test_set[i].spec2);
+//        set_put(dynamic_train_hset, name);
+//
+//        snprintf(name, 54, "%s_%s", test_set[i].spec2, test_set[i].spec1);
+//        set_put(dynamic_train_hset, name);
+
+    }
+    for (int i = 0; i < val_sz; i++) {
+        fprintf(fp, "%s,%s,%d\n", val_set[i].spec1, val_set[i].spec2,
+                val_set[i].relation);
+
+//        snprintf(name, 54, "%s_%s", val_set[i].spec1, val_set[i].spec2);
+//        set_put(dynamic_train_hset, name);
+//
+//        snprintf(name, 54, "%s_%s", val_set[i].spec2, val_set[i].spec1);
+//        set_put(dynamic_train_hset, name);
     }
 
-    float *result_vector = malloc(ml_bow_sz(ml) * sizeof(float));
 
-    while (threshold < 0.5){
-        train_model(&model, dynamic_train_sz, dynamic_train_set,bow_vector_1, bow_vector_2, X, ml,json_dict, vectors_dict, tfidf, test_set, test_sz);
+
+    while (threshold < 0.5) {
+
+        Pair *dynamic_train_set = malloc(sizeof(Pair) * dynamic_train_sz);
+        fseek(fp, 21, SEEK_SET);
+        int i = 0;
+        char left_spec_id[50], right_spec_id[50];
+        int relation = 0;
+        while (fscanf(fp, "%[^,],%[^,],%d\n", left_spec_id, right_spec_id, &relation) != EOF) {
+            dynamic_train_set[i].spec1 = strdup(left_spec_id);
+            dynamic_train_set[i].spec2 = strdup(right_spec_id);
+            dynamic_train_set[i].relation = relation;
+            i++;
+        }
+        fseek(fp, 0, SEEK_END);
+
+        train_model(&model, dynamic_train_sz, dynamic_train_set, bow_vector_1, bow_vector_2, X, ml, json_dict,
+                    vectors_dict, tfidf, test_set, test_sz);
 
         char *left = NULL, *right = NULL;
         ulong start_left = 0, start_right = 0;
-        char entry_buf[128], entry_buf1[128];
+        char entry_buf_1[54], entry_buf_2[54];
         JSON_ENTITY **json1 = NULL, **json2 = NULL;
         int wc = 0;
-        float y_pred = 0;
+        float y_predict = 0;
         SpecEntry *left_spec, *right_spec, *left_root, *right_root;
-        DICT_FOREACH_ENTRY(left, json_dict, &start_left, json_dict->htab->buf_load){
-            // printf("LEFT: %s\n", left);
-            DICT_FOREACH_ENTRY(right, json_dict, &start_right, json_dict->htab->buf_load){
-                snprintf(entry_buf, 128, "%s_%s", left, right);
-                snprintf(entry_buf1, 128, "%s_%s", right, left);
-                // printf("entry_buf: %s\n", entry_buf);
-                // printf("entry_buf: %s\n", entry_buf1);
-                if (!strcmp(left, right) || set_in(dynamic_train_hset, entry_buf)){
+        unsigned int ii = 0;
+        unsigned int jj = 0;
+        I_DICT_FOREACH_ENTRY(ii, left, json_dict, &start_left, json_dict->htab->buf_load) {
+            I_DICT_FOREACH_ENTRY(jj, right, json_dict, &start_right, json_dict->htab->buf_load) {
+                snprintf(entry_buf_1, 54, "%s_%s", left, right);
+                snprintf(entry_buf_2, 54, "%s_%s", right, left);
+                if (!strcmp(left, right) /*|| set_in(dynamic_train_hset, entry_buf_1)*/) {
                     continue;
                 }
-
-                
-
                 bow_vector_1 = dict_get(vectors_dict, left);
                 bow_vector_2 = dict_get(vectors_dict, right);
-
                 for (int c = 0; c < ml_bow_sz(ml); c++) {
                     result_vector[c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
                 }
                 // putchar('\n');
-                y_pred = lr_predict_one(model, result_vector);
-
-                if(y_pred < threshold || y_pred > 1 - threshold){
-                    //we need to create all the different pairs of the two cliques.
-                    //iterate the two cliques and create the pairs.
-
-                    left_spec = sts_get(X,left);
-                    right_spec = sts_get(X,right);
-                    left_root = findRoot(X,left_spec);
-                    right_root = findRoot(X,right_spec);
-
-                    LL_FOREACH(A,left_root->similar){
-                        LL_FOREACH(B, right_root->similar){
-                            //For every pair add it to the training set with realloc
-                            // and add it to the set.
-                            dynamic_train_set = realloc(dynamic_train_set, (++dynamic_train_sz) * sizeof(Pair));
-                            Pair new_pair;
-                            new_pair.spec1 = A->data;
-                            new_pair.spec2 = B->data;
-                            new_pair.relation = y_pred < threshold ? 0 : 1;
-                            dynamic_train_set[dynamic_train_sz - 1] = new_pair;
-                            set_put(dynamic_train_hset, entry_buf);
-                            set_put(dynamic_train_hset, entry_buf1);
-
+                y_predict = lr_predict_one(model, result_vector);
+                if (y_predict < threshold || y_predict > 1 - threshold) {
+                    /* we need to create all the different pairs of the two cliques. */
+                    /* iterate the two cliques and create the pairs. */
+                    left_spec = sts_get(X, left);
+                    right_spec = sts_get(X, right);
+                    left_root = findRoot(X, left_spec);
+                    right_root = findRoot(X, right_spec);
+                    LL_FOREACH(A, left_root->similar) {
+                        LL_FOREACH(B, right_root->similar) {
+                            fprintf(fp, "%s,%s,%d\n", A->data, B->data, y_predict < threshold ? 0 : 1);
+//                            set_put(dynamic_train_hset, entry_buf_1);
+//                            set_put(dynamic_train_hset, entry_buf_2);
+                            dynamic_train_sz++;
                         }
                     }
                 }
@@ -829,7 +861,14 @@ int main(int argc, char *argv[]) {
             start_right = 0;
         }
         threshold += STEP_VALUE;
+
+
+        free(dynamic_train_set);
+
     }
+
+
+    fclose(fp);
 
     /*================================================================================================================*/
 
@@ -841,6 +880,7 @@ int main(int argc, char *argv[]) {
     free(train_set);
     free(test_set);
     free(val_set);
+
     ml_destroy(&ml);
 
     /* Destroy json dict */

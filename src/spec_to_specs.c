@@ -316,10 +316,12 @@ void print_sts_similar(FILE *file, STS *sts) {
             continue;
         }
 
-        for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
-            printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
+        if (ll_len(root->similar) > 1){
+            for (StrList *similar = root->similar; similar; similar = ll_nth(similar, 1)) {
+                printf("%s%s", similar == root->similar ? "" : ", ", similar->data);
+            }
+            printf("\n");
         }
-        printf("\n");
     }
 }
 
