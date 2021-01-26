@@ -42,12 +42,9 @@ LogReg *lr_new_from_file(FILE *fp, bool *bow) {
 }
 
 void lr_cpy(LogReg **dst, LogReg *src) {
-    *dst = lr_new(0, 0);
-    (*dst)->learning_rate = src->learning_rate;
+    *dst = lr_new(src->weights_len, src->learning_rate);
     (*dst)->bias = src->bias;
-    (*dst)->weights_len = src->weights_len;
-    (*dst)->weights = malloc(src->weights_len * sizeof(float));
-    for (int i = 0; i < src->weights_len; ++i) {
+    for (int i = 0; i < (*dst)->weights_len; ++i) {
         (*dst)->weights[i] = src->weights[i];
     }
 }
@@ -95,12 +92,13 @@ void *lr_predict_t(Job job) {
 
 float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
     float *Ps = malloc(sizeof(Ps) * batch_sz);
-    if (js != NULL) {
+    if (js == NULL) {
         for (int i = 0; i < batch_sz; i++) {
             Ps[i] = lr_predict_one(reg, &Xs[i * reg->weights_len]);
         }
     } else {
         Job jobs[batch_sz];
+        memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
             js_create_job(&jobs[i], (void *(*)(void *)) lr_predict_t, JOB_ARG(reg), JOB_ARG(Xs),JOB_ARG(Ps),
                                     JOB_ARG(i), NULL);
@@ -108,6 +106,9 @@ float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
+        for (int i = 0; i < batch_sz; i++) {
+           js_destroy_job(&jobs[i]);
+        }
     }
     return Ps;
 }
@@ -139,7 +140,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     /* calculate the Deltas */
     float *Deltas = malloc((reg->weights_len + 1) * sizeof(float));
     memset(Deltas, 0, (reg->weights_len + 1) * sizeof(float));
-    if (js != NULL) {
+    if (js == NULL) {
         for (int i = 0; i < batch_sz; i++) {
             int j;
             for (j = 0; j < reg->weights_len; j++) {
@@ -152,6 +153,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
     } else {
         //Job jobs[batch_sz];
         Job *jobs = malloc(batch_sz * sizeof(Job));
+        memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
             js_create_job(&jobs[i], (void *(*)(void *)) lr_train_t_,
                                     JOB_ARG(reg),
@@ -162,16 +164,13 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
                                     NULL);
             js_submit_job(js, jobs[i]);
         }
-
         js_execute_all_jobs(js);
-        //js_wait_all_jobs(js, false);
-
+        js_wait_all_jobs(js, false);
         for (int i = 0; i < batch_sz; i++) {
             for (int j = 0; j < reg->weights_len + 1; j++) {
                 Deltas[j] += ((float *) js_get_return_val(js, jobs[i]))[j];
             }
-            free((float *) js_get_return_val(js, jobs[i]));
-            //js_destroy_job(&jobs[i]);
+            js_destroy_job(&jobs[i]);
         }
         free(jobs);
     }

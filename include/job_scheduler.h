@@ -26,6 +26,8 @@ void js_create(JobScheduler *js, int execution_threads);
 
 void js_destroy(JobScheduler *js);
 
+uint js_get_execution_threads(JobScheduler js);
+
 bool js_submit_job(JobScheduler js, Job job);
 
 bool js_execute_all_jobs(JobScheduler js);

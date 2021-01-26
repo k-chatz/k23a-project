@@ -4,7 +4,7 @@ vpath	 %.h       include
 vpath	 %_tests   tests-bin
 
 CC	= gcc
-CFLAGS	= -g3 -Wall -DMAKEFILE
+CFLAGS	= -g3 -Wall -DMAKEFILE -O3
 LFLAGS	= -lm -lpthread
 
 color_rst=\033[0m       # Text Reset
@@ -12,7 +12,7 @@ yellow=\033[0;33m       # Yellow
 
 .PHONY: tests all clean githooks docs phony
 
-all: tests project 
+all: tests project user
 
 objs/%.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@

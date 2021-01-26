@@ -19,9 +19,9 @@
                 "-csv",
                 "resources/datasets/validation_set.csv",
                 "-vocabulary",
-                "resources/vocabs/vocabulary.csv",
+                "resources/vocabulary.csv",
                 "-model",
-                "resources/models/model.csv"
+                "resources/model.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -48,9 +48,9 @@
                 "-csv",
                 "resources/datasets/user_dataset.csv",
                 "-vocabulary",
-                "resources/vocabs/vocabulary.csv",
+                "resources/vocabulary.csv",
                 "-model",
-                "resources/models/model_tfidf_100e.csv"
+                "resources/model.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

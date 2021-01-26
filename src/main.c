@@ -14,15 +14,11 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 170
+#define epochs 20
 #define batch_size 2000
 #define learning_rate 0.0001
+#define THREADS 400
 #define STEP_VALUE 0.15
-
-#define LOCK_ pthread_mutex_lock(&mtx)
-#define UNLOCK_ pthread_mutex_unlock(&mtx)
-
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t wc_lock;
 
@@ -104,6 +100,7 @@ void read_user_labelled_dataset_csv(char *user_labelled_dataset_file, Pair **pai
         (*pairs)[*counter].spec1 = strdup(left_spec_id);
         (*pairs)[*counter].spec2 = strdup(right_spec_id);
         (*pairs)[*counter].relation = -1;
+        (*pairs)[*counter].type = NAT;
         (*counter)++;
     }
     fclose(fp);
@@ -211,7 +208,7 @@ dictp user_json_dict(char *path) {
 float *vec_from_json(ML ml, dictp json_dict, char *spec, bool tfidf) {
     int wc = 0;
     float *vector = malloc(ml_bow_sz(ml) * sizeof(float));
-    memset(vector, 0, ml_bow_sz(ml) * sizeof(float));
+//    memset(vector, 0, ml_bow_sz(ml) * sizeof(float));
     JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, spec);
     ml_bow_json_vector(ml, *json, vector, &wc, false);
     if (tfidf) {
@@ -225,35 +222,67 @@ void *fill_vector(Job job) {
     dictp json_dict = NULL, vectors_dict = NULL;
     Pair **pairs = NULL;
     float *result_vector = NULL;
-    int *y, x = 0, i = 0, start = 0;
-    js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &x, &i, &start, NULL);
+    int *y, x = 0, start = 0, end = 0;
+    bool random;
+    URand ur = NULL;
+    js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &start, &end, &ur, &random, NULL);
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
-    bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
-    bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
-    for (int c = 0; c < ml_bow_sz(ml); c++) {
-        result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+    for (int i = start; i < end; i++) {
+        x = random ? ur_get(ur) : i;
+        bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
+        bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
+        for (int c = 0; c < ml_bow_sz(ml); c++) {
+            result_vector[i * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
+        }
+        y[i] = (*pairs)[x].relation;
     }
-    y[i - start] = (*pairs)[x].relation;
     return NULL;
 }
 
 void
 prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             dictp json_dict, dictp vectors_dict, Pair **pairs, float *result_vector, int *y, bool tfidf, bool is_user) {
-    int x = 0;
+    int wc = 0, x = 0;
+    JSON_ENTITY **json1 = NULL, **json2 = NULL;
+    SpecEntry *spec1 = NULL, *spec2 = NULL;
     if (js) {
-        Job *jobs = malloc((end - start) * sizeof(Job));
-        for (int i = start; i < end; i++) {
-            x = random ? ur_get(ur) : i;
+
+        uint threads = js_get_execution_threads(js);
+
+        Job *jobs = malloc(threads * sizeof(Job));
+        //memset(jobs, 0, threads  * sizeof(Job));
+        int offset = end / threads, start_t = 0, end_t = 0;
+        int i = 0;
+        for (i = 0; i < threads; i++) {
+            start_t = i * offset;
+            end_t = (i + 1) * offset;
+            jobs[i] = NULL;
             js_create_job(&jobs[i], (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
-                                    JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
-                                    JOB_ARG(y), JOB_ARG(x), JOB_ARG(i), JOB_ARG(start), NULL);
+                          JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
+                          JOB_ARG(y), JOB_ARG(start_t), JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
             js_submit_job(js, jobs[i]);
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
-        for (int i = start; i < end; i++) {
-           js_destroy_job(&jobs[i]);
+
+        for (int i = 0; i < threads; i++) {
+            //js_destroy_job(&jobs[i]);
+        }
+
+        if ((end - end_t) > 0) {
+            Job last_job = NULL;
+            start_t = end_t;
+            end_t = end;
+            last_job = NULL;
+            js_create_job(&last_job, (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
+                          JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
+                          JOB_ARG(y), JOB_ARG(start_t),
+                          JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
+            js_submit_job(js, last_job);
+
+            js_execute_all_jobs(js);
+            js_wait_all_jobs(js, false);
+            //js_destroy_job(&last_job);
         }
         free(jobs);
     } else {
@@ -265,7 +294,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             for (int c = 0; c < ml_bow_sz(ml); c++) {
                 result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
             }
-                y[i - start] = (*pairs)[x].relation;
+            y[i - start] = (*pairs)[x].relation;
         }
     }
 }
@@ -296,6 +325,17 @@ float calc_max_loss(float *losses, float *y_pred, int *y, int offset) {
         }
     }
     return max_loss;
+}
+
+float calc_med_loss(float *losses, float *y_pred, int *y, int offset) {
+    float med_loss = 0, sum = 0;
+    /* Calculate max_loss */
+    for (int i = 0; i < offset; i++) {
+        losses[i] = lr_loss(y_pred[i], y[i]);
+        sum += losses[i];
+    }
+    med_loss = sum / offset;
+    return med_loss;
 }
 
 void merge_set(Pair *set, int set_sz, int similar_set_sz, Pair *similar_pairs_train,
@@ -456,7 +496,8 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                         sentence = json_to_string(json_val);
                         tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml_get_stopwords(ml));
                         while ((token = tokenizer_next(tok)) != NULL) {
-                                set_put(json_bow_set, token);
+                            if (!strcmp(token, "\0")) continue;
+                            set_put(json_bow_set, token);
                         }
                         tokenizer_free(tok);
                     }
@@ -468,12 +509,12 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
     dict_free(json_bow_set, NULL);
 }
 
-bool check_local_maximum(int epoch, const float *max_losses) {
+bool check_local_maximum(int epoch, const float *med_losses) {
     int q = 0;
     if (epoch > 3) {
         q = epoch;
         while (q >= epoch - 4) {
-            if (max_losses[q] < max_losses[q - 1]) {
+            if (med_losses[q] < med_losses[q - 1]) {
                 break;
             }
             q--;
@@ -510,7 +551,7 @@ LogReg *train_model(LogReg **model, int train_sz, Pair *train_set, float *bow_ve
 
     /* create mini batch unique random */
     ur_create(&ur_mini_batch, 0, train_sz - 1);
-    float max_losses[epochs], *y_pred = NULL;
+    float med_losses[epochs], *y_pred = NULL;
     int y[batch_size];
     int *y_test = malloc(test_sz * sizeof(int));
     float *losses = malloc(test_sz * sizeof(float));
@@ -532,19 +573,19 @@ LogReg *train_model(LogReg **model, int train_sz, Pair *train_set, float *bow_ve
 
         y_pred = lr_predict(*model, result_vec_test, test_sz);
 
-        /* Calculate the max losses value & save into max_losses array*/
-        max_losses[e] = calc_max_loss(losses, y_pred, y_test, test_sz);
+        /* Calculate the max losses value & save into med_losses array*/
+        med_losses[e] = calc_med_loss(losses, y_pred, y_test, test_sz);
 
         free(y_pred);
 
         /* Copy model & max losses*/
         lr_cpy(&models[e], *model);
 
-//        /* Check if the last five max losses are ascending */
-//        if (check_local_maximum(e, max_losses)) {
-//            model = models[e - 4];
-//            break;
-//        }
+        /* Check if the last five max losses are ascending */
+        if (check_local_maximum(e, med_losses)) {
+            model = models[e - 4];
+            break;
+        }
 
         // /* Check if the last five max losses are ascending */
         // if (check_weigths(model,  -5)) {
@@ -580,10 +621,10 @@ dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
                 DICT_CONF_KEY_SZ_F, str_sz,
                 DICT_CONF_DONE
     );
-    char* entry;
+    char *entry;
     ulong i_start = 0;
     int size = ml_bow_sz(ml);
-    DICT_FOREACH_ENTRY(entry, json_dict, &i_start, json_dict->htab->buf_load){
+    DICT_FOREACH_ENTRY(entry, json_dict, &i_start, json_dict->htab->buf_load) {
         float vector[size];
         int wc = 0;
         JSON_ENTITY **json = (JSON_ENTITY **) dict_get(json_dict, entry);
@@ -591,12 +632,13 @@ dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
         if (tfidf) {
             ml_tfidf(ml, vector, wc);
         }
-        dict_put(vectors_dict,entry, &vector);
+        dict_put(vectors_dict, entry, &vector);
     }
     return vectors_dict;
 }
 
 int main(int argc, char *argv[]) {
+    clock_t begin = clock();
     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
     int chunks = 0;
@@ -605,6 +647,7 @@ int main(int argc, char *argv[]) {
     dictp json_dict = NULL;
     setp train_json_files_set = NULL;
     ML ml = NULL;
+
     Options options = {NULL,
                        NULL,
                        NULL,
@@ -619,7 +662,9 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 16);
+    if (THREADS) {
+        js_create(&js, THREADS);
+    }
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -697,6 +742,10 @@ int main(int argc, char *argv[]) {
 
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
+
+    if (THREADS) {
+        js_destroy(&js);
+    }
 
     /*================================================================================================================*/
 
@@ -799,17 +848,17 @@ int main(int argc, char *argv[]) {
     free(train_set);
     free(test_set);
     free(val_set);
-
     ml_destroy(&ml);
 
     /* Destroy json dict */
     dict_free(json_dict, (void (*)(void *)) free_json_ht_ent);
+    dict_free(vectors_dict, NULL);
     set_free(train_json_files_set);
     lr_free(model);
     free(y_pred);
     free(y_val);
     /* Destroy STS dataset X */
     sts_destroy(X);
-
+    printf(WARNING"Time spent: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
     return 0;
 }

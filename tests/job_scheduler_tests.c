@@ -81,6 +81,7 @@ void *decrement(Job job) {
     }
     (*sum)--;
     UNLOCK_;
+    printf(CYAN"Thread [%ld] job %lld, (decrement) sum:%f\n"RESET, pthread_self(), js_get_job_id(job), *sum);
     return NULL;
 }
 
@@ -96,7 +97,7 @@ void *increment(Job job) {
     }
     (*sum)++;
     UNLOCK_;
-    printf(CYAN"Thread [%ld] job %lld, sum:%f\n"RESET, pthread_self(), js_get_job_id(job), *sum);
+    printf(CYAN"Thread [%ld] job %lld, (increment) sum:%f\n"RESET, pthread_self(), js_get_job_id(job), *sum);
     return NULL;
 }
 
@@ -111,6 +112,7 @@ void submit_smith_jobs(void) {
     js_create(&js, 4);
     TEST_CHECK(js != NULL);
     Job jobs[2][8];
+    memset(jobs, 0, sizeof(Job) * 2 * 8);
     clock_t begin = clock();
     for (int i = 0; i < 2; ++i) {
         printf(B_RED"\nstart submitting jobs...\n"RESET);
@@ -131,7 +133,7 @@ void submit_smith_jobs(void) {
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 8; j++) {
             return_val = *(double *) js_get_return_val(js, jobs[i][j]);
-            printf("return_val = [%4.2f%%]\n", return_val);
+            printf("job's %lld return_val = [%4.2f%%]\n", js_get_job_id(jobs[i][j]), return_val);
             js_destroy_job(&jobs[i][j]);
         }
     }
@@ -139,6 +141,7 @@ void submit_smith_jobs(void) {
     js_destroy(&js);
     TEST_CHECK(js == NULL);
     free(sum);
+    free(mtx);
 }
 
 void submit_increment_decrement_jobs(void) {
@@ -149,31 +152,45 @@ void submit_increment_decrement_jobs(void) {
     pthread_cond_init(count_nonzero, NULL);
     JobScheduler js = NULL;
     sum = malloc(sizeof(double));
-    *sum = 0;
+    *sum = 500;
     js_create(&js, 9);
     TEST_CHECK(js != NULL);
     Job jobs[200][10];
+    memset(jobs, 0, sizeof(Job) * 200 * 10);
     clock_t begin = clock();
     for (int i = 0; i < 200; ++i) {
         printf(B_RED"\nstart submitting jobs...\n"RESET);
-        for (int j = 0; j < 10; j++) {
+        for (int j = 0; j < 4; j++) {
             js_create_job(&jobs[i][j], (void *(*)(void *)) increment, JOB_ARG(js), JOB_ARG(sum), JOB_ARG(mtx),
                           JOB_ARG(count_nonzero), NULL);
             TEST_CHECK(js_submit_job(js, jobs[i][j]));
         }
+        for (int j = 4; j < 10; j++) {
+            js_create_job(&jobs[i][j], (void *(*)(void *)) decrement, JOB_ARG(js), JOB_ARG(sum), JOB_ARG(mtx),
+                          JOB_ARG(count_nonzero), NULL);
+            TEST_CHECK(js_submit_job(js, jobs[i][j]));
+        }
+
         printf(RED"start execute all jobs...\n"RESET);
         js_execute_all_jobs(js);
         printf(RED"start waiting jobs...\n"RESET);
         js_wait_all_jobs(js, false);
         printf(WARNING"waiting jobs done!\n"RESET);
     }
+    for (int i = 0; i < 200; ++i) {
+        for (int j = 0; j < 10; j++) {
+            js_destroy_job(&jobs[i][j]);
+        }
+    }
     printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
     printf(UNDERLINE BOLD"sum: %f\n"RESET, *sum);
-    TEST_CHECK(*sum == 2000.0);
+    TEST_CHECK(*sum == 100.0);
     js_destroy(&js);
     TEST_CHECK(js == NULL);
+    free(sum);
+    free(mtx);
+    free(count_nonzero);
 }
-
 
 TEST_LIST = {
         {"submit_smith_jobs",               submit_smith_jobs},
