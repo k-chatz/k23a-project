@@ -208,6 +208,11 @@ void js_create(JobScheduler *js, int execution_threads) {
     sem_wait_((*js)->sem_barrier, false);
 }
 
+uint js_get_execution_threads(JobScheduler js) {
+    assert(js != NULL);
+    return js->execution_threads;
+}
+
 bool js_submit_job(JobScheduler js, Job job) {
     assert(js != NULL);
     LOCK_;
