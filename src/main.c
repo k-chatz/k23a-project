@@ -18,7 +18,7 @@
 #define batch_size 2000
 #define learning_rate 0.0001
 #define THREADS 0
-#define STEP_VALUE 0.15
+#define STEP_VALUE 0.01
 
 pthread_mutex_t wc_lock;
 
@@ -752,7 +752,7 @@ int main(int argc, char *argv[]) {
     /*================================================================================================================*/
     float threshold = STEP_VALUE;
     float *result_vector = malloc(ml_bow_sz(ml) * sizeof(float));
-//    setp dynamic_train_hset = set_new(54);
+    setp dynamic_train_hset = set_new(54);
     char name[54];
     int dynamic_train_sz = train_sz + test_sz + val_sz;
 
@@ -768,34 +768,34 @@ int main(int argc, char *argv[]) {
         fprintf(fp, "%s,%s,%d\n", train_set[i].spec1, train_set[i].spec2,
                 train_set[i].relation);
 
-//        snprintf(name, 54, "%s_%s", train_set[i].spec1, train_set[i].spec2);
-//        set_put(dynamic_train_hset, name);
+        snprintf(name, 54, "%s_%s", train_set[i].spec1, train_set[i].spec2);
+        set_put(dynamic_train_hset, name);
 
-//        snprintf(name, 54, "%s_%s", train_set[i].spec2, train_set[i].spec1);
-//        set_put(dynamic_train_hset, name);
+        snprintf(name, 54, "%s_%s", train_set[i].spec2, train_set[i].spec1);
+        set_put(dynamic_train_hset, name);
 
     }
     for (int i = 0; i < test_sz; i++) {
 
         fprintf(fp, "%s,%s,%d\n", test_set[i].spec1, test_set[i].spec2,
                 test_set[i].relation);
-//
-//        snprintf(name, 54, "%s_%s", test_set[i].spec1, test_set[i].spec2);
-//        set_put(dynamic_train_hset, name);
-//
-//        snprintf(name, 54, "%s_%s", test_set[i].spec2, test_set[i].spec1);
-//        set_put(dynamic_train_hset, name);
+
+        snprintf(name, 54, "%s_%s", test_set[i].spec1, test_set[i].spec2);
+        set_put(dynamic_train_hset, name);
+
+        snprintf(name, 54, "%s_%s", test_set[i].spec2, test_set[i].spec1);
+        set_put(dynamic_train_hset, name);
 
     }
     for (int i = 0; i < val_sz; i++) {
         fprintf(fp, "%s,%s,%d\n", val_set[i].spec1, val_set[i].spec2,
                 val_set[i].relation);
 
-//        snprintf(name, 54, "%s_%s", val_set[i].spec1, val_set[i].spec2);
-//        set_put(dynamic_train_hset, name);
-//
-//        snprintf(name, 54, "%s_%s", val_set[i].spec2, val_set[i].spec1);
-//        set_put(dynamic_train_hset, name);
+        snprintf(name, 54, "%s_%s", val_set[i].spec1, val_set[i].spec2);
+        set_put(dynamic_train_hset, name);
+
+        snprintf(name, 54, "%s_%s", val_set[i].spec2, val_set[i].spec1);
+        set_put(dynamic_train_hset, name);
     }
 
 
@@ -831,7 +831,7 @@ int main(int argc, char *argv[]) {
             I_DICT_FOREACH_ENTRY(jj, right, json_dict, &start_right, json_dict->htab->buf_load) {
                 snprintf(entry_buf_1, 54, "%s_%s", left, right);
                 snprintf(entry_buf_2, 54, "%s_%s", right, left);
-                if (!strcmp(left, right) /*|| set_in(dynamic_train_hset, entry_buf_1)*/) {
+                if (!strcmp(left, right) || set_in(dynamic_train_hset, entry_buf_1)) {
                     continue;
                 }
                 bow_vector_1 = dict_get(vectors_dict, left);
@@ -851,8 +851,8 @@ int main(int argc, char *argv[]) {
                     LL_FOREACH(A, left_root->similar) {
                         LL_FOREACH(B, right_root->similar) {
                             fprintf(fp, "%s,%s,%d\n", A->data, B->data, y_predict < threshold ? 0 : 1);
-//                            set_put(dynamic_train_hset, entry_buf_1);
-//                            set_put(dynamic_train_hset, entry_buf_2);
+                            set_put(dynamic_train_hset, entry_buf_1);
+                            set_put(dynamic_train_hset, entry_buf_2);
                             dynamic_train_sz++;
                         }
                     }
