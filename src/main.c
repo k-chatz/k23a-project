@@ -14,9 +14,10 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 170
+#define epochs 5
 #define batch_size 2000
 #define learning_rate 0.0001
+#define THREADS 5000
 
 pthread_mutex_t wc_lock;
 
@@ -226,23 +227,19 @@ void *fill_vector(Job job) {
     dictp json_dict = NULL, vectors_dict = NULL;
     Pair **pairs = NULL;
     float *result_vector = NULL;
-    int *y, wc = 0, x = 0, i = 0, start = 0, end = 0;
-    bool tfidf, is_user, random;
+    int *y, x = 0, start = 0, end = 0;
+    bool random;
     URand ur = NULL;
     js_get_args(job, &ml, &json_dict, &vectors_dict, &pairs, &result_vector, &y, &start, &end, &ur, &random, NULL);
-
     float *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     for (int i = start; i < end; i++) {
- 
         x = random ? ur_get(ur) : i;
- 
         bow_vector_1 = dict_get(vectors_dict, (*pairs)[x].spec1);
         bow_vector_2 = dict_get(vectors_dict, (*pairs)[x].spec2);
         for (int c = 0; c < ml_bow_sz(ml); c++) {
             result_vector[i * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
         }
         y[i] = (*pairs)[x].relation;
-        
     }
     return NULL;
 }
@@ -259,41 +256,40 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
 
         Job *jobs = malloc(threads * sizeof(Job));
         //memset(jobs, 0, threads  * sizeof(Job));
-        int offset = end / threads, start_t = 0, end_t = 0; 
+        int offset = end / threads, start_t = 0, end_t = 0;
         int i = 0;
-        for(i = 0; i < threads; i++){
-            
+        for (i = 0; i < threads; i++) {
             start_t = i * offset;
             end_t = (i + 1) * offset;
             jobs[i] = NULL;
             js_create_job(&jobs[i], (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
-                                    JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
-                                    JOB_ARG(y), JOB_ARG(start_t), JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
+                          JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
+                          JOB_ARG(y), JOB_ARG(start_t), JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
             js_submit_job(js, jobs[i]);
-              
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
+
         for (int i = 0; i < threads; i++) {
-           js_destroy_job(&jobs[i]);
+            //js_destroy_job(&jobs[i]);
         }
-          
-        if ((end - end_t ) > 0){
-            Job last_job = NULL;  
+
+        if ((end - end_t) > 0) {
+            Job last_job = NULL;
             start_t = end_t;
-            end_t = end; 
+            end_t = end;
             last_job = NULL;
             js_create_job(&last_job, (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
-                                    JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
-                                    JOB_ARG(y), JOB_ARG(start_t),
-                                    JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random),NULL);
+                          JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
+                          JOB_ARG(y), JOB_ARG(start_t),
+                          JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
             js_submit_job(js, last_job);
 
             js_execute_all_jobs(js);
             js_wait_all_jobs(js, false);
-            js_destroy_job(&last_job);
+            //js_destroy_job(&last_job);
         }
-        
+
         free(jobs);
     } else {
         for (int i = start; i < end; i++) {
@@ -304,7 +300,7 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             for (int c = 0; c < ml_bow_sz(ml); c++) {
                 result_vector[(i - start) * ml_bow_sz(ml) + c] = fabs((bow_vector_1[c] - bow_vector_2[c]));
             }
-                y[i - start] = (*pairs)[x].relation;
+            y[i - start] = (*pairs)[x].relation;
         }
     }
 
@@ -508,8 +504,8 @@ void tokenize_json_train_set(ML ml, setp train_json_files_set, dictp json_dict) 
                         sentence = json_to_string(json_val);
                         tokenizer_t *tok = tokenizer_nlp_sw(sentence, ml_get_stopwords(ml));
                         while ((token = tokenizer_next(tok)) != NULL) {
-                                if (!strcmp(token, "\0")) continue;
-                                set_put(json_bow_set, token);
+                            if (!strcmp(token, "\0")) continue;
+                            set_put(json_bow_set, token);
                         }
                         tokenizer_free(tok);
                     }
@@ -595,11 +591,11 @@ LogReg *train_model(int train_sz, Pair *train_set, float *bow_vector_1, float *b
         /* Copy model & max losses*/
         lr_cpy(&models[e], model);
 
-       /* Check if the last five max losses are ascending */
-       if (check_local_maximum(e, med_losses)) {
-           model = models[e - 4];
-           break;
-       }
+        /* Check if the last five max losses are ascending */
+        if (check_local_maximum(e, med_losses)) {
+            model = models[e - 4];
+            break;
+        }
 
         // /* Check if the last five max losses are ascending */
         // if (check_weigths(model,  -5)) {
@@ -652,6 +648,7 @@ dictp init_vectors_dict(dictp json_dict, ML ml, bool tfidf) {
 }
 
 int main(int argc, char *argv[]) {
+    clock_t begin = clock();
     float *y_pred = NULL, *result_vec_val = NULL, *bow_vector_1 = NULL, *bow_vector_2 = NULL;
     int *y_val = NULL, similar_sz = 0, different_sz = 0, train_sz = 0, test_sz = 0, val_sz = 0;
     int chunks = 0;
@@ -660,6 +657,7 @@ int main(int argc, char *argv[]) {
     dictp json_dict = NULL;
     setp train_json_files_set = NULL;
     ML ml = NULL;
+
     Options options = {NULL,
                        NULL,
                        NULL,
@@ -674,7 +672,9 @@ int main(int argc, char *argv[]) {
     bool tfidf = !strcmp(options.vec_mode, "tfidf");
 
     /* initialze job scheduler */
-    js_create(&js, 2);
+    if (THREADS) {
+        js_create(&js, THREADS);
+    }
 
     /* initialize an STS dataset X*/
     STS *X = init_sts_dataset_X(options.dataset_dir);
@@ -753,9 +753,9 @@ int main(int argc, char *argv[]) {
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
-
-
-    js_destroy(&js);
+    if (THREADS) {
+        js_destroy(&js);
+    }
 
     free(result_vec_val);
 
@@ -776,6 +776,6 @@ int main(int argc, char *argv[]) {
     free(y_val);
     /* Destroy STS dataset X */
     sts_destroy(X);
-
+    printf(WARNING"Time spend: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
     return 0;
 }
