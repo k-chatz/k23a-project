@@ -14,10 +14,10 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 2000
+#define epochs 20
 #define batch_size 2000
 #define learning_rate 0.0001
-#define THREADS 5000
+#define THREADS 400
 
 pthread_mutex_t wc_lock;
 
@@ -776,6 +776,6 @@ int main(int argc, char *argv[]) {
     free(y_val);
     /* Destroy STS dataset X */
     sts_destroy(X);
-    printf(WARNING"Time spend: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
+    printf(WARNING"Time spent: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
     return 0;
 }
