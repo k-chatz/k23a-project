@@ -715,7 +715,7 @@ int main(int argc, char *argv[]) {
     result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
 
     /*********************************************** Training *********************************************************/
-/* initialize the model */
+    /* initialize the model */
     model = lr_new(ml_bow_sz(ml), learning_rate);
     model = train_model(&model, train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf,
                         test_set, test_sz);
@@ -866,6 +866,7 @@ int main(int argc, char *argv[]) {
         free(dynamic_train_set);
 
     }
+    lr_export_model(model, !tfidf, options.export_path);
 
 
     fclose(fp);
