@@ -47,7 +47,7 @@ dictp user_json_dict(char *path) {
     struct dirent **name_list = NULL, **internals_name_list = NULL;
     int n, internals;
     char new_path[512], spec_name[1024];
-    char json_name[512], json_path[1024];
+    char json_name[512], json_path[1026];
     dictp json_dict = dict_new2(128, sizeof(JSON_ENTITY *));
     dict_config(json_dict,
                 DICT_CONF_HASH_FUNC, djb2_str,
@@ -82,7 +82,7 @@ dictp user_json_dict(char *path) {
                 continue;
             }
             strcpy(json_name, internals_name_list[internals]->d_name);
-            snprintf(json_path, 1025, "%s/%s", new_path, json_name);
+            snprintf(json_path, 1026, "%s/%s", new_path, json_name);
             internals_name_list[internals]->d_name[strlen(internals_name_list[internals]->d_name) - 5] = '\0';
             snprintf(spec_name, 1024, "%s//%s", name_list[n]->d_name, internals_name_list[internals]->d_name);
             /* Opening, parsing and creating a JSON ENTITY object for the 'json_path' file*/
