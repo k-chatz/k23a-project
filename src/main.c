@@ -273,13 +273,10 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             Job last_job = NULL;
             start_t = end_t;
             end_t = end;
-            last_job = NULL;
-            js_create_job(&last_job, (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
+            last_job = js_create_and_submit_job(js, (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
                           JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
                           JOB_ARG(y), JOB_ARG(start_t),
                           JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
-            js_submit_job(js, last_job);
-
             js_execute_all_jobs(js);
             js_wait_all_jobs(js, false);
             //js_destroy_job(&last_job);
@@ -745,10 +742,6 @@ int main(int argc, char *argv[]) {
     /* calculate F1 score */
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
-    if (THREADS) {
-        js_destroy(&js);
-    }
-
     /*================================================================================================================*/
     float threshold = STEP_VALUE;
     float *result_vector = malloc(ml_bow_sz(ml) * sizeof(float));
@@ -872,6 +865,10 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     /*================================================================================================================*/
+
+    if (THREADS) {
+        js_destroy(&js);
+    }
 
     free(result_vec_val);
 
