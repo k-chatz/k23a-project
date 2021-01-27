@@ -239,6 +239,35 @@ bool js_submit_job(JobScheduler js, Job job) {
     return true;
 }
 
+Job js_create_and_submit_job(JobScheduler js, void *(*start_routine)(void *), ...) {
+    Job job = NULL;
+    static long long int job_id = 0;
+    va_list vargs;
+    job = malloc(sizeof(struct job));
+    assert(job != NULL);
+    (job)->job_id = ++job_id;
+    (job)->start_routine = start_routine;
+    (job)->args = NULL;
+    (job)->args_count = 0;
+    va_start(vargs, start_routine);
+    FOREACH_ARG(arg, vargs) {
+        size_t type_sz = va_arg(vargs, size_t);
+        (job)->args = realloc((job)->args, (i + 1) * sizeof(Argument));
+        (job)->args[i].arg = malloc(type_sz);
+        assert((job)->args[i].arg != NULL);
+        memcpy((job)->args[i].arg, arg, type_sz);
+        (job)->args[i].type_sz = type_sz;
+        (job)->args_count++;
+    };
+    va_end(vargs);
+    (job)->return_val = NULL;
+    (job)->complete = false;
+    sem_init(&(job)->sem_complete, 0, 0);
+
+    js_submit_job(js, job);
+    return job;
+}
+
 bool js_execute_all_jobs(JobScheduler js) {
     assert(js != NULL);
     LOCK_;

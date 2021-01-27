@@ -104,6 +104,7 @@ void *increment(Job job) {
 /*** test functions ***/
 
 void submit_smith_jobs(void) {
+    clock_t begin = clock();
     double *sum = NULL, return_val = 0;
     pthread_mutex_t *mtx = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(mtx, NULL);
@@ -113,7 +114,6 @@ void submit_smith_jobs(void) {
     TEST_CHECK(js != NULL);
     Job jobs[2][8];
     memset(jobs, 0, sizeof(Job) * 2 * 8);
-    clock_t begin = clock();
     for (int i = 0; i < 2; ++i) {
         printf(B_RED"\nstart submitting jobs...\n"RESET);
         for (int j = 0; j < 8; j++) {
@@ -129,7 +129,7 @@ void submit_smith_jobs(void) {
         js_wait_all_jobs(js, false);
         printf(WARNING"waiting jobs done!\n"RESET);
     }
-    printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
+
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 8; j++) {
             return_val = *(double *) js_get_return_val(js, jobs[i][j]);
@@ -142,9 +142,11 @@ void submit_smith_jobs(void) {
     TEST_CHECK(js == NULL);
     free(sum);
     free(mtx);
+    printf(WARNING"time spend: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
 }
 
 void submit_increment_decrement_jobs(void) {
+    clock_t begin = clock();
     double *sum = NULL;
     pthread_mutex_t *mtx = malloc(sizeof(pthread_mutex_t));
     pthread_cond_t *count_nonzero = malloc(sizeof(pthread_cond_t));
@@ -157,7 +159,6 @@ void submit_increment_decrement_jobs(void) {
     TEST_CHECK(js != NULL);
     Job jobs[200][10];
     memset(jobs, 0, sizeof(Job) * 200 * 10);
-    clock_t begin = clock();
     for (int i = 0; i < 200; ++i) {
         printf(B_RED"\nstart submitting jobs...\n"RESET);
         for (int j = 0; j < 4; j++) {
@@ -182,7 +183,6 @@ void submit_increment_decrement_jobs(void) {
             js_destroy_job(&jobs[i][j]);
         }
     }
-    printf("time spend: %f\n", (double) (clock() - begin) / CLOCKS_PER_SEC);
     printf(UNDERLINE BOLD"sum: %f\n"RESET, *sum);
     TEST_CHECK(*sum == 100.0);
     js_destroy(&js);
@@ -190,10 +190,11 @@ void submit_increment_decrement_jobs(void) {
     free(sum);
     free(mtx);
     free(count_nonzero);
+    printf(WARNING"time spend: %f\n"RESET, (double) (clock() - begin) / CLOCKS_PER_SEC);
 }
 
 TEST_LIST = {
-        {"submit_smith_jobs",               submit_smith_jobs},
+        {"submit_smith_jobs", submit_smith_jobs},
         {"submit_increment_decrement_jobs", submit_increment_decrement_jobs},
         {NULL, NULL}
 };

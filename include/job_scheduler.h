@@ -30,6 +30,8 @@ uint js_get_execution_threads(JobScheduler js);
 
 bool js_submit_job(JobScheduler js, Job job);
 
+Job js_create_and_submit_job(JobScheduler js, void *(*start_routine)(void *), ...);
+
 bool js_execute_all_jobs(JobScheduler js);
 
 bool js_wait_job(JobScheduler js, Job job, bool destroy);
