@@ -9,9 +9,9 @@ make
 
 echo "Running user main..."
 
-./user -dir resources/user_json_files \
--csv resources/user_dataset.csv \
+./user -dir Datasets/camera_specs/2013_camera_specs \
+-csv resources/datasets/user_dataset.csv \
 -vocabulary resources/vocabulary.csv \
--model resources/model.csv
+-model resources/models/best_model.csv
 
 echo "Done!"

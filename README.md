@@ -74,12 +74,11 @@
 ### Ενδεικτική εκτέλεση προγράμματος Training  
   
     
->./project \  
--dir Datasets/camera_specs/2013_camera_specs \  
--csv Datasets/sigmod_large_labelled_dataset.csv \  
--sw resources/unwanted-words.txt \  
--m bow \  
--ex resources  
+>./project -dir Datasets/camera_specs/2013_camera_specs \
+>-csv Datasets/sigmod_large_labelled_dataset.csv \
+>-ex resources \
+>-m tfidf \
+>-sw resources/unwanted-words.txt
   
   
   
@@ -87,8 +86,11 @@
 ### Ενδεικτική εκτέλεση προγράμματος Predicting  
   
     
->  ./user -dir resources/user_json_files \  
- -csv resources/user_dataset.csv \ -vocabulary resources/vocabulary.csv \ -model resources/model.csv  
+>  ./user -dir Datasets/camera_specs/2013_camera_specs \
+>  -csv resources/datasets/user_dataset.csv \
+>  -vocabulary resources/vocabulary.csv \
+>  -model resources/models/best_model.csv
+>  
 ### Έξοδος προγράμματος Training  
   
     
