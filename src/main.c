@@ -711,6 +711,7 @@ int main(int argc, char *argv[]) {
     result_vec_val = malloc(val_sz * ml_bow_sz(ml) * sizeof(float));
 
     /*********************************************** Training *********************************************************/
+    printf("Training: \n\n\n");
     /* initialize the model */
     model = lr_new(ml_bow_sz(ml), learning_rate);
     model = train_model(&model, train_sz, train_set, bow_vector_1, bow_vector_2, X, ml, json_dict, vectors_dict, tfidf,
@@ -719,6 +720,8 @@ int main(int argc, char *argv[]) {
     lr_export_model(model, !tfidf, options.export_path);
 
     /**************************************************** Predict ****************************************************/
+
+    printf("\n\n\npredicting validation set\n\n\n");
 
     y_val = malloc(val_sz * sizeof(int));
 
@@ -790,10 +793,10 @@ int main(int argc, char *argv[]) {
         set_put(dynamic_train_hset, name);
     }
 
-
-
+    int rl_counter = 0;
+    printf("\n\n\nDynamic Learning: \n\n\n");
     while (threshold < 0.5) {
-
+        printf("repetition: %d\n", rl_counter);
         Pair *dynamic_train_set = malloc(sizeof(Pair) * dynamic_train_sz);
         fseek(fp, 21, SEEK_SET);
         int i = 0;
@@ -859,6 +862,7 @@ int main(int argc, char *argv[]) {
 
 
         free(dynamic_train_set);
+        rl_counter++;
 
     }
     lr_export_model(model, !tfidf, options.export_path);
@@ -867,6 +871,37 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     /*================================================================================================================*/
+
+    /**************************************************** Predict ****************************************************/
+
+    printf("\n\n\npredicting validation set after the dynamic learning\n\n\n");
+
+    y_val = malloc(val_sz * sizeof(int));
+
+    prepare_set(0, val_sz, false, NULL, NULL, ml, json_dict, vectors_dict, &val_set,
+                result_vec_val, y_val, tfidf, 1);
+
+    /* Predict validation set */
+    y_pred = lr_predict(model, result_vec_val, val_sz);
+    for (int i = 0; i < val_sz; i++) {
+        if ((val_set[i].relation == 0 && y_pred[i] < 0.5) || (val_set[i].relation == 1 && y_pred[i] >= 0.5)) {
+            printf(B_GREEN"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        } else {
+            printf(B_RED"spec1: %s, spec2: %s, y: %d, y_pred:%f\n"RESET, val_set[i].spec1, val_set[i].spec2,
+                   val_set[i].relation, y_pred[i]);
+        }
+        // if (i==2) break;
+    }
+
+    /* calculate F1 score */
+    printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
+
+    /*================================================================================================================*/
+
+
+
+
 
     if (THREADS) {
         js_destroy(&js);

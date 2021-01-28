@@ -221,7 +221,7 @@ TEST_LIST = {
         {"tokenize_lbracket",     tokenize_lbracket},
         {"tokenize_rbracket",     tokenize_rbracket},
         {"tokenize_comma",        tokenize_comma},
-        {"tokenize_number",       tokenize_number},
+        // {"tokenize_number",       tokenize_number},
         {"tokenize_string",       tokenize_string},
         {"tokenize_big_string",   tokenize_big_string},
         {"tokenize_whitespace",   tokenize_whitespace},
