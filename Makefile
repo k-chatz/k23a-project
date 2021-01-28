@@ -4,7 +4,7 @@ vpath	 %.h       include
 vpath	 %_tests   tests-bin
 
 CC	= gcc
-CFLAGS	= -g3 -Wall -DMAKEFILE -O3
+CFLAGS	= -g3 -Wall -DMAKEFILE
 LFLAGS	= -lm -lpthread
 
 color_rst=\033[0m       # Text Reset

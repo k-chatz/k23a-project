@@ -47,6 +47,6 @@ void logreg_test(void) {
 }
 
 TEST_LIST = {
-        // {"logreg_test", logreg_test},
+        {"logreg_test", logreg_test},
         {NULL, NULL}
 };
