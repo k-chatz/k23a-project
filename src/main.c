@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 1
+#define epochs 200
 #define batch_size 2000
 #define learning_rate 0.0001
 #define THREADS 0
