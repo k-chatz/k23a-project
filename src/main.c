@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 200
+#define epochs 1
 #define batch_size 2000
 #define learning_rate 0.0001
 #define THREADS 0
@@ -796,7 +796,7 @@ int main(int argc, char *argv[]) {
     int rl_counter = 0;
     printf("\n\n\nDynamic Learning: \n\n\n");
     while (threshold < 0.5) {
-        printf("repetition: %d\n", rl_counter);
+        printf("repetition: %d\n\n", rl_counter);
         Pair *dynamic_train_set = malloc(sizeof(Pair) * dynamic_train_sz);
         fseek(fp, 21, SEEK_SET);
         int i = 0;
