@@ -860,7 +860,10 @@ int main(int argc, char *argv[]) {
         }
         threshold += STEP_VALUE;
 
-
+        for (int i = 0; i < dynamic_train_sz; i++){
+            free(dynamic_train_set[i].spec1);
+            free(dynamic_train_set[i].spec2);
+        }
         free(dynamic_train_set);
         rl_counter++;
 
@@ -907,6 +910,7 @@ int main(int argc, char *argv[]) {
         js_destroy(&js);
     }
 
+    free(result_vector);
     free(result_vec_val);
 
     free(similar_pairs);
