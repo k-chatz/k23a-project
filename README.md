@@ -1,47 +1,26 @@
 
-
-  
 <h1  align="center">ΑΝΑΠΤΥΞΗ ΛΟΓΙΣΜΙΚΟΥ ΓΙΑ ΠΛΗΡΟΦΟΡΙΑΚΑ ΣΥΣΤΗΜΑΤΑ</h1>  
-  
-    
-  
-<p  align="center">  
-  
-<br>  
-  
+
+<p align="center">  
 <b>Entity resolution</b>  
-  
-<br>  
-  
 </p>  
-  
-    
-  
-<p  align="center">  
-  
+
+<p align="center">  
 <a  target="_blank"  href="https://k23a-prj-auth.herokuapp.com"><strong>Documentation</strong></a>  
-  
-<br>  
-  
 </p>  
+
+<p align="center">  
   
-    
+<a href="https://discord.gg/nSGmntAX">  
   
-<p  align="center">  
-  
-<a  href="https://discord.gg/nSGmntAX">  
-  
-<img  alt="Discord"  src="https://img.shields.io/discord/765286458243153950?color=7389d8&label=Discord&logo=Discord&logoColor=fff">  
+<img alt="Discord"  src="https://img.shields.io/discord/765286458243153950?color=7389d8&label=Discord&logo=Discord&logoColor=fff">  
   
 </a>  
-  
+
 </p>  
-  
-    
-  
+
 <hr>  
-  
-    
+
   
 # Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών  
   
