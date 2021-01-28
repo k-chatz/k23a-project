@@ -18,7 +18,7 @@
 #define batch_size 2000
 #define learning_rate 0.0001
 #define THREADS 0
-#define STEP_VALUE 0.01
+#define STEP_VALUE 0.15
 
 pthread_mutex_t wc_lock;
 
@@ -843,19 +843,14 @@ int main(int argc, char *argv[]) {
                 if (y_predict < threshold || y_predict > 1 - threshold) {
                     /* we need to create all the different pairs of the two cliques. */
                     /* iterate the two cliques and create the pairs. */
-                    LL_FOREACH(A, left_root->similar) {
-                        LL_FOREACH(B, right_root->similar) {
-                            fprintf(fp, "%s,%s,%d\n", A->data, B->data, y_predict < threshold ? 0 : 1);
-                            new_pairs_counter++;
-                            set_put(dynamic_train_hset, entry_buf_1);
-                            set_put(dynamic_train_hset, entry_buf_2);
-                            dynamic_train_sz++;
-                            if (new_pairs_counter == 500000) break;
-                        }
-                        if (new_pairs_counter == 500000) break;
-                    }
+                
+                    fprintf(fp, "%s,%s,%d\n", left, right, y_predict < threshold ? 0 : 1);
+                    new_pairs_counter++;
+                    set_put(dynamic_train_hset, entry_buf_1);
+                    set_put(dynamic_train_hset, entry_buf_2);
+                    dynamic_train_sz++;
+                    if (new_pairs_counter == 500000) break;
                 }
-                if (new_pairs_counter == 500000) break;
             }
             start_right = 0;
             if (new_pairs_counter == 500000) break;
