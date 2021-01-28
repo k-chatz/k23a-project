@@ -213,10 +213,10 @@ uint js_get_execution_threads(JobScheduler js) {
     return js->execution_threads;
 }
 
-bool js_submit_job(JobScheduler js, Job job) {
+bool js_submit_job(JobScheduler js, Job job, bool force_execute) {
     assert(js != NULL);
     LOCK_;
-    if (js->working) {
+    if (js->working || force_execute) {
         UNLOCK_;
         LOCK_SUBMITTER_;
         LOCK_;
@@ -238,6 +238,36 @@ bool js_submit_job(JobScheduler js, Job job) {
     }
     return true;
 }
+
+Job js_create_and_submit_job(JobScheduler js, void *(*start_routine)(void *), bool force_execute, ...) {
+    Job job = NULL;
+    static long long int job_id = 0;
+    va_list vargs;
+    job = malloc(sizeof(struct job));
+    assert(job != NULL);
+    (job)->job_id = ++job_id;
+    (job)->start_routine = start_routine;
+    (job)->args = NULL;
+    (job)->args_count = 0;
+    va_start(vargs, force_execute);
+    FOREACH_ARG(arg, vargs) {
+        size_t type_sz = va_arg(vargs, size_t);
+        (job)->args = realloc((job)->args, (i + 1) * sizeof(Argument));
+        (job)->args[i].arg = malloc(type_sz);
+        assert((job)->args[i].arg != NULL);
+        memcpy((job)->args[i].arg, arg, type_sz);
+        (job)->args[i].type_sz = type_sz;
+        (job)->args_count++;
+    };
+    va_end(vargs);
+    (job)->return_val = NULL;
+    (job)->complete = false;
+    sem_init(&(job)->sem_complete, 0, 0);
+
+    js_submit_job(js, job, force_execute);
+    return job;
+}
+
 
 bool js_execute_all_jobs(JobScheduler js) {
     assert(js != NULL);
@@ -279,6 +309,8 @@ void js_wait_all_jobs(JobScheduler js, bool destroy_jobs) {
         if (!queue_size(js->waiting_queue) && !queue_size(js->running_queue)) {
             UNLOCK_;
             break;
+        } else {
+            BROADCAST_WAKEUP_;
         }
         UNLOCK_;
         job = NULL;

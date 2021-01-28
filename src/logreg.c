@@ -100,14 +100,14 @@ float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
         Job jobs[batch_sz];
         memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
-            js_create_job(&jobs[i], (void *(*)(void *)) lr_predict_t, JOB_ARG(reg), JOB_ARG(Xs),JOB_ARG(Ps),
-                                    JOB_ARG(i), NULL);
-            js_submit_job(js, jobs[i]);
+            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_predict_t, false, JOB_ARG(reg), JOB_ARG(Xs),
+                                               JOB_ARG(Ps),
+                                               JOB_ARG(i), NULL);
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
         for (int i = 0; i < batch_sz; i++) {
-           js_destroy_job(&jobs[i]);
+            js_destroy_job(&jobs[i]);
         }
     }
     return Ps;
@@ -155,14 +155,13 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
         Job *jobs = malloc(batch_sz * sizeof(Job));
         memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
-            js_create_job(&jobs[i], (void *(*)(void *)) lr_train_t_,
-                                    JOB_ARG(reg),
-                                    JOB_ARG(Xs),
-                                    JOB_ARG(Ys),
-                                    JOB_ARG(Ps),
-                                    JOB_ARG(i),
-                                    NULL);
-            js_submit_job(js, jobs[i]);
+            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_train_t_, false,
+                                               JOB_ARG(reg),
+                                               JOB_ARG(Xs),
+                                               JOB_ARG(Ys),
+                                               JOB_ARG(Ps),
+                                               JOB_ARG(i),
+                                               NULL);
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
