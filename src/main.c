@@ -14,7 +14,7 @@
 #include "../include/unique_rand.h"
 #include "../include/job_scheduler.h"
 
-#define epochs 1
+#define epochs 200
 #define batch_size 2000
 #define learning_rate 0.0001
 #define THREADS 0
@@ -257,10 +257,9 @@ prepare_set(int start, int end, bool random, URand ur, STS *X, ML ml,
             start_t = i * offset;
             end_t = (i + 1) * offset;
             jobs[i] = NULL;
-            js_create_job(&jobs[i], (void *(*)(void *)) fill_vector, JOB_ARG(ml), JOB_ARG(json_dict),
+            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) fill_vector, false, JOB_ARG(ml), JOB_ARG(json_dict),
                           JOB_ARG(vectors_dict), JOB_ARG(pairs), JOB_ARG(result_vector),
                           JOB_ARG(y), JOB_ARG(start_t), JOB_ARG(end_t), JOB_ARG(ur), JOB_ARG(random), NULL);
-            js_submit_job(js, jobs[i]);
         }
         js_execute_all_jobs(js);
         js_wait_all_jobs(js, false);
@@ -743,7 +742,7 @@ int main(int argc, char *argv[]) {
     printf("\nf1 score: %f\n\n", ml_f1_score((float *) y_val, y_pred, val_sz));
 
     /*================================================================================================================*/
-    float threshold = STEP_VALUE;
+    float threshold = 0.0;
     float *result_vector = malloc(ml_bow_sz(ml) * sizeof(float));
     setp dynamic_train_hset = set_new(54);
     char name[54];
@@ -820,8 +819,15 @@ int main(int argc, char *argv[]) {
         SpecEntry *left_spec, *right_spec, *left_root, *right_root;
         unsigned int ii = 0;
         unsigned int jj = 0;
+        unsigned int new_pairs_counter = 0;
         I_DICT_FOREACH_ENTRY(ii, left, json_dict, &start_left, json_dict->htab->buf_load) {
+            left_spec = sts_get(X, left);
+            left_root = findRoot(X, left_spec);
+            if (left_spec->similar_len > 1) continue;
             I_DICT_FOREACH_ENTRY(jj, right, json_dict, &start_right, json_dict->htab->buf_load) {
+                right_spec = sts_get(X, right);
+                right_root = findRoot(X, right_spec);
+                if (right_spec->similar_len > 1) continue;
                 snprintf(entry_buf_1, 54, "%s_%s", left, right);
                 snprintf(entry_buf_2, 54, "%s_%s", right, left);
                 if (!strcmp(left, right) || set_in(dynamic_train_hset, entry_buf_1)) {
@@ -837,21 +843,22 @@ int main(int argc, char *argv[]) {
                 if (y_predict < threshold || y_predict > 1 - threshold) {
                     /* we need to create all the different pairs of the two cliques. */
                     /* iterate the two cliques and create the pairs. */
-                    left_spec = sts_get(X, left);
-                    right_spec = sts_get(X, right);
-                    left_root = findRoot(X, left_spec);
-                    right_root = findRoot(X, right_spec);
                     LL_FOREACH(A, left_root->similar) {
                         LL_FOREACH(B, right_root->similar) {
                             fprintf(fp, "%s,%s,%d\n", A->data, B->data, y_predict < threshold ? 0 : 1);
+                            new_pairs_counter++;
                             set_put(dynamic_train_hset, entry_buf_1);
                             set_put(dynamic_train_hset, entry_buf_2);
                             dynamic_train_sz++;
+                            if (new_pairs_counter == 500000) break;
                         }
+                        if (new_pairs_counter == 500000) break;
                     }
                 }
+                if (new_pairs_counter == 500000) break;
             }
             start_right = 0;
+            if (new_pairs_counter == 500000) break;
         }
         threshold += STEP_VALUE;
 

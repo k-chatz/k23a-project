@@ -28,9 +28,9 @@ void js_destroy(JobScheduler *js);
 
 uint js_get_execution_threads(JobScheduler js);
 
-bool js_submit_job(JobScheduler js, Job job);
+bool js_submit_job(JobScheduler js, Job job, bool force_execute);
 
-Job js_create_and_submit_job(JobScheduler js, void *(*start_routine)(void *), ...);
+Job js_create_and_submit_job(JobScheduler js, void *(*start_routine)(void *), bool force_execute, ...);
 
 bool js_execute_all_jobs(JobScheduler js);
 

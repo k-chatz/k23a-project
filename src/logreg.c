@@ -100,7 +100,7 @@ float *lr_predict(LogReg *reg, float *Xs, int batch_sz) {
         Job jobs[batch_sz];
         memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
-            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_predict_t, JOB_ARG(reg), JOB_ARG(Xs),
+            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_predict_t, false, JOB_ARG(reg), JOB_ARG(Xs),
                                                JOB_ARG(Ps),
                                                JOB_ARG(i), NULL);
         }
@@ -155,7 +155,7 @@ float lr_train(LogReg *reg, float *Xs, int *Ys, int batch_sz) {
         Job *jobs = malloc(batch_sz * sizeof(Job));
         memset(jobs, 0, sizeof(Job) * batch_sz);
         for (int i = 0; i < batch_sz; i++) {
-            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_train_t_,
+            jobs[i] = js_create_and_submit_job(js, (void *(*)(void *)) lr_train_t_, false,
                                                JOB_ARG(reg),
                                                JOB_ARG(Xs),
                                                JOB_ARG(Ys),

@@ -121,7 +121,7 @@ void submit_smith_jobs(void) {
             js_create_job(&jobs[i][j], (void *(*)(void *)) smith_numbers, JOB_ARG(js), JOB_ARG(sum),
                           JOB_ARG(computations), JOB_ARG(mtx), NULL);
             TEST_CHECK(jobs[i][j] != NULL);
-            TEST_CHECK(js_submit_job(js, jobs[i][j]));
+            TEST_CHECK(js_submit_job(js, jobs[i][j], false));
         }
         printf(RED"start execute all jobs...\n"RESET);
         js_execute_all_jobs(js);
@@ -164,12 +164,12 @@ void submit_increment_decrement_jobs(void) {
         for (int j = 0; j < 4; j++) {
             js_create_job(&jobs[i][j], (void *(*)(void *)) increment, JOB_ARG(js), JOB_ARG(sum), JOB_ARG(mtx),
                           JOB_ARG(count_nonzero), NULL);
-            TEST_CHECK(js_submit_job(js, jobs[i][j]));
+            TEST_CHECK(js_submit_job(js, jobs[i][j], false));
         }
         for (int j = 4; j < 10; j++) {
             js_create_job(&jobs[i][j], (void *(*)(void *)) decrement, JOB_ARG(js), JOB_ARG(sum), JOB_ARG(mtx),
                           JOB_ARG(count_nonzero), NULL);
-            TEST_CHECK(js_submit_job(js, jobs[i][j]));
+            TEST_CHECK(js_submit_job(js, jobs[i][j], false));
         }
 
         printf(RED"start execute all jobs...\n"RESET);
