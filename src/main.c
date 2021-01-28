@@ -154,7 +154,7 @@ dictp user_json_dict(char *path) {
     struct dirent **name_list = NULL, **internals_name_list = NULL;
     int n, internals;
     char new_path[512], spec_name[1024];
-    char json_name[512], json_path[1024];
+    char json_name[512], json_path[1025];
     dictp json_dict = dict_new2(128, sizeof(JSON_ENTITY *));
     dict_config(json_dict,
                 DICT_CONF_HASH_FUNC, djb2_str,
@@ -699,7 +699,7 @@ int main(int argc, char *argv[]) {
     tokenize_json_train_set(ml, train_json_files_set, json_dict);
 
     if (tfidf) {
-        ml_idf_remove(ml);  //TODO: <------- keep only 1000 with lowest idf value
+        ml_idf_remove(ml);
     }
 
     /* Vectorize JSONs*/
